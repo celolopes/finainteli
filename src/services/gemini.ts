@@ -5,7 +5,7 @@ import Constants from "expo-constants";
 // Note: In a real app, ensure EXPO_PUBLIC_GEMINI_API_KEY is in your .env
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
 export interface FinancialContext {
   monthlyIncome: number;
