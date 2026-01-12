@@ -1,12 +1,16 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
-import { Text, useTheme, Button } from "react-native-paper";
 import { useRouter } from "expo-router";
-import { useStore } from "../../../src/store/useStore";
-import { SummaryCards } from "../../../src/components/SummaryCards";
-import { SmartTipCard } from "../../../src/components/SmartTipCard";
-import { GeminiService } from "../../../src/services/gemini";
+import React, { useEffect, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Text, useTheme } from "react-native-paper";
 import { VictoryPie } from "victory-native";
+import { SmartTipCard } from "../../../src/components/SmartTipCard";
+import { SummaryCards } from "../../../src/components/SummaryCards";
+import { GeminiService } from "../../../src/services/gemini";
+import { useStore } from "../../../src/store/useStore";
+
+console.log("VictoryPie:", VictoryPie);
+console.log("SummaryCards:", SummaryCards);
+console.log("SmartTipCard:", SmartTipCard);
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -87,13 +91,13 @@ export default function HomeScreen() {
           <Text variant="titleMedium" style={{ marginLeft: 16, marginTop: 16 }}>
             Top Spending
           </Text>
-          <VictoryPie
+          {/* <VictoryPie
             data={topCategories}
             colorScale={["#6C63FF", "#03DAC6", "#FF4081", "#FF9100", "#7C4DFF"]}
             innerRadius={60}
             style={{ labels: { fill: theme.colors.onBackground, fontSize: 12 } }}
             height={300}
-          />
+          /> */}
         </View>
       )}
     </ScrollView>
