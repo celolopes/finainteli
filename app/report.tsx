@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
-import { Text, Surface, ActivityIndicator, useTheme, Button } from "react-native-paper";
 import { Stack, useRouter } from "expo-router";
-import { useStore } from "../src/store/useStore";
+import React, { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Markdown from "react-native-markdown-display";
+import { ActivityIndicator, Button, Surface, Text, useTheme } from "react-native-paper";
 import { GeminiService } from "../src/services/gemini";
-import { VictoryBar, VictoryChart, VictoryTheme, VictoryAxis } from "victory-native";
+import { useStore } from "../src/store/useStore";
 
 export default function ReportScreen() {
   const theme = useTheme();
@@ -67,20 +67,30 @@ export default function ReportScreen() {
               <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "bold" }}>
                 Spending Trend
               </Text>
-              <VictoryChart width={300} height={200} theme={VictoryTheme.material}>
+              {/* <VictoryChart width={300} height={200} theme={VictoryTheme.material}>
                 <VictoryAxis dependentAxis />
                 <VictoryAxis />
                 <VictoryBar data={chartData} style={{ data: { fill: theme.colors.primary } }} />
-              </VictoryChart>
+              </VictoryChart> */}
             </Surface>
 
             <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <Text variant="titleLarge" style={{ color: theme.colors.primary, marginBottom: 12 }}>
                 Analysis
               </Text>
-              <Text variant="bodyMedium" style={{ lineHeight: 24 }}>
+              <Markdown
+                style={{
+                  body: { color: theme.colors.onSurface, fontSize: 16, lineHeight: 24 },
+                  heading1: { color: theme.colors.primary, fontSize: 24, fontWeight: "bold", marginTop: 16, marginBottom: 8 },
+                  heading2: { color: theme.colors.secondary, fontSize: 20, fontWeight: "bold", marginTop: 12, marginBottom: 8 },
+                  strong: { color: theme.colors.primary, fontWeight: "bold" },
+                  bullet_list: { marginVertical: 8 },
+                  list_item: { marginVertical: 4 },
+                  code_inline: { backgroundColor: theme.colors.elevation.level3, padding: 4, borderRadius: 4, fontFamily: "SpaceMono" },
+                }}
+              >
                 {report}
-              </Text>
+              </Markdown>
             </Surface>
 
             <Button mode="contained" onPress={() => router.back()} style={{ marginVertical: 24 }}>
