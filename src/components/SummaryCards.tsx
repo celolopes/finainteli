@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Surface, Text, useTheme } from "react-native-paper";
 
 interface Props {
@@ -7,15 +7,18 @@ interface Props {
   expenses: number;
 }
 
+import { useTranslation } from "react-i18next";
+
 export const SummaryCards = ({ income, expenses }: Props) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const savings = income - expenses;
 
   return (
     <View style={styles.container}>
-      <Card title="Income" amount={income} color={(theme.colors as any).success} />
-      <Card title="Expense" amount={expenses} color={(theme.colors as any).error} />
-      <Card title="Savings" amount={savings} color={theme.colors.primary} />
+      <Card title={t("dashboard.income")} amount={income} color={(theme.colors as any).success} />
+      <Card title={t("dashboard.expense")} amount={expenses} color={(theme.colors as any).error} />
+      <Card title={t("dashboard.savings")} amount={savings} color={theme.colors.primary} />
     </View>
   );
 };

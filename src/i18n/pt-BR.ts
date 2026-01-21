@@ -1,0 +1,35 @@
+export default {
+  auth: {
+    login: "Entrar",
+    email: "E-mail",
+    password: "Senha",
+    subtitle: "Seu Assistente Financeiro Pessoal com IA",
+    continueWithGoogle: "Continuar com Google",
+    signup: "Criar conta",
+    noAccount: "Não tem uma conta?",
+  },
+  common: {
+    loading: "Carregando...",
+    save: "Salvar",
+    cancel: "Cancelar",
+    back: "Voltar",
+    error: "Erro",
+    success: "Sucesso",
+  },
+  dashboard: {
+    title: "Painel",
+    subtitle: "Sua saúde financeira em resumo",
+    insight: "Insight FinAI",
+    viewReport: "Ver Relatório Completo",
+    income: "Receitas",
+    expense: "Despesas",
+    savings: "Economia",
+    topSpending: "Maiores Gastos",
+  },
+  tabs: {
+    home: "Início",
+    transactions: "Transações",
+    goals: "Metas",
+    profile: "Perfil",
+  },
+};

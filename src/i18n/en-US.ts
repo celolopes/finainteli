@@ -1,0 +1,35 @@
+export default {
+  auth: {
+    login: "Login",
+    email: "Email",
+    password: "Password",
+    subtitle: "Your Personal AI Finance Assistant",
+    continueWithGoogle: "Continue with Google",
+    signup: "Sign Up",
+    noAccount: "Don't have an account?",
+  },
+  common: {
+    loading: "Loading...",
+    save: "Save",
+    cancel: "Cancel",
+    back: "Back",
+    error: "Error",
+    success: "Success",
+  },
+  dashboard: {
+    title: "Dashboard",
+    subtitle: "Your financial health at a glance",
+    insight: "FinAI Insight",
+    viewReport: "View Full AI Report",
+    income: "Income",
+    expense: "Expense",
+    savings: "Savings",
+    topSpending: "Top Spending",
+  },
+  tabs: {
+    home: "Home",
+    transactions: "Transactions",
+    goals: "Goals",
+    profile: "Profile",
+  },
+};

@@ -1,6 +1,6 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Surface, Text, Button, Icon, useTheme } from "react-native-paper";
+import { StyleSheet, View } from "react-native";
+import { Button, Icon, Surface, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
 interface Props {
@@ -9,8 +9,11 @@ interface Props {
   loading?: boolean;
 }
 
+import { useTranslation } from "react-i18next";
+
 export const SmartTipCard = ({ tip, onPressReport, loading }: Props) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Animated.View entering={FadeInUp.delay(300)}>
@@ -18,16 +21,16 @@ export const SmartTipCard = ({ tip, onPressReport, loading }: Props) => {
         <View style={styles.header}>
           <Icon source="creation" size={24} color={theme.colors.primary} />
           <Text variant="titleMedium" style={{ marginLeft: 8, color: theme.colors.primary, fontWeight: "bold" }}>
-            FinAI Insight
+            {t("dashboard.insight")}
           </Text>
         </View>
 
         <Text variant="bodyMedium" style={styles.content}>
-          {loading ? "Analyzing your finances..." : tip}
+          {loading ? t("common.loading") : tip}
         </Text>
 
         <Button mode="contained-tonal" onPress={onPressReport} style={styles.button} icon="chart-box-outline">
-          View Full AI Report
+          {t("dashboard.viewReport")}
         </Button>
       </Surface>
     </Animated.View>

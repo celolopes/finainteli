@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Constants from "expo-constants";
 
 // Initialize Gemini
 // Note: In a real app, ensure EXPO_PUBLIC_GEMINI_API_KEY is in your .env
@@ -23,7 +22,7 @@ export const GeminiService = {
   /**
    * Generates a short, friendly "Smart Tip" based on current financial context.
    */
-  async generateSmartTip(context: FinancialContext): Promise<string> {
+  async generateSmartTip(context: FinancialContext, language: string = "en-US"): Promise<string> {
     if (!apiKey) return "Add your Gemini API Key to .env to get smart tips!";
 
     const prompt = `
@@ -38,6 +37,7 @@ export const GeminiService = {
       ${context.goal ? `- Goal: Save $${context.goal.target} by ${context.goal.deadline}` : ""}
       
       Tone: Encouraging, premium, concise.
+      Language: Respond strictly in ${language.startsWith("pt") ? "Portuguese (Brazil)" : "English"}.
     `;
 
     try {

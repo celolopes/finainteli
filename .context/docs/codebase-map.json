@@ -1,0 +1,574 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-20T18:58:02.571Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "frameworks": [
+      "react-native"
+    ],
+    "buildTools": [],
+    "testFrameworks": [],
+    "packageManager": "npm",
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 47,
+    "topDirectories": [
+      {
+        "name": "app",
+        "fileCount": 14
+      },
+      {
+        "name": "app.json",
+        "fileCount": 1
+      },
+      {
+        "name": "assets",
+        "fileCount": 5
+      },
+      {
+        "name": "babel.config.js",
+        "fileCount": 1
+      },
+      {
+        "name": "components",
+        "fileCount": 9
+      },
+      {
+        "name": "constants",
+        "fileCount": 1
+      },
+      {
+        "name": "expo-env.d.ts",
+        "fileCount": 1
+      },
+      {
+        "name": "package-lock.json",
+        "fileCount": 1
+      },
+      {
+        "name": "package.json",
+        "fileCount": 1
+      },
+      {
+        "name": "README.md",
+        "fileCount": 1
+      },
+      {
+        "name": "src",
+        "fileCount": 11
+      },
+      {
+        "name": "tsconfig.json",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".tsx",
+        "count": 21
+      },
+      {
+        "extension": ".ts",
+        "count": 14
+      },
+      {
+        "extension": ".json",
+        "count": 4
+      },
+      {
+        "extension": ".png",
+        "count": 4
+      },
+      {
+        "extension": ".js",
+        "count": 2
+      },
+      {
+        "extension": ".md",
+        "count": 1
+      },
+      {
+        "extension": ".ttf",
+        "count": 1
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "components",
+          "src\\components",
+          "components\\__tests__"
+        ],
+        "symbolCount": 14,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "src\\services"
+        ],
+        "symbolCount": 1,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [],
+    "entryPoints": [
+      "src\\types\\index.ts",
+      "src\\theme\\index.ts",
+      "app\\(app)\\(tabs)\\index.tsx"
+    ]
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "Markdown",
+        "kind": "class",
+        "file": "src\\markdown.d.ts",
+        "line": 5,
+        "exported": true
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "FinancialContext",
+        "kind": "interface",
+        "file": "src\\services\\gemini.ts",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "Goal",
+        "kind": "interface",
+        "file": "src\\types\\index.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "Transaction",
+        "kind": "interface",
+        "file": "src\\types\\index.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "UserState",
+        "kind": "interface",
+        "file": "src\\types\\index.ts",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "AppState",
+        "kind": "interface",
+        "file": "src\\store\\useStore.ts",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Message",
+        "kind": "interface",
+        "file": "app\\(app)\\(tabs)\\chat.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "interface",
+        "file": "src\\components\\TransactionItem.tsx",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "interface",
+        "file": "src\\components\\SummaryCards.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "interface",
+        "file": "src\\components\\SmartTipCard.tsx",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "ThemeColors",
+        "kind": "interface",
+        "file": "src\\theme.d.ts",
+        "line": 5,
+        "exported": false
+      }
+    ],
+    "functions": [
+      {
+        "name": "AuthLayout",
+        "kind": "function",
+        "file": "app\\(auth)\\_layout.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "DrawerLayout",
+        "kind": "function",
+        "file": "app\\(app)\\_layout.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "EditScreenInfo",
+        "kind": "function",
+        "file": "components\\EditScreenInfo.tsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "LoginScreen",
+        "kind": "function",
+        "file": "app\\(auth)\\login.tsx",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "ModalScreen",
+        "kind": "function",
+        "file": "app\\modal.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "MonoText",
+        "kind": "function",
+        "file": "components\\StyledText.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "NotFoundScreen",
+        "kind": "function",
+        "file": "app\\+not-found.tsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "Root",
+        "kind": "function",
+        "file": "app\\+html.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "RootLayout",
+        "kind": "function",
+        "file": "app\\_layout.tsx",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "Text",
+        "kind": "function",
+        "file": "components\\Themed.tsx",
+        "line": 33,
+        "exported": true
+      },
+      {
+        "name": "useClientOnlyValue",
+        "kind": "function",
+        "file": "components\\useClientOnlyValue.web.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "useClientOnlyValue",
+        "kind": "function",
+        "file": "components\\useClientOnlyValue.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "useColorScheme",
+        "kind": "function",
+        "file": "components\\useColorScheme.web.ts",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "useThemeColor",
+        "kind": "function",
+        "file": "components\\Themed.tsx",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "View",
+        "kind": "function",
+        "file": "components\\Themed.tsx",
+        "line": 40,
+        "exported": true
+      }
+    ],
+    "types": [
+      {
+        "name": "TextProps",
+        "kind": "type",
+        "file": "components\\Themed.tsx",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "ViewProps",
+        "kind": "type",
+        "file": "components\\Themed.tsx",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "FormData",
+        "kind": "type",
+        "file": "app\\(auth)\\login.tsx",
+        "line": 15,
+        "exported": false
+      },
+      {
+        "name": "FormData",
+        "kind": "type",
+        "file": "app\\(app)\\add-transaction.tsx",
+        "line": 20,
+        "exported": false
+      },
+      {
+        "name": "ThemeProps",
+        "kind": "type",
+        "file": "components\\Themed.tsx",
+        "line": 11,
+        "exported": false
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "AuthLayout",
+      "kind": "function",
+      "file": "app\\(auth)\\_layout.tsx",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "DrawerLayout",
+      "kind": "function",
+      "file": "app\\(app)\\_layout.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "EditScreenInfo",
+      "kind": "function",
+      "file": "components\\EditScreenInfo.tsx",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "FinancialContext",
+      "kind": "interface",
+      "file": "src\\services\\gemini.ts",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "Goal",
+      "kind": "interface",
+      "file": "src\\types\\index.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "LoginScreen",
+      "kind": "function",
+      "file": "app\\(auth)\\login.tsx",
+      "line": 17,
+      "exported": true
+    },
+    {
+      "name": "Markdown",
+      "kind": "class",
+      "file": "src\\markdown.d.ts",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "ModalScreen",
+      "kind": "function",
+      "file": "app\\modal.tsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "MonoText",
+      "kind": "function",
+      "file": "components\\StyledText.tsx",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "NotFoundScreen",
+      "kind": "function",
+      "file": "app\\+not-found.tsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "Root",
+      "kind": "function",
+      "file": "app\\+html.tsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "RootLayout",
+      "kind": "function",
+      "file": "app\\_layout.tsx",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "Text",
+      "kind": "function",
+      "file": "components\\Themed.tsx",
+      "line": 33,
+      "exported": true
+    },
+    {
+      "name": "TextProps",
+      "kind": "type",
+      "file": "components\\Themed.tsx",
+      "line": 16,
+      "exported": true
+    },
+    {
+      "name": "Transaction",
+      "kind": "interface",
+      "file": "src\\types\\index.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "useClientOnlyValue",
+      "kind": "function",
+      "file": "components\\useClientOnlyValue.web.ts",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "useClientOnlyValue",
+      "kind": "function",
+      "file": "components\\useClientOnlyValue.ts",
+      "line": 2,
+      "exported": true
+    },
+    {
+      "name": "useColorScheme",
+      "kind": "function",
+      "file": "components\\useColorScheme.web.ts",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "UserState",
+      "kind": "interface",
+      "file": "src\\types\\index.ts",
+      "line": 18,
+      "exported": true
+    },
+    {
+      "name": "useThemeColor",
+      "kind": "function",
+      "file": "components\\Themed.tsx",
+      "line": 19,
+      "exported": true
+    },
+    {
+      "name": "View",
+      "kind": "function",
+      "file": "components\\Themed.tsx",
+      "line": 40,
+      "exported": true
+    },
+    {
+      "name": "ViewProps",
+      "kind": "type",
+      "file": "components\\Themed.tsx",
+      "line": 17,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\store\\useStore.ts",
+        "importedBy": 7
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\services\\gemini.ts",
+        "importedBy": 4
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\types/index.ts",
+        "importedBy": 3
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\components\\Themed.tsx",
+        "importedBy": 2
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\components\\StyledText.tsx",
+        "importedBy": 2
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\utils\\seed.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\components\\useColorScheme.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\components\\ExternalLink.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\theme\\index.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\components\\TransactionItem.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\components\\SmartTipCard.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\dev\\projects\\finainteli\\src\\components\\SummaryCards.tsx",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 31,
+    "exportedSymbols": 22,
+    "analysisTimeMs": 260
+  }
+}
