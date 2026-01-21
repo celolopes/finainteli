@@ -4,6 +4,7 @@ This directory contains plans for coordinating work across documentation and pla
 
 ## Plan Queue
 1. [Redesign And I18n](./redesign-and-i18n.md)
+2. [Supabase Authentication](./supabase-authentication.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.
