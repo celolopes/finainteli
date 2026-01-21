@@ -40,6 +40,51 @@ export default {
     expense: "Despesas",
     savings: "Economia",
     topSpending: "Maiores Gastos",
+    welcome: "Bem-vindo",
+    greeting: "Vamos cuidar das suas finanças hoje?",
+    quickActions: "Acesso Rápido",
+    balanceTotal: "Saldo Total",
+    actions: {
+      transaction: "Transação",
+      account: "Conta",
+      card: "Cartão",
+      goal: "Meta",
+    },
+  },
+  onboarding: {
+    welcome: {
+      title: "Bem-vindo ao FinAInteli",
+      subtitle: "Vamos configurar sua experiência financeira. Primeiro, escolha sua moeda principal.",
+    },
+    setup: {
+      title: "Primeiros Passos",
+      subtitle: "Para começar, adicione onde você guarda seu dinheiro.",
+    },
+    form: {
+      accountName: "Nome da Conta",
+      placeholderName: "Ex: Nubank, Carteira...",
+      balance: "Saldo Atual",
+      type: "Tipo de Conta",
+      typeCash: "Carteira / Dinheiro",
+      typeBank: "Conta Bancária",
+    },
+    finish: "Concluir Configuração",
+    continue: "Continuar",
+  },
+  tutorial: {
+    skip: "Pular",
+    next: "Próximo",
+    steps: {
+      header: { title: "Seu Perfil", desc: "Configure sua conta e veja saudações aqui." },
+      balance: { title: "Visão Geral", desc: "Acompanhe seu fluxo de caixa mensal aqui." },
+      actions: { title: "Acesso Rápido", desc: "Adicione transações e gerencie suas contas facilmente." },
+      tips: { title: "Dicas Inteligentes", desc: "Receba recomendações da IA para economizar." },
+    },
+  },
+  empty: {
+    title: "Comece sua jornada",
+    subtitle: "Adicione sua primeira conta bancária ou cartão para visualizar seus insights financeiros aqui.",
+    button: "Configurar Finanças",
   },
   tabs: {
     home: "Início",

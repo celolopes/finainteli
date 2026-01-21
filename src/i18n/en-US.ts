@@ -40,6 +40,51 @@ export default {
     expense: "Expense",
     savings: "Savings",
     topSpending: "Top Spending",
+    welcome: "Welcome",
+    greeting: "Let's take care of your finances today?",
+    quickActions: "Quick Actions",
+    balanceTotal: "Total Balance",
+    actions: {
+      transaction: "Transaction",
+      account: "Account",
+      card: "Card",
+      goal: "Goal",
+    },
+  },
+  onboarding: {
+    welcome: {
+      title: "Welcome to FinAInteli",
+      subtitle: "Let's set up your financial experience. First, choose your main currency.",
+    },
+    setup: {
+      title: "First Steps",
+      subtitle: "To start, add where you keep your money.",
+    },
+    form: {
+      accountName: "Account Name",
+      placeholderName: "Ex: Bank, Wallet...",
+      balance: "Current Balance",
+      type: "Account Type",
+      typeCash: "Cash / Wallet",
+      typeBank: "Bank Account",
+    },
+    finish: "Finish Setup",
+    continue: "Continue",
+  },
+  tutorial: {
+    skip: "Skip",
+    next: "Next",
+    steps: {
+      header: { title: "Your Profile", desc: "Configure your account and see greetings here." },
+      balance: { title: "Overview", desc: "Track your monthly cash flow here." },
+      actions: { title: "Quick Actions", desc: "Add transactions and manage accounts easily." },
+      tips: { title: "Smart Tips", desc: "Get AI recommendations to save money." },
+    },
+  },
+  empty: {
+    title: "Start your journey",
+    subtitle: "Add your first bank account or card to view your financial insights here.",
+    button: "Setup Finances",
   },
   tabs: {
     home: "Home",

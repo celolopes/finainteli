@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "supabase-authentication",
+      "path": "plans/supabase-authentication.md",
+      "title": "🔐 Plano: Implementação de Autenticação com Supabase",
+      "summary": "Implementar sistema completo de autenticação usando Supabase como backend, incluindo login com email/senha, Google OAuth e Apple ID. Adicionar imagem do ícone na tela de login e criar as tabelas necessárias no banco de dados.",
+      "linkedAt": "2026-01-21T12:36:34.098Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "supabase-authentication"
+}
