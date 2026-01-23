@@ -1,0 +1,42 @@
+project:
+  name: "future-features-roadmap"
+  scale: QUICK
+  started: "2026-01-21T20:06:51.286Z"
+  current_phase: V
+
+phases:
+  P:
+    status: skipped
+    reason: "Not required for scale QUICK"
+  R:
+    status: skipped
+    reason: "Not required for scale QUICK"
+  E:
+    status: filled
+    started_at: "2026-01-21T20:06:51.286Z"
+    completed_at: "2026-01-21T20:18:43.499Z"
+  V:
+    status: completed
+    started_at: "2026-01-21T20:18:43.505Z"
+    completed_at: "2026-01-23T12:49:36.458Z"
+    outputs:
+      - path: "plans/budget-notifications.md"
+        status: filled
+  C:
+    status: skipped
+    reason: "Not required for scale QUICK"
+
+execution:
+  history:
+    - timestamp: "2026-01-23T12:49:36.458Z"
+      phase: V
+      action: completed
+  last_activity: "2026-01-23T12:49:36.458Z"
+  resume_context: "Fase V (Validação) concluída"
+
+approval:
+  plan_created: true
+  plan_approved: true
+  approved_by: "system-migration"
+  approved_at: "2026-01-21T20:06:51.293Z"
+

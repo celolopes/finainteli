@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacit
 import { Appbar, Avatar, Button, Dialog, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { DatePickerField } from "../../../src/components/DatePickerField";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
+import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
 
@@ -16,6 +17,7 @@ export default function NewTransaction() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
+  const { checkBudgets } = useBudgetMonitor();
 
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("expense");
@@ -115,6 +117,12 @@ export default function NewTransaction() {
       };
 
       await FinancialService.createTransaction(transactionData);
+
+      // Verificar orçamentos após criar despesa (dispara notificação se limite atingido)
+      if (type === "expense") {
+        checkBudgets();
+      }
+
       router.back();
     } catch (error) {
       console.error(error);

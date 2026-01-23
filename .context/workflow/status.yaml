@@ -1,42 +1,41 @@
 project:
-  name: "future-features-roadmap"
-  scale: QUICK
-  started: "2026-01-21T20:06:51.286Z"
+  name: "budget-notifications"
+  scale: MEDIUM
+  started: "2026-01-23T12:49:45.166Z"
   current_phase: V
 
 phases:
   P:
-    status: skipped
-    reason: "Not required for scale QUICK"
+    status: filled
+    started_at: "2026-01-23T12:49:45.166Z"
+    completed_at: "2026-01-23T12:49:51.481Z"
   R:
-    status: skipped
-    reason: "Not required for scale QUICK"
+    status: filled
+    started_at: "2026-01-23T12:49:51.487Z"
+    completed_at: "2026-01-23T12:50:31.760Z"
   E:
     status: filled
-    started_at: "2026-01-21T20:06:51.286Z"
-    completed_at: "2026-01-21T20:18:43.499Z"
+    started_at: "2026-01-23T12:50:31.784Z"
+    completed_at: "2026-01-23T12:57:33.262Z"
   V:
-    status: completed
-    started_at: "2026-01-21T20:18:43.505Z"
-    completed_at: "2026-01-22T15:40:09.734Z"
-    outputs:
-      - path: "plans/budget-notifications.md"
-        status: filled
+    status: in_progress
+    started_at: "2026-01-23T12:57:33.268Z"
   C:
     status: skipped
-    reason: "Not required for scale QUICK"
+    reason: "Not required for scale MEDIUM"
 
 execution:
   history:
-    - timestamp: "2026-01-22T15:40:09.734Z"
+    - timestamp: "2026-01-23T12:57:33.268Z"
       phase: V
-      action: completed
-  last_activity: "2026-01-22T15:40:09.734Z"
-  resume_context: "Fase V (Validação) concluída"
+      action: started
+  last_activity: "2026-01-23T12:57:33.268Z"
+  resume_context: "Fase V (Validação) em progresso"
 
 approval:
   plan_created: true
   plan_approved: true
-  approved_by: "system-migration"
-  approved_at: "2026-01-21T20:06:51.293Z"
+  approved_by: "architect"
+  approved_at: "2026-01-23T12:50:29.258Z"
+  approval_notes: "Plano revisado e aprovado. Arquitetura validada: expo-notifications + Supabase + hooks React Native."
 
