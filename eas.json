@@ -9,7 +9,13 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "store",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyAIEqy9gXMcQUkpN7LtVlLl0qVkq3rPhOo",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://enqzhsncukrmcrsubcvm.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVucXpoc25jdWtybWNyc3ViY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5OTM4OTEsImV4cCI6MjA4NDU2OTg5MX0.hcGhpOuBiiWPfb1NusZO752Rv2kfg_5fpLbUPjNMU7g"
+      }
     },
     "production": {
       "autoIncrement": true

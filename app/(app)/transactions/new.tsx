@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Button, Dialog, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { DatePickerField } from "../../../src/components/DatePickerField";
+import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
 
@@ -16,23 +18,20 @@ export default function NewTransaction() {
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState(false);
-  const [type, setType] = useState("expense"); // income, expense, transfer
+  const [type, setType] = useState("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); // YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Data Sources
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
 
-  // Selections
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [useCard, setUseCard] = useState(false); // Toggle between Account/Card
+  const [useCard, setUseCard] = useState(false);
 
-  // Dialogs Visibility
   const [showCatDialog, setShowCatDialog] = useState(false);
   const [showSourceDialog, setShowSourceDialog] = useState(false);
 
@@ -40,17 +39,49 @@ export default function NewTransaction() {
     loadData();
   }, []);
 
+  // Converter data para formato ISO (YYYY-MM-DD) para o banco
+  const getISODate = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
   const loadData = async () => {
     try {
       const [cats, accs, crds] = await Promise.all([FinancialService.getCategories(), FinancialService.getAccounts(), FinancialService.getCreditCards()]);
       setCategories(cats || []);
       setAccounts(accs || []);
       setCards(crds || []);
-
-      // Defaults
       if (accs && accs.length > 0) setSelectedAccount(accs[0]);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // Handler para quando o usuário seleciona uma sugestão do autocomplete
+  const handleSelectSuggestion = (suggestion: AutocompleteSuggestion) => {
+    // Preencher categoria
+    if (suggestion.category_id && suggestion.category) {
+      const cat = categories.find((c) => c.id === suggestion.category_id);
+      if (cat) setSelectedCategory(cat);
+    }
+
+    // Preencher conta ou cartão
+    if (suggestion.credit_card_id && suggestion.card) {
+      const card = cards.find((c) => c.id === suggestion.credit_card_id);
+      if (card) {
+        setSelectedCard(card);
+        setUseCard(true);
+      }
+    } else if (suggestion.account_id && suggestion.account) {
+      const acc = accounts.find((a) => a.id === suggestion.account_id);
+      if (acc) {
+        setSelectedAccount(acc);
+        setUseCard(false);
+      }
+    }
+
+    // Ajustar tipo se necessário
+    if (suggestion.type && (suggestion.type === "income" || suggestion.type === "expense")) {
+      setType(suggestion.type);
     }
   };
 
@@ -66,14 +97,12 @@ export default function NewTransaction() {
         type: type as any,
         amount: value,
         description,
-        transaction_date: date,
+        transaction_date: getISODate(selectedDate),
         category_id: selectedCategory.id,
         account_id: useCard ? null : selectedAccount!.id,
         credit_card_id: useCard ? selectedCard!.id : null,
-        currency_code: "BRL", // TODO: Get from account
-        user_id: undefined as any, // Supabase auth handles
+        currency_code: "BRL",
         status: "completed" as any,
-        // Optional fields required by TS type
         destination_account_id: null,
         notes: null,
         is_installment: false,
@@ -98,9 +127,9 @@ export default function NewTransaction() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={t("dashboard.actions.transaction") || "Nova Transação"} />
+        <Appbar.Content title={t("transactions.newTitle")} />
       </Appbar.Header>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
@@ -110,9 +139,16 @@ export default function NewTransaction() {
             value={type}
             onValueChange={setType}
             buttons={[
-              { value: "expense", label: t("dashboard.expense") || "Despesa", style: type === "expense" ? { backgroundColor: theme.colors.errorContainer } : undefined },
-              { value: "income", label: t("dashboard.income") || "Receita", style: type === "income" ? { backgroundColor: theme.colors.primaryContainer } : undefined },
-              // Transfer not implemented yet simplicity
+              {
+                value: "expense",
+                label: t("dashboard.expense"),
+                style: type === "expense" ? { backgroundColor: theme.colors.errorContainer } : undefined,
+              },
+              {
+                value: "income",
+                label: t("dashboard.income"),
+                style: type === "income" ? { backgroundColor: theme.colors.primaryContainer } : undefined,
+              },
             ]}
             style={styles.segmented}
           />
@@ -136,46 +172,56 @@ export default function NewTransaction() {
             />
           </View>
 
-          {/* Description */}
-          <TextInput label="Descrição" value={description} onChangeText={setDescription} mode="outlined" style={styles.input} placeholder="Ex: Almoço, Uber..." />
+          {/* Description with Autocomplete */}
+          <DescriptionAutocomplete
+            value={description}
+            onChangeText={setDescription}
+            onSelectSuggestion={handleSelectSuggestion}
+            label={t("transactions.description")}
+            placeholder={t("transactions.descriptionPlaceholder")}
+          />
 
           {/* Category Selection */}
-          <TouchableOpacity onPress={() => setShowCatDialog(true)} style={styles.selector}>
+          <TouchableOpacity onPress={() => setShowCatDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-              Categoria
+              {t("transactions.category")}
             </Text>
             <View style={styles.selectorValue}>
-              <Avatar.Icon size={32} icon={selectedCategory?.icon || "help"} style={{ backgroundColor: selectedCategory?.color || theme.colors.surfaceVariant }} />
-              <Text variant="titleMedium">{selectedCategory?.name || "Selecionar"}</Text>
-              <Avatar.Icon size={24} icon="chevron-down" style={{ backgroundColor: "transparent" }} color={theme.colors.onSurface} />
+              <Avatar.Icon size={32} icon={selectedCategory?.icon || "help"} style={{ backgroundColor: selectedCategory?.color || theme.colors.surface }} />
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface, flex: 1 }}>
+                {selectedCategory?.name || t("common.select")}
+              </Text>
+              <Avatar.Icon size={24} icon="chevron-down" style={{ backgroundColor: "transparent" }} color={theme.colors.onSurfaceVariant} />
             </View>
           </TouchableOpacity>
 
           {/* Account/Card Selection */}
-          <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={styles.selector}>
+          <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-              {type === "expense" ? "Pago com" : "Recebido em"}
+              {type === "expense" ? t("transactions.payWith") : t("transactions.receivedIn")}
             </Text>
             <View style={styles.selectorValue}>
-              <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: (useCard ? selectedCard?.color : selectedAccount?.color) || theme.colors.surfaceVariant }} />
-              <Text variant="titleMedium">{useCard ? selectedCard?.name || "Selecionar Cartão" : selectedAccount?.name || "Selecionar Conta"}</Text>
-              <Avatar.Icon size={24} icon="chevron-down" style={{ backgroundColor: "transparent" }} color={theme.colors.onSurface} />
+              <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: (useCard ? selectedCard?.color : selectedAccount?.color) || theme.colors.surface }} />
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface, flex: 1 }}>
+                {useCard ? selectedCard?.name || t("transactions.selectCard") : selectedAccount?.name || t("transactions.selectAccount")}
+              </Text>
+              <Avatar.Icon size={24} icon="chevron-down" style={{ backgroundColor: "transparent" }} color={theme.colors.onSurfaceVariant} />
             </View>
           </TouchableOpacity>
 
-          {/* Date Input (Simple Text for now) */}
-          <TextInput label="Data (YYYY-MM-DD)" value={date} onChangeText={setDate} mode="outlined" style={styles.input} />
+          {/* Date Picker */}
+          <DatePickerField value={selectedDate} onChange={setSelectedDate} label={t("common.date")} />
 
-          <Button mode="contained" onPress={handleSave} loading={loading} style={[styles.button, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
-            Salvar Transação
+          <Button mode="contained" onPress={handleSave} loading={loading} style={styles.button} buttonColor={color} textColor={theme.colors.onError} contentStyle={{ height: 50 }}>
+            {t("common.save")}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Category Dialog */}
       <Portal>
-        <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)} style={{ maxHeight: "80%" }}>
-          <Dialog.Title>Selecionar Categoria</Dialog.Title>
+        <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)} style={{ maxHeight: "80%", backgroundColor: theme.colors.surface }}>
+          <Dialog.Title>{t("transactions.selectCategory")}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView>
               <View style={styles.grid}>
@@ -190,8 +236,8 @@ export default function NewTransaction() {
                         setShowCatDialog(false);
                       }}
                     >
-                      <Avatar.Icon size={40} icon={cat.icon || "circle"} style={{ backgroundColor: cat.color || "#ddd" }} />
-                      <Text variant="bodySmall" style={{ textAlign: "center" }} numberOfLines={1}>
+                      <Avatar.Icon size={40} icon={cat.icon || "circle"} style={{ backgroundColor: cat.color || theme.colors.surfaceVariant }} />
+                      <Text variant="bodySmall" style={{ textAlign: "center", color: theme.colors.onSurface }} numberOfLines={1}>
                         {cat.name}
                       </Text>
                     </TouchableOpacity>
@@ -200,19 +246,19 @@ export default function NewTransaction() {
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setShowCatDialog(false)}>Cancelar</Button>
+            <Button onPress={() => setShowCatDialog(false)}>{t("common.cancel")}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
 
       {/* Source Dialog */}
       <Portal>
-        <Dialog visible={showSourceDialog} onDismiss={() => setShowSourceDialog(false)}>
-          <Dialog.Title>Selecionar Origem</Dialog.Title>
+        <Dialog visible={showSourceDialog} onDismiss={() => setShowSourceDialog(false)} style={{ backgroundColor: theme.colors.surface }}>
+          <Dialog.Title>{t("transactions.selectSource")}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView>
-              <Text variant="titleSmall" style={styles.sectionTitle}>
-                Contas Bancárias
+              <Text variant="titleSmall" style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>
+                {t("transactions.accounts")}
               </Text>
               {accounts.map((acc) => (
                 <RadioButton.Item
@@ -226,13 +272,14 @@ export default function NewTransaction() {
                     setShowSourceDialog(false);
                   }}
                   color={theme.colors.primary}
+                  labelStyle={{ color: theme.colors.onSurface }}
                 />
               ))}
 
               {type === "expense" && (
                 <>
-                  <Text variant="titleSmall" style={[styles.sectionTitle, { marginTop: 16 }]}>
-                    Cartões de Crédito
+                  <Text variant="titleSmall" style={[styles.sectionTitle, { marginTop: 16, color: theme.colors.onSurfaceVariant }]}>
+                    {t("transactions.cards")}
                   </Text>
                   {cards.map((card) => (
                     <RadioButton.Item
@@ -246,6 +293,7 @@ export default function NewTransaction() {
                         setShowSourceDialog(false);
                       }}
                       color={theme.colors.primary}
+                      labelStyle={{ color: theme.colors.onSurface }}
                     />
                   ))}
                 </>
@@ -253,7 +301,7 @@ export default function NewTransaction() {
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setShowSourceDialog(false)}>Cancelar</Button>
+            <Button onPress={() => setShowSourceDialog(false)}>{t("common.cancel")}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -286,15 +334,12 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
-    backgroundColor: "white",
   },
   selector: {
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
-    backgroundColor: "white",
   },
   selectorValue: {
     flexDirection: "row",
@@ -303,7 +348,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   button: {
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: 24,
   },
   grid: {
@@ -319,12 +364,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   catItemSelected: {
-    opacity: 0.5, // Highlight
+    opacity: 0.5,
     transform: [{ scale: 1.1 }],
   },
   sectionTitle: {
     fontWeight: "bold",
-    color: "#666",
     marginLeft: 16,
     marginBottom: 4,
   },

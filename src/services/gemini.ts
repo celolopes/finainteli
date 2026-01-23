@@ -20,6 +20,21 @@ export interface FinancialContext {
 
 export const GeminiService = {
   /**
+   * Generic method to generate content explicitly
+   */
+  async generateContent(prompt: string): Promise<string> {
+    if (!apiKey) throw new Error("API Key not configured");
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      console.error("Gemini Generic Error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Generates a short, friendly "Smart Tip" based on current financial context.
    */
   async generateSmartTip(context: FinancialContext, language: string = "en-US"): Promise<string> {
@@ -38,6 +53,8 @@ export const GeminiService = {
       
       Tone: Encouraging, premium, concise.
       Language: Respond strictly in ${language.startsWith("pt") ? "Portuguese (Brazil)" : "English"}.
+      
+      Important: Return ONLY the tip text, no "Tip:" prefix or markdown.
     `;
 
     try {

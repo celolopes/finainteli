@@ -1,8 +1,7 @@
-import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { Transaction, Goal } from "../types";
-import { seedData } from "../utils/seed";
+import { Goal, Transaction } from "../types";
 
 interface AppState {
   transactions: Transaction[];
@@ -47,14 +46,21 @@ export const useStore = create<AppState>()(
 
       initialize: async () => {
         set({ isLoading: true });
-        const data = await seedData();
-        if (data) set({ transactions: data });
+
+        // Check for legacy seed marker and clear junk data
+        const hasSeeded = await AsyncStorage.getItem("@finainteli_seeded");
+        if (hasSeeded) {
+          console.log("Cleaning up seed data...");
+          set({ transactions: [] });
+          await AsyncStorage.removeItem("@finainteli_seeded");
+        }
+
         set({ isLoading: false });
       },
     }),
     {
       name: "finainteli-storage",
       storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+    },
+  ),
 );

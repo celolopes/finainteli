@@ -1,10 +1,12 @@
-import React from "react";
 import { Tabs } from "expo-router";
-import { useTheme, Icon, Text } from "react-native-paper";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { Platform } from "react-native";
+import { Icon, useTheme } from "react-native-paper";
 
 export default function TabLayout() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -26,29 +28,29 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          headerTitle: "FinAInteli",
+          title: t("tabs.home"),
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Icon source="home-variant" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: "Transactions",
+          title: t("tabs.transactions"),
           tabBarIcon: ({ color, size }) => <Icon source="format-list-bulleted" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="goals"
         options={{
-          title: "Goals",
+          title: t("tabs.goals"),
           tabBarIcon: ({ color, size }) => <Icon source="target" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Advisor",
+          title: t("tabs.advisor"),
           tabBarIcon: ({ color, size }) => <Icon source="robot" size={size} color={color} />,
         }}
       />

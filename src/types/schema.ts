@@ -95,6 +95,29 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["transactions"]["Row"], "id" | "created_at" | "updated_at">;
         Update: Partial<Database["public"]["Tables"]["transactions"]["Insert"]>;
       };
+      budgets: {
+        Row: {
+          id: string;
+          user_id: string;
+          category_id: string;
+          name: string | null;
+          amount: number;
+          currency_code: string;
+          period: "monthly" | "weekly";
+          start_date: string | null;
+          end_date: string | null;
+          is_active: boolean;
+          alert_threshold: number | null;
+          alert_50: boolean;
+          alert_80: boolean;
+          alert_100: boolean;
+          last_alert_sent_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["budgets"]["Row"], "id" | "created_at" | "updated_at">;
+        Update: Partial<Database["public"]["Tables"]["budgets"]["Insert"]>;
+      };
     };
   };
 }

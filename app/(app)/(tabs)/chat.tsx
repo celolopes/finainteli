@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform } from "react-native";
-import { TextInput, Button, Text, Surface, useTheme, Avatar } from "react-native-paper";
-import { useStore } from "../../../src/store/useStore";
+import { useTranslation } from "react-i18next";
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Avatar, Surface, Text, TextInput, useTheme } from "react-native-paper";
 import { GeminiService } from "../../../src/services/gemini";
+import { useStore } from "../../../src/store/useStore";
 
 interface Message {
   id: string;
@@ -12,9 +13,10 @@ interface Message {
 
 export default function ChatScreen() {
   const theme = useTheme();
+  const { t, i18n } = useTranslation();
   const { transactions, goals } = useStore();
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([{ id: "1", role: "model", text: "Hello! I am your financial assistant. Ask me about your spending trends or how to save for your goals." }]);
+  const [messages, setMessages] = useState<Message[]>([{ id: "1", role: "model", text: t("advisor.greeting") }]);
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
@@ -79,7 +81,7 @@ export default function ChatScreen() {
 
       <View style={[styles.inputContainer, { backgroundColor: theme.colors.elevation.level1 }]}>
         <TextInput
-          placeholder="Ask about your finances..."
+          placeholder={t("advisor.placeholder")}
           value={input}
           onChangeText={setInput}
           mode="outlined"

@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text, useTheme } from "react-native-paper";
@@ -16,24 +16,68 @@ import { UserHeader } from "../../../src/components/dashboard/UserHeader";
 import { SmartTipCard } from "../../../src/components/SmartTipCard";
 import { CoachMarkTarget } from "../../../src/components/tutorial/CoachMarkTarget";
 import { useTutorial } from "../../../src/context/TutorialContext";
+import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
+import { GeminiService } from "../../../src/services/gemini";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { accounts, monthlySummary, isLoading, fetchDashboardData, spendingByCategory } = useFinancialStore();
 
   const { session } = useAuthStore();
+
+  // Budget monitor para verificar limites e enviar notificações
+  const { checkBudgets } = useBudgetMonitor();
+
+  // AI Tip State
+  const [aiTip, setAiTip] = useState<string>("");
+  const [tipLoading, setTipLoading] = useState(false);
+
+  // Fetch AI Tip
+  const fetchAiTip = useCallback(async () => {
+    if (!accounts.length) return;
+
+    setTipLoading(true);
+    try {
+      const context = {
+        monthlyIncome: monthlySummary.income,
+        monthlyExpenses: monthlySummary.expense,
+        savings: monthlySummary.income - monthlySummary.expense,
+        topCategories: spendingByCategory.slice(0, 5).map((cat) => ({
+          category: cat.x,
+          amount: cat.y,
+        })),
+      };
+
+      const tip = await GeminiService.generateSmartTip(context, i18n.language);
+      setAiTip(tip);
+    } catch (error) {
+      console.error("Error fetching AI tip:", error);
+      setAiTip(t("dashboard.mockTip"));
+    } finally {
+      setTipLoading(false);
+    }
+  }, [accounts, monthlySummary, spendingByCategory, i18n.language, t]);
 
   // Carregar dados ao entrar na tela
   useFocusEffect(
     useCallback(() => {
       if (session) {
         fetchDashboardData();
+        // Verificar orçamentos e disparar alertas se necessário
+        checkBudgets();
       }
-    }, [session])
+    }, [session]),
   );
+
+  // Fetch AI tip when data is loaded
+  React.useEffect(() => {
+    if (accounts.length > 0 && !aiTip && !tipLoading) {
+      fetchAiTip();
+    }
+  }, [accounts.length]);
 
   const hasData = accounts.length > 0;
 
@@ -45,18 +89,38 @@ export default function HomeScreen() {
     if (tutorial === "true" && hasData) {
       const timer = setTimeout(() => {
         startTutorial([
-          { targetId: "header", title: "Seu Perfil", description: "Configure sua conta e veja saudações aqui." },
-          { targetId: "balance", title: "Visão Geral", description: "Acompanhe seu fluxo de caixa mensal aqui." },
-          { targetId: "actions", title: "Acesso Rápido", description: "Adicione transações e gerencie suas contas facilmente." },
-          { targetId: "tips", title: "Dicas Inteligentes", description: "Receba recomendações da IA para economizar." },
+          {
+            targetId: "header",
+            title: t("tutorial.steps.header.title"),
+            description: t("tutorial.steps.header.desc"),
+          },
+          {
+            targetId: "balance",
+            title: t("tutorial.steps.balance.title"),
+            description: t("tutorial.steps.balance.desc"),
+          },
+          {
+            targetId: "actions",
+            title: t("tutorial.steps.actions.title"),
+            description: t("tutorial.steps.actions.desc"),
+          },
+          {
+            targetId: "tips",
+            title: t("tutorial.steps.tips.title"),
+            description: t("tutorial.steps.tips.desc"),
+          },
         ]);
-      }, 1000);
+      }, 2500); // Wait for entrance animations to finish (prevent wrong measurements)
       return () => clearTimeout(timer);
     }
   }, [tutorial, hasData]);
 
-  // Mock tip por enquanto - integração Gemini virá depois com dados reais
-  const mockTip = "Com base nos seus gastos recentes, você pode economizar R$ 150,00 reduzindo despesas com Alimentação.";
+  const formatMoney = (value: number) => {
+    return new Intl.NumberFormat(i18n.language || "pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -90,14 +154,14 @@ export default function HomeScreen() {
 
                 {/* Dica IA */}
                 <CoachMarkTarget id="tips">
-                  <SmartTipCard tip={mockTip} loading={false} onPressReport={() => router.push("/modal")} />
+                  <SmartTipCard tip={aiTip || t("reports.advisor.analyzing")} loading={tipLoading} onPressReport={() => router.push("/reports/ai-advisor" as any)} onRefreshTip={fetchAiTip} />
                 </CoachMarkTarget>
 
                 {/* Maiores Gastos (Simples por enquanto) */}
                 {spendingByCategory.length > 0 && (
                   <View style={styles.section}>
                     <Text variant="titleMedium" style={styles.sectionTitle}>
-                      {t("dashboard.topSpending") || "Maiores Gastos"}
+                      {t("dashboard.topSpending")}
                     </Text>
                     {spendingByCategory.map((cat, index) => (
                       <View key={cat.x} style={styles.spendingItem}>
@@ -106,7 +170,7 @@ export default function HomeScreen() {
                         <View style={styles.barContainer}>
                           <View style={[styles.bar, { width: `${Math.min((cat.y / monthlySummary.expense) * 100, 100)}%`, backgroundColor: cat.color }]} />
                         </View>
-                        <Text style={styles.amount}>R$ {cat.y}</Text>
+                        <Text style={styles.amount}>{formatMoney(cat.y)}</Text>
                       </View>
                     ))}
                   </View>
@@ -175,7 +239,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 12,
     fontWeight: "bold",
-    width: 60,
+    width: 80, // Increased width for formatted currency
     textAlign: "right",
   },
 });

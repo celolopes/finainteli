@@ -46,6 +46,9 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
         return;
       }
 
+      // Recalcular saldos com base nas transações (sincroniza saldos antigos)
+      await FinancialService.recalculateAccountBalances();
+
       // Parallel fetching for performance
       const [accounts, transactions, summary, spending] = await Promise.all([
         FinancialService.getAccounts(),

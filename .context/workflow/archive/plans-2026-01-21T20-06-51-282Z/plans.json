@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "dashboard-redesign-financial-database",
+      "path": "plans/dashboard-redesign-financial-database.md",
+      "title": "🏦 Plano: Redesign do Dashboard e Estrutura Completa de Banco de Dados Financeiro",
+      "summary": "Implementar redesign completo do Dashboard com Material Design 3, integração de dados do usuário logado (avatar, nome), criação de estrutura de banco de dados Supabase para app financeiro (contas bancárias, cartões de crédito, transações, metas, orçamentos) com suporte multi-moeda, e fluxo de onboarding para novos usuários.",
+      "linkedAt": "2026-01-21T15:05:48.980Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "dashboard-redesign-financial-database"
+}

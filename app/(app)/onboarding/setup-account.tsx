@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
 import { Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -9,9 +10,10 @@ import { useFinancialStore } from "../../../src/store/financialStore";
 export default function OnboardingAccount() {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const { fetchDashboardData } = useFinancialStore();
 
-  const [name, setName] = useState("Carteira");
+  const [name, setName] = useState(t("onboarding.form.typeCash").split("/")[0].trim()); // Default: "Carteira" or "Wallet"
   const [balance, setBalance] = useState("");
   const [type, setType] = useState("cash"); // cash | checking
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function OnboardingAccount() {
       const initialBalance = parseFloat(balance.replace(",", ".") || "0");
 
       await FinancialService.createAccount({
-        name: name || "Conta Inicial",
+        name: name || t("onboarding.form.accountName"), // Fallback
         account_type: type as any,
         currency_code: "BRL", // Usar do profile idealmente, mas default BRL
         initial_balance: initialBalance,
@@ -48,7 +50,7 @@ export default function OnboardingAccount() {
       // Passar param para ativar tutorial
       router.replace("/(app)/(tabs)/?tutorial=true" as any);
     } catch (error) {
-      console.error("Erro ao finalizar setup:", error);
+      console.error("Error setup:", error);
       // Fallback: tenta ir anyway
       router.replace("/(app)/(tabs)/" as any);
     } finally {
@@ -61,41 +63,41 @@ export default function OnboardingAccount() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeInUp.delay(200)} style={styles.header}>
           <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
-            Primeiros Passos
+            {t("onboarding.setup.title")}
           </Text>
           <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-            Para começar, adicione onde você guarda seu dinheiro.
+            {t("onboarding.setup.subtitle")}
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(400)} style={styles.form}>
           <Text variant="titleMedium" style={styles.label}>
-            Tipo de Conta
+            {t("onboarding.form.type")}
           </Text>
           <SegmentedButtons
             value={type}
             onValueChange={setType}
             buttons={[
-              { value: "cash", label: "Carteira / Dinheiro", icon: "wallet" },
-              { value: "checking", label: "Conta Bancária", icon: "bank" },
+              { value: "cash", label: t("onboarding.form.typeCash"), icon: "wallet" },
+              { value: "checking", label: t("onboarding.form.typeBank"), icon: "bank" },
             ]}
             style={styles.input}
           />
 
           <Text variant="titleMedium" style={styles.label}>
-            Nome da Conta
+            {t("onboarding.form.accountName")}
           </Text>
-          <TextInput mode="outlined" value={name} onChangeText={setName} placeholder="Ex: Nubank, Carteira..." style={styles.input} />
+          <TextInput mode="outlined" value={name} onChangeText={setName} placeholder={t("onboarding.form.placeholderName")} style={styles.input} />
 
           <Text variant="titleMedium" style={styles.label}>
-            Saldo Atual
+            {t("onboarding.form.balance")}
           </Text>
           <TextInput mode="outlined" value={balance} onChangeText={setBalance} keyboardType="numeric" placeholder="R$ 0,00" left={<TextInput.Affix text="R$ " />} style={styles.input} />
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(600)} style={styles.footer}>
           <Button mode="contained" onPress={handleFinish} loading={loading} style={styles.button} contentStyle={{ height: 56 }}>
-            Concluir Configuração
+            {t("onboarding.finish")}
           </Button>
         </Animated.View>
       </ScrollView>

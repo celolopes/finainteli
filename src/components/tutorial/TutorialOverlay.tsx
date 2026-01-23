@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { Button, IconButton, Surface, Text, useTheme } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
@@ -16,6 +17,7 @@ const SPRING_CONFIG = {
 export const TutorialOverlay = () => {
   const { isActive, currentStep, targets, nextStep, skipTutorial } = useTutorial();
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   // Valores animados do "Buraco" (Spotlight)
@@ -30,11 +32,14 @@ export const TutorialOverlay = () => {
       const target = targets[currentStep.targetId];
       if (target) {
         // padding no spotlight para não colar no elemento
-        const PADDING = 8;
-        spotTop.value = withSpring(target.y - PADDING, SPRING_CONFIG);
+        const PADDING = 16;
+        // Offset vertical manual para corrigir o deslocamento (titles sendo cortados)
+        const VERTICAL_OFFSET = 25;
+
+        spotTop.value = withSpring(target.y - PADDING - VERTICAL_OFFSET, SPRING_CONFIG);
         spotLeft.value = withSpring(target.x - PADDING, SPRING_CONFIG);
         spotWidth.value = withSpring(target.width + PADDING * 2, SPRING_CONFIG);
-        spotHeight.value = withSpring(target.height + PADDING * 2, SPRING_CONFIG);
+        spotHeight.value = withSpring(target.height + PADDING * 2 + VERTICAL_OFFSET, SPRING_CONFIG); // Aumentar altura também se offset subir
         opacity.value = withTiming(1);
       }
     } else {
@@ -59,12 +64,12 @@ export const TutorialOverlay = () => {
   const tooltipStyle = useAnimatedStyle(() => {
     // Tenta posicionar abaixo, se não der, acima
     const isBottom = spotTop.value + spotHeight.value + 150 < SCREEN_HEIGHT;
-    const topPos = isBottom ? spotTop.value + spotHeight.value + 20 : spotTop.value - 150; // Altura estimada do card
+    const topPos = isBottom ? spotTop.value + spotHeight.value + 20 : spotTop.value - 160;
 
     return {
       position: "absolute",
-      left: 20, // Margem fixa lateral
-      right: 20,
+      left: 16,
+      right: 16,
       top: topPos,
       opacity: opacity.value,
     };
@@ -74,33 +79,49 @@ export const TutorialOverlay = () => {
 
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 9999 }]} pointerEvents="box-none">
-      {/* O Spotlight Overlay (intercepta toques fora do buraco?) */}
-      {/* Na verdade, pointerEvents="auto" na view gigante bloqueia tudo, inclusive o buraco se tiver bg transparente mas fizer parte da view. O buraco é o 'content' da view com bordas. O content é transparente e CLICA? Sim. */}
-      {/* Para bloquear toques *fora*, precisamos de uma view full screen transparente atrás. */}
-
+      {/* O Spotlight Overlay (Mascara) */}
       <Animated.View style={[styles.spotlight, { borderColor: "rgba(0,0,0,0.85)" }, overlayStyle]} />
+
+      {/* Borda de Destaque (Visual Indicator) */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            borderRadius: 16,
+            borderWidth: 2,
+            borderColor: "white", // Ou theme.colors.primary para cor temática
+            top: spotTop,
+            left: spotLeft,
+            width: spotWidth,
+            height: spotHeight,
+            opacity: opacity,
+          },
+        ]}
+      />
 
       {/* Tooltip Card */}
       <Animated.View style={tooltipStyle}>
-        <Surface style={styles.card} elevation={4}>
+        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level3 }]} elevation={5}>
           <View style={styles.cardContent}>
-            <View style={{ flex: 1 }}>
-              <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.primary }}>
-                {currentStep.title}
-              </Text>
-              <Text variant="bodyMedium" style={{ marginTop: 8 }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <View style={styles.headerRow}>
+                <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.primary }}>
+                  {currentStep.title}
+                </Text>
+              </View>
+              <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurface }}>
                 {currentStep.description}
               </Text>
             </View>
-            <IconButton icon="close" size={20} onPress={skipTutorial} />
+            <IconButton icon="close" size={20} onPress={skipTutorial} iconColor={theme.colors.onSurfaceVariant} />
           </View>
 
           <View style={styles.actions}>
-            <Button compact onPress={skipTutorial}>
-              Pular
+            <Button compact onPress={skipTutorial} textColor={theme.colors.onSurfaceVariant}>
+              {t("tutorial.skip")}
             </Button>
-            <Button mode="contained" compact onPress={nextStep}>
-              Próximo
+            <Button mode="contained" onPress={nextStep}>
+              {t("tutorial.next")}
             </Button>
           </View>
         </Surface>
@@ -112,23 +133,26 @@ export const TutorialOverlay = () => {
 const styles = StyleSheet.create({
   spotlight: {
     position: "absolute",
-    borderRadius: 16, // Arredondar o buraco
-    // O hack funciona assim: a view tem tamanho width/height do buraco.
-    // As bordas são gigantes para fora.
+    borderRadius: 16,
   },
   card: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
   },
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    gap: 12,
   },
 });

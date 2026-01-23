@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { Button, Icon, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -7,6 +8,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 export const EmptyDashboard = () => {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
@@ -16,11 +18,11 @@ export const EmptyDashboard = () => {
         </View>
 
         <Text variant="headlineSmall" style={[styles.title, { color: theme.colors.onSurface }]}>
-          Comece sua jornada
+          {t("empty.title")}
         </Text>
 
         <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-          Adicione sua primeira conta bancária ou cartão para visualizar seus insights financeiros aqui.
+          {t("empty.subtitle")}
         </Text>
 
         <Button
@@ -29,7 +31,7 @@ export const EmptyDashboard = () => {
           style={styles.button}
           contentStyle={{ height: 48 }}
         >
-          Configurar Finanças
+          {t("empty.button")}
         </Button>
       </Animated.View>
     </View>

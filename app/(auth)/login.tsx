@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Animated, Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
@@ -14,24 +14,26 @@ import { ThemedText } from "../../src/components/ui/ThemedText";
 import { useAppTheme } from "../../src/context/ThemeContext";
 import { useAuthStore } from "../../src/store/authStore";
 
-// Validation schema
-const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
-});
-
-const signUpSchema = loginSchema
-  .extend({
-    displayName: z.string().min(2, "Mínimo 2 caracteres").optional(),
-    confirmPassword: z.string().min(6, "Mínimo 6 caracteres"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Senhas não coincidem",
-    path: ["confirmPassword"],
+// Validation schema creators
+const createLoginSchema = (t: any) =>
+  z.object({
+    email: z.string().email(t("auth.validation.invalidEmail")),
+    password: z.string().min(6, t("auth.validation.minChars", { count: 6 })),
   });
 
-type LoginFormData = z.infer<typeof loginSchema>;
-type SignUpFormData = z.infer<typeof signUpSchema>;
+const createSignUpSchema = (t: any) =>
+  createLoginSchema(t)
+    .extend({
+      displayName: z
+        .string()
+        .min(2, t("auth.validation.minChars", { count: 2 }))
+        .optional(),
+      confirmPassword: z.string().min(6, t("auth.validation.minChars", { count: 6 })),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("auth.validation.passwordMismatch"),
+      path: ["confirmPassword"],
+    });
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -48,6 +50,13 @@ export default function LoginScreen() {
 
   // Animation for logo
   const logoScale = React.useRef(new Animated.Value(0)).current;
+
+  // Schemas
+  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
+  const signUpSchema = useMemo(() => createSignUpSchema(t), [t]);
+
+  type LoginFormData = z.infer<typeof loginSchema>;
+  type SignUpFormData = z.infer<typeof signUpSchema>;
 
   // Initialize auth
   useEffect(() => {
@@ -67,7 +76,7 @@ export default function LoginScreen() {
   // Redirect if user is authenticated
   useEffect(() => {
     if (initialized && user) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/");
     }
   }, [initialized, user]);
 
@@ -102,7 +111,7 @@ export default function LoginScreen() {
     Keyboard.dismiss();
     const result = await signInWithEmail(data.email, data.password);
     if (result.success) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/");
     }
   };
 
@@ -110,21 +119,21 @@ export default function LoginScreen() {
     Keyboard.dismiss();
     const result = await signUpWithEmail(data.email, data.password, data.displayName);
     if (result.success) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/");
     }
   };
 
   const handleGoogleLogin = async () => {
     const result = await signInWithGoogle();
     if (result.success) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/");
     }
   };
 
   const handleAppleLogin = async () => {
     const result = await signInWithApple();
     if (result.success) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/");
     }
   };
 
@@ -368,7 +377,7 @@ export default function LoginScreen() {
         }}
         duration={4000}
         action={{
-          label: "OK",
+          label: t("common.ok"),
           onPress: () => setSnackbarVisible(false),
         }}
       >

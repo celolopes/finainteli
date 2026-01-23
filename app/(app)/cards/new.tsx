@@ -5,6 +5,7 @@ import { Appbar, Button, SegmentedButtons, Text, TextInput, useTheme } from "rea
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { FinancialService } from "../../../src/services/financial";
+import { CurrencyUtils } from "../../../src/utils/currency";
 
 const COLORS = ["#6750A4", "#B3261E", "#7D5260", "#625B71", "#5B8C5A", "#EA8C00", "#00796B", "#3E2723"];
 const FREE_CARD_LIMIT = 1;
@@ -60,8 +61,8 @@ export default function CardForm() {
     setLoading(true);
 
     try {
-      const limitValue = parseFloat(limit.replace(",", ".") || "0");
-      const invoiceValue = parseFloat(currentInvoice.replace(",", ".") || "0");
+      const limitValue = CurrencyUtils.parse(limit, currency);
+      const invoiceValue = CurrencyUtils.parse(currentInvoice, currency);
       const closing = parseInt(closingDay);
       const due = parseInt(dueDay);
 
@@ -130,20 +131,20 @@ export default function CardForm() {
             <TextInput
               label="Limite Total"
               value={limit}
-              onChangeText={setLimit}
+              onChangeText={(text) => setLimit(CurrencyUtils.maskInput(text, currency))}
               mode="outlined"
               keyboardType="numeric"
               style={[styles.input, { flex: 1, marginRight: 12 }]}
-              left={<TextInput.Affix text="R$ " />}
+              left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
             />
             <TextInput
               label="Fatura Atual"
               value={currentInvoice}
-              onChangeText={setCurrentInvoice}
+              onChangeText={(text) => setCurrentInvoice(CurrencyUtils.maskInput(text, currency))}
               mode="outlined"
               keyboardType="numeric"
               style={[styles.input, { flex: 1 }]}
-              left={<TextInput.Affix text="R$ " />}
+              left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
             />
           </View>
 
@@ -166,7 +167,11 @@ export default function CardForm() {
           </Text>
           <View style={styles.colorGrid}>
             {COLORS.map((c) => (
-              <TouchableOpacity key={c} onPress={() => setColor(c)} style={[styles.colorItem, { backgroundColor: c }, color === c && styles.selectedColor]} />
+              <TouchableOpacity
+                key={c}
+                onPress={() => setColor(c)}
+                style={[styles.colorItem, { backgroundColor: c }, color === c && [styles.selectedColor, { borderColor: theme.colors.onSurface }]]}
+              />
             ))}
           </View>
 
@@ -195,7 +200,7 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
-    backgroundColor: "white",
+    // backgroundColor: "white", -- REMOVED
   },
   typeScroll: {
     marginBottom: 16,
@@ -216,7 +221,7 @@ const styles = StyleSheet.create({
   },
   selectedColor: {
     borderWidth: 3,
-    borderColor: "black",
+    // borderColor: "black", -- Removed, handled in render
     transform: [{ scale: 1.1 }],
   },
   button: {

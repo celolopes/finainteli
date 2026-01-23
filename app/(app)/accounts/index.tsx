@@ -31,7 +31,7 @@ export default function AccountsList() {
   useFocusEffect(
     useCallback(() => {
       loadAccounts();
-    }, [])
+    }, []),
   );
 
   const onRefresh = () => {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "white", // override para garantir contraste se tema for confuso, ideal usar theme.colors.surface
+    // backgroundColor: "white", -- REMOVED
   },
   cardLeft: {
     flexDirection: "row",

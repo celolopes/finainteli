@@ -75,14 +75,21 @@ export const useAuthStore = create<AuthState>((set) => ({
         console.log("[Auth] State changed:", event);
 
         if (event === "SIGNED_IN" && session?.user) {
-          const profile = await authHelpers.ensureUserProfile(session.user.id, session.user.user_metadata?.full_name || session.user.email?.split("@")[0]);
+          console.log("[Auth] Getting profile for:", session.user.id);
+          try {
+            const profile = await authHelpers.ensureUserProfile(session.user.id, session.user.user_metadata?.full_name || session.user.email?.split("@")[0]);
+            console.log("[Auth] Profile loaded:", profile ? "Success" : "NULL");
 
-          set({
-            user: session.user,
-            session,
-            profile,
-            loading: false,
-          });
+            set({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+            });
+          } catch (e) {
+            console.error("[Auth] Profile load failed:", e);
+            set({ loading: false });
+          }
         } else if (event === "SIGNED_OUT") {
           set({
             user: null,

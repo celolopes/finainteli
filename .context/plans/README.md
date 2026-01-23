@@ -3,9 +3,11 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Dashboard Redesign Financial Database](./dashboard-redesign-financial-database.md)
-2. [Redesign And I18n](./redesign-and-i18n.md)
-3. [Supabase Authentication](./supabase-authentication.md)
+1. [Budget Notifications](./budget-notifications.md)
+2. [Dashboard Redesign Financial Database](./dashboard-redesign-financial-database.md)
+3. [Future Features Roadmap](./future-features-roadmap.md)
+4. [Redesign And I18n](./redesign-and-i18n.md)
+5. [Supabase Authentication](./supabase-authentication.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

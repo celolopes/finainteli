@@ -1,6 +1,6 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { List, Text, useTheme, IconButton } from "react-native-paper";
+import { StyleSheet, View } from "react-native";
+import { List, Text, useTheme } from "react-native-paper";
 import { Transaction } from "../types";
 
 interface Props {
@@ -12,21 +12,28 @@ export const TransactionItem = ({ transaction, onPress }: Props) => {
   const theme = useTheme();
   const isIncome = transaction.type === "income";
 
+  // Formatar valor com vírgula para pt-BR
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return (
     <List.Item
       title={transaction.title}
-      description={transaction.date.split("T")[0]} // Simple date format
-      left={(props) => <List.Icon {...props} icon={isIncome ? "arrow-up-circle" : "arrow-down-circle"} color={isIncome ? (theme.colors as any).success : (theme.colors as any).error} />}
-      right={(props) => (
+      titleStyle={{ color: theme.colors.onSurface }}
+      description={transaction.date.split("T")[0]}
+      descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
+      left={(props) => <List.Icon {...props} icon={isIncome ? "arrow-up-circle" : "arrow-down-circle"} color={isIncome ? theme.colors.primary : theme.colors.error} />}
+      right={() => (
         <View style={styles.right}>
           <Text
             variant="bodyLarge"
             style={{
-              color: isIncome ? (theme.colors as any).success : theme.colors.onSurface,
+              color: isIncome ? theme.colors.primary : theme.colors.error,
               fontWeight: "bold",
             }}
           >
-            {isIncome ? "+" : "-"}${transaction.amount}
+            {isIncome ? "+" : "-"}R$ {formatCurrency(transaction.amount)}
           </Text>
         </View>
       )}

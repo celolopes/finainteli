@@ -8,6 +8,7 @@ import { TutorialOverlay } from "../src/components/tutorial/TutorialOverlay";
 import { AppThemeProvider } from "../src/context/ThemeContext";
 import { TutorialProvider } from "../src/context/TutorialContext";
 import "../src/i18n";
+import { useAuthStore } from "../src/store/authStore";
 import { useStore } from "../src/store/useStore";
 
 SplashScreen.preventAutoHideAsync();
@@ -18,9 +19,11 @@ export default function RootLayout() {
   });
 
   const { initialize } = useStore();
+  const { initialize: initAuth } = useAuthStore();
 
   useEffect(() => {
     initialize();
+    initAuth();
     if (loaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
@@ -35,10 +38,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppThemeProvider>
         <TutorialProvider>
-          <Stack>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(app)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
+            <Stack.Screen name="+not-found" options={{ headerShown: true }} />
           </Stack>
           <TutorialOverlay />
           <StatusBar style="auto" />
