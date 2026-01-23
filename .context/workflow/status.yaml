@@ -1,41 +1,39 @@
 project:
-  name: "budget-notifications"
-  scale: MEDIUM
-  started: "2026-01-23T12:49:45.166Z"
-  current_phase: V
+  name: "design-app-icons"
+  scale: LARGE
+  started: "2026-01-23T13:20:09.926Z"
+  current_phase: C
 
 phases:
   P:
     status: filled
-    started_at: "2026-01-23T12:49:45.166Z"
-    completed_at: "2026-01-23T12:49:51.481Z"
+    started_at: "2026-01-23T13:20:09.926Z"
+    completed_at: "2026-01-23T13:20:54.207Z"
   R:
     status: filled
-    started_at: "2026-01-23T12:49:51.487Z"
-    completed_at: "2026-01-23T12:50:31.760Z"
+    started_at: "2026-01-23T13:20:54.214Z"
+    completed_at: "2026-01-23T13:22:36.696Z"
   E:
     status: filled
-    started_at: "2026-01-23T12:50:31.784Z"
-    completed_at: "2026-01-23T12:57:33.262Z"
+    started_at: "2026-01-23T13:22:36.700Z"
+    completed_at: "2026-01-23T13:24:26.501Z"
   V:
-    status: in_progress
-    started_at: "2026-01-23T12:57:33.268Z"
+    status: filled
+    started_at: "2026-01-23T13:24:26.505Z"
+    completed_at: "2026-01-23T13:24:43.226Z"
   C:
-    status: skipped
-    reason: "Not required for scale MEDIUM"
+    status: in_progress
+    started_at: "2026-01-23T13:24:43.230Z"
 
 execution:
   history:
-    - timestamp: "2026-01-23T12:57:33.268Z"
-      phase: V
+    - timestamp: "2026-01-23T13:24:43.230Z"
+      phase: C
       action: started
-  last_activity: "2026-01-23T12:57:33.268Z"
-  resume_context: "Fase V (Validação) em progresso"
+  last_activity: "2026-01-23T13:24:43.230Z"
+  resume_context: "Fase C (Confirmação) em progresso"
 
 approval:
   plan_created: true
-  plan_approved: true
-  approved_by: "architect"
-  approved_at: "2026-01-23T12:50:29.258Z"
-  approval_notes: "Plano revisado e aprovado. Arquitetura validada: expo-notifications + Supabase + hooks React Native."
+  plan_approved: false
 

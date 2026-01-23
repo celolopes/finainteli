@@ -1,13 +1,14 @@
 {
   "active": [
     {
-      "slug": "budget-notifications",
-      "path": "plans/budget-notifications.md",
-      "title": "Feature F2: Notificações de Orçamento",
-      "linkedAt": "2026-01-23T12:49:49.044Z",
+      "slug": "design-app-icons",
+      "path": "plans/design-app-icons.md",
+      "title": "Design App Icons (iOS Liquid Glass & Android Adaptive)",
+      "summary": "Design and generate new app icons for iOS and Android according to latest guidelines.",
+      "linkedAt": "2026-01-23T13:20:24.673Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "budget-notifications"
+  "primary": "design-app-icons"
 }
