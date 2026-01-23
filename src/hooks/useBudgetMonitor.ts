@@ -1,122 +1,110 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { BudgetService, BudgetStatus } from "../services/budget";
-import { BudgetAlert, NotificationService } from "../services/notifications";
-import { useAuthStore } from "../store/authStore";
+import { NotificationService } from "../services/notifications";
+import { supabase } from "../services/supabase";
 
-interface UseBudgetMonitorReturn {
-  budgetStatuses: BudgetStatus[];
-  isLoading: boolean;
-  error: Error | null;
-  checkBudgets: () => Promise<void>;
-  requestNotificationPermission: () => Promise<boolean>;
-}
+const ALERT_STORAGE_KEY = "@budget_alerts_sent";
 
-/**
- * Hook para monitorar orçamentos e disparar notificações
- * Uso: Chamar checkBudgets() no Dashboard ou após criar transação
- */
-export const useBudgetMonitor = (): UseBudgetMonitorReturn => {
-  const { session } = useAuthStore();
-  const [budgetStatuses, setBudgetStatuses] = useState<BudgetStatus[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  /**
-   * Verifica orçamentos e dispara notificações se necessário
-   */
+export const useBudgetMonitor = () => {
   const checkBudgets = useCallback(async () => {
-    if (!session?.user) return;
-
-    setIsLoading(true);
-    setError(null);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
 
     try {
-      // 1. Buscar status de todos os orçamentos
-      const statuses = await BudgetService.checkBudgetStatus();
-      setBudgetStatuses(statuses);
+      const statusList = await BudgetService.checkBudgetStatus(user.id);
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
 
-      // 2. Verificar quais precisam de alerta
-      for (const status of statuses) {
-        if (status.alertLevel > 0) {
-          const alert: BudgetAlert = {
-            budgetId: status.budget.id,
-            categoryName: status.budget.category?.name || "Categoria",
-            threshold: status.alertLevel,
-            currentPercentage: status.percentage,
-            amountSpent: status.spent,
-            budgetAmount: Number(status.budget.amount),
-          };
+      // Load history
+      const sentAlertsRaw = await AsyncStorage.getItem(ALERT_STORAGE_KEY);
+      let sentAlerts = sentAlertsRaw ? JSON.parse(sentAlertsRaw) : {};
+      let hasChanges = false;
 
-          // 3. Tentar enviar notificação (serviço verifica duplicatas)
-          const notificationId = await NotificationService.sendBudgetAlert(alert);
+      for (const status of statusList) {
+        if (status.alert_level === "none") continue;
 
-          if (notificationId) {
-            // Atualizar timestamp no banco
-            await BudgetService.updateLastAlertSent(status.budget.id);
-            console.log(`Alerta enviado: ${status.budget.category?.name} - ${status.alertLevel}%`);
-          }
+        // Check if alerts are enabled for this level
+        const levelKey = status.alert_level === "exceeded" ? 100 : Number(status.alert_level);
+        // @ts-ignore
+        if (!status.alerts_enabled[levelKey]) continue;
+
+        // Dedup key: ID + Level + Date
+        // Example: uuid_80_2024-01-23
+        const alertKey = `${status.budget_id}_${status.alert_level}_${dateStr}`;
+
+        if (sentAlerts[alertKey]) continue;
+
+        // Content
+        let title = "⚠️ Alerta de Gastos";
+        let body = `Você atingiu ${status.percentage.toFixed(0)}% do orçamento de ${status.category_name}.`;
+
+        if (status.alert_level === "exceeded") {
+          title = "🚨 Orçamento Estourado!";
+          body = `Você ultrapassou seu limite em ${status.category_name} por R$ ${Math.abs(status.remaining).toFixed(2)}.`;
+        } else if (status.alert_level === "100") {
+          title = "🛑 Orçamento Atingido";
+          body = `Você consumiu todo o orçamento de ${status.category_name}.`;
         }
-      }
-    } catch (err) {
-      console.error("Erro ao verificar orçamentos:", err);
-      setError(err instanceof Error ? err : new Error("Erro desconhecido"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session?.user]);
 
-  /**
-   * Solicita permissão de notificação
-   */
-  const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
-    return await NotificationService.requestPermissions();
+        await NotificationService.scheduleLocalNotification(title, body, { budgetId: status.budget_id });
+
+        sentAlerts[alertKey] = true;
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        await AsyncStorage.setItem(ALERT_STORAGE_KEY, JSON.stringify(sentAlerts));
+      }
+    } catch (error) {
+      console.log("UseBudgetMonitor: Error checking budgets", error);
+    }
   }, []);
 
-  // Verificar ao montar (opcional - pode ser chamado manualmente)
   useEffect(() => {
-    if (session?.user) {
-      // Limpar alertas antigos ao abrir o app
-      NotificationService.clearOldAlerts();
-    }
-  }, [session?.user]);
+    checkBudgets();
 
-  return {
-    budgetStatuses,
-    isLoading,
-    error,
-    checkBudgets,
-    requestNotificationPermission,
-  };
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        checkBudgets();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [checkBudgets]);
+
+  return { checkBudgets };
 };
 
-/**
- * Hook simplificado apenas para buscar orçamentos (sem notificações)
- */
 export const useBudgets = () => {
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetchBudgets = useCallback(async () => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const statuses = await BudgetService.checkBudgetStatus();
-      setBudgets(statuses);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Erro ao buscar orçamentos"));
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const data = await BudgetService.checkBudgetStatus(user.id);
+        setBudgets(data);
+      }
+    } catch (error) {
+      console.error("Failed to load budgets", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+    refresh();
+  }, [refresh]);
 
-  return {
-    budgets,
-    isLoading,
-    error,
-    refresh: fetchBudgets,
-  };
+  return { budgets, isLoading, refresh };
 };

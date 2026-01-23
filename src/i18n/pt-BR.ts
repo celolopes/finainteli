@@ -44,6 +44,7 @@ export default {
     },
     user: "Usuário",
     ok: "OK",
+    offline_mode_active: "Modo Offline Ativo - Sincronização pendente",
   },
   dashboard: {
     title: "Painel",
@@ -148,6 +149,7 @@ export default {
     yesterday: "Ontem",
     noDescription: "Sem descrição",
     noResults: "Nenhuma transação encontrada",
+    export: "Exportar CSV",
     empty: "Nenhuma transação ainda",
     addFirst: "Adicionar Transação",
     searchPlaceholder: "Buscar transações...",

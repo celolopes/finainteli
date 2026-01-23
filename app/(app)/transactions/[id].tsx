@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { FinancialService } from "../../../src/services/financial";
+import { DetailedTransaction } from "../../../src/types";
 import { Database } from "../../../src/types/schema";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 type Account = Database["public"]["Tables"]["bank_accounts"]["Row"];
 type Card = Database["public"]["Tables"]["credit_cards"]["Row"];
-type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
+type Transaction = DetailedTransaction;
 
 /**
  * Tela de Detalhes/Edição de Transação
@@ -60,15 +61,14 @@ export default function TransactionDetails() {
 
       // Load transaction if editing
       if (id) {
-        const txns = await FinancialService.getTransactions();
-        const txn = txns?.find((t: Transaction) => t.id === id);
+        const txn = await FinancialService.getTransactionById(id);
 
         if (txn) {
           setTransaction(txn);
           setType(txn.type);
           setAmount(txn.amount.toString());
           setDescription(txn.description || "");
-          setDate(txn.transaction_date);
+          setDate(txn.transaction_date.split("T")[0]);
 
           // Set category
           const cat = cats?.find((c) => c.id === txn.category_id);
@@ -101,7 +101,7 @@ export default function TransactionDetails() {
     try {
       const value = parseFloat(amount.replace(",", "."));
 
-      const updates = {
+      const updates: any = {
         type: type as any,
         amount: value,
         description,

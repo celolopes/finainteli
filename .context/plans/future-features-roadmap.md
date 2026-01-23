@@ -1,5 +1,5 @@
 ---
-status: active
+status: complete
 generated: 2026-01-21
 priority: high
 scale: MEDIUM
@@ -20,11 +20,11 @@ phases:
   - id: "F1"
     name: "Sincronização Offline"
     prevc: "E"
-    status: "pending"
+    status: "done"
   - id: "F2"
     name: "Notificações de Orçamento"
     prevc: "E"
-    status: "pending"
+    status: "done"
   - id: "F3"
     name: "Limite de IA para Free Tier"
     prevc: "E"
@@ -33,10 +33,7 @@ phases:
     name: "Listagem de Transações"
     prevc: "E"
     status: "done"
-  - id: "F5"
-    name: "Relatórios Avançados Pro"
-    prevc: "E"
-    status: "pending"
+    status: "done"
 ---
 
 # 🚀 Roadmap de Features Futuras - FinAInteli
@@ -64,10 +61,11 @@ Permitir que usuários criem, editem e visualizem transações mesmo sem conexã
 ### 🎯 Objetivos
 
 - [x] Armazenamento local de dados com SQLite/WatermelonDB
-- [ ] Queue de operações pendentes
-- [ ] Sincronização automática ao reconectar
-- [ ] Indicador visual de status de conexão
-- [ ] Resolução de conflitos (last-write-wins)
+- [x] Queue de operações pendentes (Gerenciado pelo SyncStatus)
+- [x] Sincronização automática ao reconectar
+- [x] Indicador visual de status de conexão (SyncIndicator)
+- [x] Feedback visual por item pendente (Cloud Icon)
+- [x] Resolução de conflitos (last-write-wins)
 
 ### 📦 Entregáveis
 
@@ -439,28 +437,28 @@ Criar tela de relatórios com visualizações avançadas: gráficos de evoluçã
 
 #### Relatórios Visuais
 
-- [ ] Gráfico de evolução patrimonial (linha)
-- [ ] Gráfico de gastos por categoria (pizza/donut)
-- [ ] Comparativo mês a mês (barras)
-- [ ] Resumo de receitas vs despesas
-- [ ] Filtro por período customizado
+- [x] Gráfico de evolução patrimonial (linha)
+- [x] Gráfico de gastos por categoria (pizza/donut)
+- [x] Comparativo mês a mês (barras)
+- [x] Resumo de receitas vs despesas
+- [x] Filtro por período customizado
 
 #### Consultor Financeiro IA 🤖
 
-- [ ] Análise de gastos por período (semana, mês, ano)
-- [ ] Identificação de gastos desnecessários ou excesivos
-- [ ] Comparativo de gastos entre meses ("Você gastou 30% a mais em delivery este mês")
-- [ ] Sugestões de onde pode ter mais liberdade para gastar
-- [ ] Alertas sobre padrões preocupantes
-- [ ] Elogios quando o usuário está indo bem ("Parabéns! Seu gasto com lazer foi 20% menor")
-- [ ] Dicas personalizadas baseadas no perfil de gastos
-- [ ] Previsões de gastos futuros baseado em histórico
+- [x] Análise de gastos por período (semana, mês, ano)
+- [x] Identificação de gastos desnecessários ou excesivos
+- [x] Comparativo de gastos entre meses ("Você gastou 30% a mais em delivery este mês")
+- [x] Sugestões de onde pode ter mais liberdade para gastar
+- [x] Alertas sobre padrões preocupantes
+- [x] Elogios quando o usuário está indo bem ("Parabéns! Seu gasto com lazer foi 20% menor")
+- [x] Dicas personalizadas baseadas no perfil de gastos
+- [x] Previsões de gastos futuros baseado em histórico
 
 #### Exportação
 
-- [ ] Export PDF dos dados e insights
-- [ ] Export CSV dos dados brutos
-- [ ] Paywall para usuários Free
+- [x] Export PDF dos dados e insights
+- [x] Export CSV dos dados brutos
+- [x] Paywall para usuários Free
 
 ### 📦 Entregáveis
 
@@ -739,9 +737,9 @@ Idioma: ${language === "pt-BR" ? "Português do Brasil" : "English"}
 | ----------------------------- | --------- | ----------- | ---------- |
 | F3: Limite IA Free            | ✅        |             |            |
 | F4: Listagem Transações       | ✅        |             |            |
-| F2: Notificações Orçamento    |           | ✅          |            |
-| F5: Relatórios + Consultor IA |           | ✅          |            |
-| F1: Sync Offline              |           |             | ✅         |
+| F2: Notificações Orçamento    | ✅        |             |            |
+| F5: Relatórios + Consultor IA | ✅        |             |            |
+| F1: Sync Offline              | ✅        |             |            |
 
 ### Timeline Sugerida
 
@@ -749,25 +747,20 @@ Idioma: ${language === "pt-BR" ? "Português do Brasil" : "English"}
 Sprint 1 (Semana 1): ✅ CONCLUÍDO
 ├── F3: Limite de IA (5h) ✅
 └── F4: Listagem de Transações (9.5h) ✅
+└── F1: Modo Offline (12h) ✅
+└── F2: Notificações de Orçamento (7h) ✅
+└── F5.5: Exportação CSV/PDF (5h) ✅
 
 Sprint 2 (Semana 2): ✅ CONCLUÍDO
-├── F2: Notificações de Orçamento (7h) ✅
-└── F5: Relatórios + Consultor IA (24h) ✅
-    ├── Consultor IA (AIAdvisorService) ✅
-    ├── Cards de Insights ✅
-    └── Tela de Insights ✅
+├── F5: Relatórios + Consultor IA (24h) ✅
+│   ├── Consultor IA (AIAdvisorService) ✅
+│   ├── Cards de Insights ✅
+│   └── Tela de Insights ✅
 
 Sprint 3 (Semana 3):
-├── F1: Modo Offline (12h)
-└── F5.3: Advanced Reports Pro (Gráficos avançados) & Polish
+└── F1: Refinamentos e QA Final
 
-Sprint 4 (Semana 4):
-├── F5: Relatórios + Consultor IA - Parte 3 (10h)
-│   ├── Export CSV/PDF
-│   └── Testes
-└── F1: Sincronização Offline (12h) - Complexo
-
-Total Estimado: ~67.5 horas (~8-9 dias de trabalho)
+Total Estimado: ~67.5 horas (~8-9 dias de trabalho) -> CONCLUÍDO
 ```
 
 ### Dependências entre Features

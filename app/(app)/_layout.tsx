@@ -1,9 +1,14 @@
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useTheme } from "react-native-paper";
+
+import { useBudgetMonitor } from "../../src/hooks/useBudgetMonitor";
+import { useSync } from "../../src/hooks/useSync";
 
 export default function DrawerLayout() {
   const theme = useTheme();
+  useBudgetMonitor();
+  useSync();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

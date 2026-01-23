@@ -5,6 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
 import { create } from "zustand";
 
+import { database } from "../database";
 import { authHelpers, supabase, UserProfile } from "../services/supabase";
 
 // Enable web browser redirect for OAuth
@@ -439,6 +440,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       await supabase.auth.signOut();
+
+      // Limpa banco de dados local WatermelonDB para garantir isolamento
+      await database.write(async () => {
+        await database.unsafeResetDatabase();
+      });
+
       set({
         user: null,
         session: null,

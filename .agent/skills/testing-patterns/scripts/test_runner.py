@@ -88,6 +88,9 @@ def run_tests(cmd: list, cwd: Path) -> dict:
     }
     
     try:
+        import platform
+        is_windows = platform.system() == "Windows"
+        
         proc = subprocess.run(
             cmd,
             cwd=str(cwd),
@@ -95,7 +98,8 @@ def run_tests(cmd: list, cwd: Path) -> dict:
             text=True,
             encoding='utf-8',
             errors='replace',
-            timeout=300  # 5 min timeout for tests
+            timeout=300,  # 5 min timeout for tests
+            shell=is_windows
         )
         
         result["output"] = proc.stdout[:3000] if proc.stdout else ""

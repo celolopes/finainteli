@@ -10,13 +10,15 @@
     },
     "preview": {
       "distribution": "store",
-      "channel": "preview"
+      "channel": "preview",
+      "autoIncrement": true
     },
     "preview-apk": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "autoIncrement": true
     },
     "production": {
       "autoIncrement": true

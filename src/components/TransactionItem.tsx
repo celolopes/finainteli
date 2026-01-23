@@ -26,15 +26,18 @@ export const TransactionItem = ({ transaction, onPress }: Props) => {
       left={(props) => <List.Icon {...props} icon={isIncome ? "arrow-up-circle" : "arrow-down-circle"} color={isIncome ? theme.colors.primary : theme.colors.error} />}
       right={() => (
         <View style={styles.right}>
-          <Text
-            variant="bodyLarge"
-            style={{
-              color: isIncome ? theme.colors.primary : theme.colors.error,
-              fontWeight: "bold",
-            }}
-          >
-            {isIncome ? "+" : "-"}R$ {formatCurrency(transaction.amount)}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {transaction.sync_status !== "synced" && <List.Icon icon="cloud-upload-outline" color={theme.colors.outline} style={{ height: 20, width: 20, margin: 0, marginRight: 4 }} />}
+            <Text
+              variant="bodyLarge"
+              style={{
+                color: isIncome ? theme.colors.primary : theme.colors.error,
+                fontWeight: "bold",
+              }}
+            >
+              {isIncome ? "+" : "-"}R$ {formatCurrency(transaction.amount)}
+            </Text>
+          </View>
         </View>
       )}
       onPress={onPress}

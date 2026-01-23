@@ -1,160 +1,95 @@
-import { GeminiService } from "./gemini";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { FinancialService } from "./financial";
 
-// Interfaces de Dados Financeiros
-export interface CategoryExpense {
-  category: string;
-  amount: number;
-  percentage: number;
-}
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
-export interface FinancialAnalysis {
-  period: "week" | "month" | "year";
-  startDate: Date;
-  endDate: Date;
-  totalIncome: number;
-  totalExpenses: number;
-  savings: number;
-  categoryBreakdown: CategoryExpense[];
-  previousPeriodComparison?: {
-    totalExpenses: number;
-    difference: number; // Porcentagem
-    categoryDifferences: { category: string; difference: number }[];
-  };
-}
-
-// Interfaces de Insights da IA
-export type InsightType = "warning" | "alert" | "praise" | "tip" | "prediction";
-export type InsightImpact = "high" | "medium" | "low";
+let genAI: GoogleGenerativeAI | null = null;
+const getGeminiClient = () => {
+  if (!genAI) {
+    if (!API_KEY) {
+      console.warn("Gemini API Key missing!");
+    }
+    genAI = new GoogleGenerativeAI(API_KEY || "");
+  }
+  return genAI;
+};
 
 export interface AIInsight {
-  id: string;
-  type: InsightType;
-  icon: string; // Nome do ícone (MaterialCommunityIcons)
+  type: "warning" | "alert" | "praise" | "tip" | "prediction";
+  icon: string;
   title: string;
   message: string;
   category?: string;
-  impact: InsightImpact;
-  actionable: boolean;
-  suggestedAction?: string;
+  impact?: "high" | "medium" | "low";
+  actionable?: boolean;
 }
 
 export const AIAdvisorService = {
-  /**
-   * Analisa os dados financeiros e retorna insights personalizados.
-   * Esta é a função principal que orquestra a chamada ao Gemini.
-   */
-  async analyzeFinances(
-    userId: string, // Futuro: Usar ID para buscar dados históricos específicos se necessário
-    analysis: FinancialAnalysis,
-    language: string = "pt-BR",
-  ): Promise<AIInsight[]> {
+  async getInsights(period: "week" | "month" | "year", userId: string, language = "pt-BR", currencyCode = "BRL"): Promise<AIInsight[]> {
     try {
-      // 1. Construir o prompt com os dados financeiros
-      const prompt = this.buildPrompt(analysis, language);
+      // 1. Get Financial Data
+      const analysis = await FinancialService.getFinancialAnalysis(period, "BRL");
 
-      // 2. Chamar o Gemini (usando o GeminiService existente ou direto)
-      // Estamos usando um método específico aqui para garantir o formato JSON
-      const responseText = await GeminiService.generateContent(prompt);
+      // 2. Prepare Prompt
+      const prompt = `
+        CONTEXTO:
+        Você é o "FinAI Advisor", um consultor financeiro pessoal de elite. Sua personalidade é profissional, perspicaz, encorajadora e direta.
+        Você está analisando os dados financeiros de um usuário para o período: ${period.toUpperCase()} (${currencyCode}).
 
-      // 3. Parsear a resposta para JSON
-      const insights = this.parseResponse(responseText);
+        DADOS FINANCEIROS (JSON):
+        ${JSON.stringify(analysis, null, 2)}
 
-      return insights;
-    } catch (error) {
-      console.error("AIAdvisorService Error:", error);
-      // Fallback em caso de erro
-      return [
-        {
-          id: "error-fallback",
-          type: "tip",
-          icon: "lightbulb-outline",
-          title: "Dica Rápida",
-          message: "Continue registrando seus gastos para obter insights mais precisos no futuro.",
-          impact: "low",
-          actionable: false,
-        },
-      ];
-    }
-  },
+        SEUS OBJETIVOS:
+        1. 🔍 **Identificar Padrões**: Detecte gastos anormais, tendências de alta ou categorias que desviaram do padrão.
+        2. 💡 **Gerar Insights**: Crie *exatamente 3 a 5* insights acionáveis. Não traga obviedades (ex: "Você gastou dinheiro").
+        3. ⚖️ **Equilíbrio**: Misture alertas (se houver problemas) com elogios (se houver conquistas/economia).
+        
+        REGRAS DE FORMATAÇÃO:
+        - Responda ESTRITAMENTE com um Array JSON válido.
+        - Não use Markdown (\`\`\`json). Apenas o raw JSON.
+        - Idioma: ${language}.
 
-  /**
-   * Constrói o prompt otimizado para o Gemini
-   */
-  buildPrompt(analysis: FinancialAnalysis, language: string): string {
-    const currency = language === "pt-BR" ? "R$" : "$";
+        SCHEMA DE SAÍDA (Array de Objetos):
+        [
+          {
+            "type": "warning" | "alert" | "praise" | "tip" | "prediction",
+            "icon": "String (Emoji único que represente o insight)",
+            "title": "String (Título curto e impactante, max 40 chars)",
+            "message": "String (Explicação clara e ação sugerida, max 120 chars)",
+            "category": "String (Nome da categoria relacionada ou null)",
+            "impact": "high" | "medium" | "low"
+          }
+        ]
+      `;
 
-    // Serializar dados para o prompt
-    const dataSummary = JSON.stringify(
-      {
-        period: analysis.period,
-        income: analysis.totalIncome,
-        expenses: analysis.totalExpenses,
-        savings: analysis.savings,
-        topCategories: analysis.categoryBreakdown.slice(0, 5), // Top 5
-        comparison: analysis.previousPeriodComparison,
-      },
-      null,
-      2,
-    );
+      // 3. Call Gemini
+      const client = getGeminiClient();
+      const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
 
-    return `
-      Atue como um Consultor Financeiro Pessoal experiente, amigável e perspicaz.
-      Analise os seguintes dados financeiros do usuário para o período: ${analysis.period}.
-      
-      DADOS:
-      ${dataSummary}
-      
-      TAREFA:
-      Gere 3 a 5 insights valiosos sobre as finanças do usuário.
-      Seja específico, use números quando possível, e varie entre elogios, alertas e dicas.
-      
-      REGRAS:
-      1. Identifique gastos desnecessários ou aumentos súbitos.
-      2. Elogie economias ou reduções de gastos.
-      3. Sugira ações práticas.
-      4. O formato de resposta DEVE ser estritamente um ARRAY JSON válido.
-      5. Idioma: ${language === "pt-BR" ? "Português do Brasil" : "English"}.
-      
-      FORMATO JSON ESPERADO:
-      [
-        {
-          "type": "warning" | "alert" | "praise" | "tip" | "prediction",
-          "icon": "nome-do-icone-mdi", // Ex: alert-circle, trophy, gift, trending-up
-          "title": "Título curto",
-          "message": "Mensagem detalhada e amigável (max 2 frases)",
-          "category": "Nome da Categoria (opcional)",
-          "impact": "high" | "medium" | "low",
-          "actionable": true | false,
-          "suggestedAction": "Ação sugerida curta (se actionable=true)"
-        }
-      ]
-      
-      Retorne APENAS o JSON, sem markdown ou explicações adicionais.
-    `;
-  },
-
-  /**
-   * Processa a resposta do LLM para garantir um objeto válido
-   */
-  parseResponse(responseText: string): AIInsight[] {
-    try {
-      // Limpar blocos de código markdown se existirem
-      const cleanText = responseText
+      // 4. Parse JSON
+      // Remove code blocks if present
+      const cleanText = text
         .replace(/```json/g, "")
         .replace(/```/g, "")
         .trim();
-      const parsed = JSON.parse(cleanText);
 
-      if (Array.isArray(parsed)) {
-        return parsed.map((item, index) => ({
-          ...item,
-          id: `ai-insight-${Date.now()}-${index}`, // Gerar IDs únicos
-        }));
-      }
-      return [];
-    } catch (e) {
-      console.warn("Falha ao parsear resposta JSON da IA", e);
-      return [];
+      const insights: AIInsight[] = JSON.parse(cleanText);
+      return insights;
+    } catch (error) {
+      console.error("AIAdvisorService Error:", error);
+      // Fallback insights if AI fails
+      return [
+        {
+          type: "tip",
+          icon: "💡",
+          title: "Dica Geral",
+          message: "Mantenha seus gastos organizados para atingir suas metas.",
+          impact: "low",
+        },
+      ];
     }
   },
 };

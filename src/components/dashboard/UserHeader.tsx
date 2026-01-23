@@ -7,6 +7,7 @@ import { Avatar, IconButton, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/authStore";
+import { SyncIndicator } from "../ui/SyncIndicator";
 
 export const UserHeader = () => {
   const theme = useTheme();
@@ -38,7 +39,10 @@ export const UserHeader = () => {
           </Text>
         </View>
       </TouchableOpacity>
-      <IconButton icon="bell-outline" iconColor={theme.colors.onSurface} size={24} onPress={() => {}} />
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <SyncIndicator />
+        <IconButton icon="bell-outline" iconColor={theme.colors.onSurface} size={24} onPress={() => {}} />
+      </View>
     </View>
   );
 

@@ -1,176 +1,209 @@
+import { Q } from "@nozbe/watermelondb";
+import { database } from "../database";
+import BudgetModel from "../database/model/Budget";
+import Transaction from "../database/model/Transaction";
 import { Database } from "../types/schema";
+import { NotificationService } from "./notifications";
 import { supabase } from "./supabase";
+import { mySync } from "./sync";
 
-type Budget = Database["public"]["Tables"]["budgets"]["Row"];
-type BudgetInsert = Database["public"]["Tables"]["budgets"]["Insert"];
+type BudgetRow = Database["public"]["Tables"]["budgets"]["Row"];
 
-export interface BudgetWithCategory extends Budget {
+export type Budget = BudgetRow & {
   category?: {
-    id: string;
     name: string;
-    icon: string;
     color: string;
+    icon: string;
+  };
+};
+
+export type BudgetWithCategory = Budget;
+
+export interface BudgetStatus {
+  budget_id: string;
+  category_id: string;
+  category_name: string;
+  budget_amount: number;
+  spent_amount: number;
+  percentage: number;
+  remaining: number;
+  alert_level: "none" | "50" | "80" | "100" | "exceeded";
+  alerts_enabled: {
+    50: boolean;
+    80: boolean;
+    100: boolean;
   };
 }
 
-export interface BudgetStatus {
-  budget: BudgetWithCategory;
-  spent: number;
-  percentage: number;
-  remaining: number;
-  isOverBudget: boolean;
-  alertLevel: 0 | 50 | 80 | 100; // 0 = sem alerta
-}
-
 export const BudgetService = {
-  /**
-   * Busca todos os orçamentos do usuário com informações da categoria
-   */
-  async getBudgets(): Promise<BudgetWithCategory[]> {
-    const { data, error } = await supabase
-      .from("budgets")
-      .select(
-        `
-        *,
-        category:categories(id, name, icon, color)
-      `,
-      )
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+  async getBudgets(userId: string) {
+    const records = await database
+      .get<BudgetModel>("budgets")
+      .query(Q.where("user_id", userId), Q.where("is_active", true), Q.where("deleted_at", Q.eq(null)))
+      .fetch();
 
-    if (error) throw error;
-    return data as BudgetWithCategory[];
+    return (await Promise.all(
+      records.map(async (r) => {
+        const category = await r.category.fetch();
+        return {
+          id: r.id,
+          user_id: r.userId,
+          category_id: r.categoryId,
+          amount: r.amount,
+          period: r.period,
+          is_active: r.isActive,
+          alert_50: r.alert50,
+          alert_80: r.alert80,
+          alert_100: r.alert100,
+          category: category
+            ? {
+                name: category.name,
+                color: category.color,
+                icon: category.icon,
+              }
+            : undefined,
+        };
+      }),
+    )) as Budget[];
   },
 
-  /**
-   * Cria ou atualiza um orçamento
-   */
-  async upsertBudget(budget: Partial<BudgetInsert> & { category_id: string }): Promise<Budget> {
+  async upsertBudget(budget: Partial<Database["public"]["Tables"]["budgets"]["Insert"]> & { id?: string }) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    if (!user) throw new Error("User not authenticated");
 
-    // Verificar se já existe orçamento para essa categoria
-    const { data: existing } = await supabase
-      .from("budgets")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("category_id", budget.category_id)
-      .eq("period", budget.period || "monthly")
-      .single();
-
-    if (existing) {
-      // Atualizar existente
-      const { data, error } = await supabase
-        .from("budgets")
-        .update({
-          amount: budget.amount,
-          alert_50: budget.alert_50 ?? true,
-          alert_80: budget.alert_80 ?? true,
-          alert_100: budget.alert_100 ?? true,
-          is_active: true,
-        })
-        .eq("id", existing.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } else {
-      // Criar novo
-      const { data, error } = await supabase
-        .from("budgets")
-        .insert({
-          user_id: user.id,
-          category_id: budget.category_id,
-          amount: budget.amount!,
-          currency_code: budget.currency_code || "BRL",
-          period: budget.period || "monthly",
-          alert_50: budget.alert_50 ?? true,
-          alert_80: budget.alert_80 ?? true,
-          alert_100: budget.alert_100 ?? true,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  },
-
-  /**
-   * Remove um orçamento (soft delete)
-   */
-  async deleteBudget(budgetId: string): Promise<void> {
-    const { error } = await supabase.from("budgets").update({ is_active: false }).eq("id", budgetId);
-
-    if (error) throw error;
-  },
-
-  /**
-   * Verifica status de todos os orçamentos vs gastos atuais
-   */
-  async checkBudgetStatus(): Promise<BudgetStatus[]> {
-    const budgets = await this.getBudgets();
-    if (budgets.length === 0) return [];
-
-    // Calcular período atual
-    const now = new Date();
-    let startDate: Date;
-
-    // Por enquanto só suportamos mensal
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // Buscar gastos por categoria no período
-    const { data: transactions, error } = await supabase
-      .from("transactions")
-      .select("amount, category_id")
-      .eq("type", "expense")
-      .gte("transaction_date", startDate.toISOString().split("T")[0])
-      .neq("status", "cancelled");
-
-    if (error) throw error;
-
-    // Agrupar gastos por categoria
-    const spentByCategory: Record<string, number> = {};
-    transactions.forEach((t) => {
-      if (t.category_id) {
-        spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + t.amount;
+    let record: BudgetModel;
+    await database.write(async () => {
+      if (budget.id) {
+        record = await database.get<BudgetModel>("budgets").find(budget.id);
+        await record.update((b) => {
+          if (budget.amount !== undefined) b.amount = Number(budget.amount);
+          if (budget.category_id !== undefined) b.categoryId = budget.category_id;
+          if (budget.period !== undefined) b.period = budget.period;
+          if (budget.is_active !== undefined) b.isActive = budget.is_active;
+          if (budget.alert_50 !== undefined) b.alert50 = budget.alert_50;
+          if (budget.alert_80 !== undefined) b.alert80 = budget.alert_80;
+          if (budget.alert_100 !== undefined) b.alert100 = budget.alert_100;
+        });
+      } else {
+        record = await database.get<BudgetModel>("budgets").create((b) => {
+          b.userId = user.id;
+          b.categoryId = budget.category_id!;
+          b.amount = Number(budget.amount);
+          b.period = budget.period || "monthly";
+          b.isActive = budget.is_active ?? true;
+          b.alert50 = budget.alert_50 ?? true;
+          b.alert80 = budget.alert_80 ?? true;
+          b.alert100 = budget.alert_100 ?? true;
+        });
       }
     });
 
-    // Calcular status de cada orçamento
-    return budgets.map((budget) => {
-      const spent = spentByCategory[budget.category_id] || 0;
-      const percentage = budget.amount > 0 ? (spent / Number(budget.amount)) * 100 : 0;
-      const remaining = Number(budget.amount) - spent;
-      const isOverBudget = spent > Number(budget.amount);
+    mySync().catch(console.error);
+    return record!._raw;
+  },
 
-      // Determinar nível de alerta
-      let alertLevel: 0 | 50 | 80 | 100 = 0;
-      if (percentage >= 100 && budget.alert_100) alertLevel = 100;
-      else if (percentage >= 80 && budget.alert_80) alertLevel = 80;
-      else if (percentage >= 50 && budget.alert_50) alertLevel = 50;
+  async deleteBudget(budgetId: string) {
+    await database.write(async () => {
+      const record = await database.get<BudgetModel>("budgets").find(budgetId);
+      await record.update((b) => {
+        b.deletedAt = new Date();
+      });
+    });
+    mySync().catch(console.error);
+  },
+
+  async checkBudgetStatus(userId: string): Promise<BudgetStatus[]> {
+    const budgets = await this.getBudgets(userId);
+    if (!budgets || budgets.length === 0) return [];
+
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const transactions = await database
+      .get<Transaction>("transactions")
+      .query(Q.where("user_id", userId), Q.where("type", "expense"), Q.where("transaction_date", Q.gte(firstDay)), Q.where("deleted_at", Q.eq(null)))
+      .fetch();
+
+    const spendingByCategory: Record<string, number> = {};
+    transactions.forEach((t) => {
+      if (t.category.id) {
+        spendingByCategory[t.category.id] = (spendingByCategory[t.category.id] || 0) + t.amount;
+      }
+    });
+
+    return budgets.map((budget) => {
+      const spent = spendingByCategory[budget.category_id!] || 0;
+      const amount = Number(budget.amount);
+      const percentage = (spent / amount) * 100;
+
+      let alert_level: BudgetStatus["alert_level"] = "none";
+      if (percentage >= 100) alert_level = "exceeded";
+      else if (percentage >= 80) alert_level = "80";
+      else if (percentage >= 50) alert_level = "50";
 
       return {
-        budget,
-        spent,
+        budget_id: budget.id,
+        category_id: budget.category_id!,
+        category_name: budget.category?.name || "Categoria",
+        budget_amount: amount,
+        spent_amount: spent,
         percentage,
-        remaining,
-        isOverBudget,
-        alertLevel,
+        remaining: amount - spent,
+        alert_level,
+        alerts_enabled: {
+          50: budget.alert_50 ?? true,
+          80: budget.alert_80 ?? true,
+          100: budget.alert_100 ?? true,
+        },
       };
     });
   },
 
-  /**
-   * Atualiza timestamp do último alerta enviado
-   */
-  async updateLastAlertSent(budgetId: string): Promise<void> {
-    const { error } = await supabase.from("budgets").update({ last_alert_sent_at: new Date().toISOString() }).eq("id", budgetId);
+  async checkAndNotifyBudgets(userId: string) {
+    const statuses = await this.checkBudgetStatus(userId);
+    const budgetsToUpdate: { budget: BudgetModel; threshold: number }[] = [];
 
-    if (error) throw error;
+    for (const status of statuses) {
+      const budgetRecord = await database.get<BudgetModel>("budgets").find(status.budget_id);
+
+      let thresholdToNotify: number | null = null;
+      const percentage = status.percentage;
+
+      // Determinamos o maior threshold atingido que ainda não foi notificado
+      if (percentage >= 100 && budgetRecord.alert100 && budgetRecord.lastAlertThreshold !== 100) {
+        thresholdToNotify = 100;
+      } else if (percentage >= 80 && budgetRecord.alert80 && (budgetRecord.lastAlertThreshold || 0) < 80) {
+        thresholdToNotify = 80;
+      } else if (percentage >= 50 && budgetRecord.alert50 && (budgetRecord.lastAlertThreshold || 0) < 50) {
+        thresholdToNotify = 50;
+      }
+
+      if (thresholdToNotify) {
+        const title = thresholdToNotify === 100 ? "Orçamento Esgotado!" : "Alerta de Orçamento";
+        const body = `Você atingiu ${thresholdToNotify}% do seu orçamento para ${status.category_name}.`;
+
+        await NotificationService.scheduleLocalNotification(title, body, {
+          budgetId: status.budget_id,
+          threshold: thresholdToNotify,
+        });
+
+        // Agendamos atualização do registro
+        budgetsToUpdate.push({ budget: budgetRecord, threshold: thresholdToNotify });
+      }
+    }
+
+    if (budgetsToUpdate.length > 0) {
+      await database.write(async () => {
+        for (const item of budgetsToUpdate) {
+          await item.budget.update((b) => {
+            b.lastAlertThreshold = item.threshold;
+            b.lastAlertSentAt = Date.now();
+          });
+        }
+      });
+      mySync().catch(console.error);
+    }
   },
 };

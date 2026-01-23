@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "design-app-icons",
+      "path": "plans/design-app-icons.md",
+      "title": "Design App Icons (iOS Liquid Glass & Android Adaptive)",
+      "summary": "Design and generate new app icons for iOS and Android according to latest guidelines.",
+      "linkedAt": "2026-01-23T13:20:24.673Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "design-app-icons"
+}

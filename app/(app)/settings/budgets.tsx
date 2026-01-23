@@ -2,18 +2,15 @@ import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Button, Checkbox, FAB, IconButton, Modal, Portal, ProgressBar, Text, TextInput, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, FAB, IconButton, ProgressBar, Text, useTheme } from "react-native-paper";
+import { BudgetModal } from "../../../src/components/budgets/BudgetModal";
 import { useBudgets } from "../../../src/hooks/useBudgetMonitor";
-import { BudgetService, BudgetStatus } from "../../../src/services/budget";
+import { Budget, BudgetService, BudgetStatus } from "../../../src/services/budget";
 import { FinancialService } from "../../../src/services/financial";
 import { NotificationService } from "../../../src/services/notifications";
+import { Database } from "../../../src/types/schema";
 
-interface Category {
-  id: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-}
+type Category = Database["public"]["Tables"]["categories"]["Row"];
 
 export default function BudgetsScreen() {
   const theme = useTheme();
@@ -22,16 +19,11 @@ export default function BudgetsScreen() {
 
   const { budgets, isLoading, refresh } = useBudgets();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  // Form state
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [amount, setAmount] = useState("");
-  const [alert50, setAlert50] = useState(true);
-  const [alert80, setAlert80] = useState(true);
-  const [alert100, setAlert100] = useState(true);
-  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
+  // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,54 +41,31 @@ export default function BudgetsScreen() {
     }
   };
 
-  const openModal = (budget?: BudgetStatus) => {
-    if (budget) {
-      // Editar existente
-      setEditingBudgetId(budget.budget.id);
-      setSelectedCategory(budget.budget.category as Category);
-      setAmount(String(budget.budget.amount));
-      setAlert50(budget.budget.alert_50 ?? true);
-      setAlert80(budget.budget.alert_80 ?? true);
-      setAlert100(budget.budget.alert_100 ?? true);
-    } else {
-      // Novo
-      setEditingBudgetId(null);
-      setSelectedCategory(null);
-      setAmount("");
-      setAlert50(true);
-      setAlert80(true);
-      setAlert100(true);
-    }
+  const openNewBudget = () => {
+    setEditingBudget(null);
     setModalVisible(true);
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedCategory(null);
-    setAmount("");
+  const openEditBudget = (status: BudgetStatus) => {
+    const b: Partial<Budget> = {
+      id: status.budget_id,
+      category_id: status.category_id,
+      amount: status.budget_amount,
+      alert_50: status.alerts_enabled[50],
+      alert_80: status.alerts_enabled[80],
+      alert_100: status.alerts_enabled[100],
+    };
+    setEditingBudget(b as Budget);
+    setModalVisible(true);
   };
 
-  const handleSave = async () => {
-    if (!selectedCategory || !amount) {
-      Alert.alert("Erro", "Preencha todos os campos");
-      return;
-    }
-
+  const handleSave = async (budget: Partial<Budget>) => {
     setSaving(true);
     try {
-      await BudgetService.upsertBudget({
-        category_id: selectedCategory.id,
-        amount: parseFloat(amount),
-        alert_50: alert50,
-        alert_80: alert80,
-        alert_100: alert100,
-      });
-
-      // Solicitar permissão de notificação se ainda não tem
+      await BudgetService.upsertBudget(budget);
       await NotificationService.requestPermissions();
-
-      closeModal();
       refresh();
+      setModalVisible(false);
     } catch (error) {
       Alert.alert("Erro", "Não foi possível salvar o orçamento");
       console.error(error);
@@ -130,8 +99,11 @@ export default function BudgetsScreen() {
     return theme.colors.primary;
   };
 
-  // Categorias disponíveis (sem orçamento ainda)
-  const availableCategories = categories.filter((cat) => !budgets.some((b) => b.budget.category_id === cat.id));
+  // Filter out categories that already have a budget
+  const availableCategories = categories.filter((cat) => !budgets.some((b) => b.category_id === cat.id));
+
+  // Combine available categories + the one currently being edited (so it shows up in list)
+  const modalCategories = editingBudget ? ([...availableCategories, categories.find((c) => c.id === editingBudget.category_id)].filter(Boolean) as Category[]) : availableCategories;
 
   return (
     <>
@@ -158,22 +130,25 @@ export default function BudgetsScreen() {
             </View>
           ) : (
             budgets.map((status) => (
-              <View key={status.budget.id} style={[styles.budgetCard, { backgroundColor: theme.colors.surface }]}>
+              <View key={status.budget_id} style={[styles.budgetCard, { backgroundColor: theme.colors.surface }]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.categoryInfo}>
-                    <View style={[styles.categoryDot, { backgroundColor: status.budget.category?.color || "#ccc" }]} />
-                    <Text variant="titleMedium">{status.budget.category?.name}</Text>
+                    <View style={[styles.categoryDot, { backgroundColor: categories.find((c) => c.id === status.category_id)?.color || "#ccc" }]} />
+                    <Text variant="titleMedium">{status.category_name}</Text>
                   </View>
-                  <IconButton icon="pencil" onPress={() => openModal(status)} size={20} />
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="pencil" onPress={() => openEditBudget(status)} size={20} />
+                    <IconButton icon="delete" iconColor={theme.colors.error} onPress={() => handleDelete(status.budget_id, status.category_name)} size={20} />
+                  </View>
                 </View>
 
                 <View style={styles.amounts}>
                   <Text variant="bodyLarge" style={{ fontWeight: "bold" }}>
-                    R$ {status.spent.toFixed(2)}
+                    R$ {status.spent_amount.toFixed(2)}
                   </Text>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                     {" "}
-                    / R$ {Number(status.budget.amount).toFixed(2)}
+                    / R$ {status.budget_amount.toFixed(2)}
                   </Text>
                 </View>
 
@@ -192,69 +167,9 @@ export default function BudgetsScreen() {
           )}
         </ScrollView>
 
-        <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={() => openModal()} />
+        <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={openNewBudget} />
 
-        {/* Modal de Edição */}
-        <Portal>
-          <Modal visible={modalVisible} onDismiss={closeModal} contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}>
-            <Text variant="titleLarge" style={styles.modalTitle}>
-              {editingBudgetId ? "Editar Orçamento" : "Novo Orçamento"}
-            </Text>
-
-            {/* Seletor de Categoria */}
-            {!editingBudgetId && (
-              <>
-                <Text variant="labelLarge" style={{ marginBottom: 8 }}>
-                  Categoria
-                </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                  {availableCategories.map((cat) => (
-                    <Button key={cat.id} mode={selectedCategory?.id === cat.id ? "contained" : "outlined"} onPress={() => setSelectedCategory(cat)} style={{ marginRight: 8 }} compact>
-                      {cat.name}
-                    </Button>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-
-            {selectedCategory && (
-              <View style={[styles.selectedCategory, { borderColor: selectedCategory.color || "#ccc" }]}>
-                <Text>Categoria selecionada: {selectedCategory.name}</Text>
-              </View>
-            )}
-
-            <TextInput label="Valor do Orçamento (R$)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" mode="outlined" style={{ marginBottom: 16 }} />
-
-            <Text variant="labelLarge" style={{ marginBottom: 8 }}>
-              Alertas
-            </Text>
-            <Checkbox.Item label="Alertar em 50%" status={alert50 ? "checked" : "unchecked"} onPress={() => setAlert50(!alert50)} />
-            <Checkbox.Item label="Alertar em 80%" status={alert80 ? "checked" : "unchecked"} onPress={() => setAlert80(!alert80)} />
-            <Checkbox.Item label="Alertar em 100%" status={alert100 ? "checked" : "unchecked"} onPress={() => setAlert100(!alert100)} />
-
-            <View style={styles.modalActions}>
-              {editingBudgetId && (
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    closeModal();
-                    handleDelete(editingBudgetId, selectedCategory?.name || "");
-                  }}
-                  textColor={theme.colors.error}
-                  style={{ marginRight: 8 }}
-                >
-                  Remover
-                </Button>
-              )}
-              <Button mode="text" onPress={closeModal}>
-                Cancelar
-              </Button>
-              <Button mode="contained" onPress={handleSave} loading={saving} disabled={saving || !selectedCategory || !amount}>
-                Salvar
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+        <BudgetModal visible={modalVisible} onDismiss={() => setModalVisible(false)} onSave={handleSave} categories={modalCategories} existingBudget={editingBudget} loading={saving} />
       </View>
     </>
   );
@@ -286,8 +201,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   fab: { position: "absolute", right: 16, bottom: 24 },
-  modal: { margin: 16, padding: 24, borderRadius: 16 },
-  modalTitle: { marginBottom: 16, fontWeight: "bold" },
-  selectedCategory: { padding: 8, borderWidth: 1, borderRadius: 8, marginBottom: 16 },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 16 },
 });

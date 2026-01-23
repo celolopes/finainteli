@@ -1,0 +1,87 @@
+import { appSchema, tableSchema } from "@nozbe/watermelondb";
+
+export default appSchema({
+  version: 3,
+  tables: [
+    tableSchema({
+      name: "transactions",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true },
+        { name: "amount", type: "number" },
+        { name: "type", type: "string" }, // income, expense, transfer
+        { name: "category_id", type: "string", isIndexed: true, isOptional: true },
+        { name: "account_id", type: "string", isIndexed: true, isOptional: true },
+        { name: "credit_card_id", type: "string", isIndexed: true, isOptional: true },
+        { name: "description", type: "string" },
+        { name: "notes", type: "string", isOptional: true },
+        { name: "transaction_date", type: "number" }, // Use timestamp for simpler sync
+        { name: "currency_code", type: "string" },
+        { name: "created_at", type: "number" },
+        { name: "updated_at", type: "number" },
+        { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: "categories",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true, isOptional: true },
+        { name: "name", type: "string" },
+        { name: "icon", type: "string" },
+        { name: "color", type: "string" },
+        { name: "type", type: "string", isOptional: true },
+        { name: "parent_id", type: "string", isOptional: true },
+        { name: "updated_at", type: "number" },
+        { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: "bank_accounts",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true },
+        { name: "name", type: "string" },
+        { name: "account_type", type: "string" },
+        { name: "currency_code", type: "string" },
+        { name: "initial_balance", type: "number" },
+        { name: "current_balance", type: "number" },
+        { name: "color", type: "string", isOptional: true },
+        { name: "icon", type: "string", isOptional: true },
+        { name: "updated_at", type: "number" },
+        { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: "budgets",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true },
+        { name: "category_id", type: "string", isIndexed: true },
+        { name: "amount", type: "number" },
+        { name: "period", type: "string" }, // monthly, weekly, etc.
+        { name: "is_active", type: "boolean" },
+        { name: "alert_50", type: "boolean" },
+        { name: "alert_80", type: "boolean" },
+        { name: "alert_100", type: "boolean" },
+        { name: "last_alert_sent_at", type: "number", isOptional: true },
+        { name: "last_alert_threshold", type: "number", isOptional: true },
+        { name: "updated_at", type: "number" },
+        { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: "credit_cards",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true },
+        { name: "name", type: "string" },
+        { name: "brand", type: "string", isOptional: true },
+        { name: "closing_day", type: "number" },
+        { name: "due_day", type: "number" },
+        { name: "credit_limit", type: "number" },
+        { name: "current_balance", type: "number" },
+        { name: "currency_code", type: "string" },
+        { name: "color", type: "string", isOptional: true },
+        { name: "is_active", type: "boolean" },
+        { name: "updated_at", type: "number" },
+        { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+  ],
+});

@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Appbar, Avatar, Button, Divider, List, Text, useTheme } from "react-native-paper";
+import { authHelpers } from "../../../src/services/supabase";
 import { useAuthStore } from "../../../src/store/authStore";
 
 export default function SettingsScreen() {
@@ -10,6 +11,18 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user, profile, signOut } = useAuthStore();
+  const [notifEnabled, setNotifEnabled] = useState(profile?.notifications_enabled ?? true);
+
+  const toggleNotifications = async (value: boolean) => {
+    setNotifEnabled(value);
+    if (user) {
+      await authHelpers.updateProfile(user.id, { notifications_enabled: value });
+      useAuthStore.setState((state) => ({
+        ...state,
+        profile: state.profile ? { ...state.profile, notifications_enabled: value } : null,
+      }));
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,9 +61,9 @@ export default function SettingsScreen() {
 
           <List.Item
             title={t("profile.notifications")}
+            description={t("profile.notificationsDesc") || "Receber alertas de orçamento"}
             left={(props) => <List.Icon {...props} icon="bell-outline" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => {}}
+            right={() => <Switch value={notifEnabled} onValueChange={toggleNotifications} />}
           />
         </List.Section>
 

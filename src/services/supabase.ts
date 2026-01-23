@@ -56,6 +56,7 @@ export interface UserProfile {
   avatar_url: string | null;
   preferred_language: string;
   theme_preference: "light" | "dark" | "system";
+  notifications_enabled: boolean;
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
@@ -112,7 +113,7 @@ export const authHelpers = {
    */
   async updateProfile(
     userId: string,
-    updates: Partial<Pick<UserProfile, "display_name" | "avatar_url" | "preferred_language" | "theme_preference" | "onboarding_completed">>,
+    updates: Partial<Pick<UserProfile, "display_name" | "avatar_url" | "preferred_language" | "theme_preference" | "notifications_enabled" | "onboarding_completed">>,
   ): Promise<UserProfile | null> {
     const { data, error } = await supabase.from("user_profiles").update(updates).eq("id", userId).select().single();
 

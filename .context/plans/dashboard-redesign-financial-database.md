@@ -650,7 +650,8 @@ CREATE POLICY "Users can insert own balance history" ON public.balance_history
 | TC-06 | Animações fluidas            | 60fps em todas as transições         | ✅     |
 | TC-07 | Saldo atualiza com transação | Balance recalcula em tempo real      | ✅     |
 
-- [x] Criar testes unitários básicos (`src/services/__tests__/financial.test.ts`)
+- [x] Criar testes unitários básicos (`src/services/__tests__/balance_recalc.test.ts`)
+- [x] Implementar exportação de CSV para usuários Pro.
 
 ---
 
@@ -748,8 +749,8 @@ CREATE POLICY "Users can insert own balance history" ON public.balance_history
 
 ### Follow-up Actions
 
-- [ ] Implementar sincronização offline
-- [ ] Adicionar notificações de orçamento
+- [x] Implementar sincronização offline
+- [x] Adicionar notificações de orçamento
 - [ ] Integrar com Open Banking (futuro)
 - [ ] Widgets iOS/Android
 

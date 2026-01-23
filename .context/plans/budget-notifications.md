@@ -16,7 +16,30 @@ agents:
 docs:
   - "project-overview.md"
   - "architecture.md"
+phases:
+  - id: "P"
+    name: "Planning"
+    prevc: "P"
+    status: completed
+  - id: "R"
+    name: "Review"
+    prevc: "R"
+    status: completed
+  - id: "E"
+    name: "Execution"
+    prevc: "E"
+    status: completed
+  - id: "V"
+    name: "Verification"
+    prevc: "V"
+    status: completed
+  - id: "C"
+    name: "Completion"
+    prevc: "C"
+    status: completed
 ---
+
+# Feature F2: Notificações de Orçamento
 
 # Feature F2: Notificações de Orçamento
 
@@ -171,11 +194,11 @@ src/components/budgets/BudgetModal.tsx
 
 ## ✅ Critérios de Sucesso
 
-- [ ] Usuário pode definir orçamento por categoria
-- [ ] Alertas disparam nos limites corretos (50%, 80%, 100%)
-- [ ] Notificações aparecem mesmo com app em background
-- [ ] Usuário pode desativar alertas individuais
-- [ ] Dados persistem entre sessões
+- [x] Usuário pode definir orçamento por categoria
+- [x] Alertas disparam nos limites corretos (50%, 80%, 100%)
+- [x] Notificações aparecem mesmo com app em background
+- [x] Usuário pode desativar alertas individuais
+- [x] Dados persistem entre sessões
 
 ## 📊 Estimativa Detalhada
 

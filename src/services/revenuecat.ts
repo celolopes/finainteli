@@ -1,8 +1,15 @@
 import { Platform } from "react-native";
 import Purchases, { PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 
-// Usando chave fornecida pelo usuário para teste
-const API_KEY = process.env.EXPO_PUBLIC_RC_KEY || "test_eKLKxmSLDwDqSkTfphvuVOuaZZL";
+const API_KEY = Platform.select({
+  ios: process.env.EXPO_PUBLIC_RC_KEY_IOS,
+  android: process.env.EXPO_PUBLIC_RC_KEY_ANDROID,
+  default: "",
+});
+
+if (!API_KEY) {
+  console.error(`RevenueCat API Key not found for platform: ${Platform.OS}. Check EXPO_PUBLIC_RC_KEY_IOS or EXPO_PUBLIC_RC_KEY_ANDROID.`);
+}
 
 export const ENTITLEMENT_ID = "finainteli Pro";
 
@@ -11,6 +18,11 @@ class RevenueCatService {
 
   async init() {
     if (this.initialized) return;
+
+    if (!API_KEY) {
+      console.error("RevenueCat API Key is missing. Skipping initialization.");
+      return;
+    }
 
     if (Platform.OS === "ios" || Platform.OS === "android") {
       try {
