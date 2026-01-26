@@ -133,13 +133,13 @@ export default function AddTransactionScreen() {
                     value: "expense",
                     label: t("dashboard.expense"),
                     icon: "arrow-down-circle-outline",
-                    style: value === "expense" ? { backgroundColor: theme.colors.errorContainer } : undefined,
+                    style: value === "expense" ? { backgroundColor: theme.colors.errorContainer, borderColor: theme.colors.error } : undefined,
                   },
                   {
                     value: "income",
                     label: t("dashboard.income"),
                     icon: "arrow-up-circle-outline",
-                    style: value === "income" ? { backgroundColor: theme.colors.primaryContainer } : undefined,
+                    style: value === "income" ? { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primary } : undefined,
                   },
                 ]}
                 style={styles.segmentedButton}
@@ -158,13 +158,25 @@ export default function AddTransactionScreen() {
             render={({ field: { onChange, value } }) => (
               <TextInput
                 value={value}
-                onChangeText={onChange}
+                onChangeText={(text) => {
+                  // Currency Formatting Logic
+                  const cleanText = text.replace(/\D/g, "");
+                  const val = parseInt(cleanText || "0", 10) / 100;
+                  onChange(
+                    val.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }),
+                  );
+                }}
                 keyboardType="numeric"
                 placeholder="0,00"
-                style={styles.amountInput}
+                placeholderTextColor={theme.colors.onSurfaceDisabled}
+                style={[styles.amountInput, { color: color }]}
                 contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
                 underlineColor="transparent"
                 activeUnderlineColor="transparent"
+                caretHidden={true}
                 error={!!errors.amount}
               />
             )}
@@ -181,7 +193,7 @@ export default function AddTransactionScreen() {
                 value={value}
                 onChangeText={onChange}
                 mode="outlined"
-                style={styles.input}
+                style={{ backgroundColor: theme.colors.surface }}
                 error={!!errors.title}
                 placeholder="Ex: Almoço, Uber, Salário..."
               />
@@ -193,24 +205,28 @@ export default function AddTransactionScreen() {
         </View>
 
         {/* Category Selector */}
-        <TouchableOpacity onPress={() => setShowCatDialog(true)} style={styles.selector}>
+        <TouchableOpacity onPress={() => setShowCatDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
             {t("transactions.category")}
           </Text>
           <View style={styles.selectorValue}>
             <Avatar.Icon size={32} icon={selectedCategory?.icon || "help"} style={{ backgroundColor: selectedCategory?.color || theme.colors.surfaceVariant }} />
-            <Text variant="titleMedium">{selectedCategory?.name || "Selecionar"}</Text>
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+              {selectedCategory?.name || "Selecionar"}
+            </Text>
           </View>
         </TouchableOpacity>
 
         {/* Source Selector (Account/Card) */}
-        <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={styles.selector}>
+        <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
             {type === "expense" ? "Pago com" : "Recebido em"}
           </Text>
           <View style={styles.selectorValue}>
             <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: (useCard ? selectedCard?.color : selectedAccount?.color) || theme.colors.surfaceVariant }} />
-            <Text variant="titleMedium">{useCard ? selectedCard?.name || "Selecionar Cartão" : selectedAccount?.name || "Selecionar Conta"}</Text>
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+              {useCard ? selectedCard?.name || "Selecionar Cartão" : selectedAccount?.name || "Selecionar Conta"}
+            </Text>
           </View>
         </TouchableOpacity>
 
@@ -237,7 +253,7 @@ export default function AddTransactionScreen() {
                     }}
                   >
                     <Avatar.Icon size={48} icon={cat.icon || "circle"} style={{ backgroundColor: cat.color || "#ddd" }} />
-                    <Text variant="bodySmall" numberOfLines={1}>
+                    <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurface }}>
                       {cat.name}
                     </Text>
                   </TouchableOpacity>
@@ -328,12 +344,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    backgroundColor: "white",
+    // Removed fixed white bg
   },
   selector: {
-    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,

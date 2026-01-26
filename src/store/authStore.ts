@@ -191,16 +191,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   /**
    * Sign in with Google OAuth
    */
+  /**
+   * Sign in with Google OAuth
+   */
   signInWithGoogle: async () => {
     set({ loading: true, error: null });
 
     try {
+      // Warm up the browser on Android to improve startup time and stability
+      if (Platform.OS === "android") {
+        await WebBrowser.warmUpAsync();
+      }
+
       // For Expo Go, we need to use the Expo scheme
       // For standalone builds, use the app's custom scheme
       const redirectUrl = makeRedirectUri({
         // Don't pass scheme - let Expo figure out the correct one
         // This will use exp:// in Expo Go and the app scheme in standalone
         path: "auth/callback",
+        preferLocalhost: false,
       });
 
       console.log("[Auth] Google OAuth redirect URL:", redirectUrl);
@@ -210,14 +219,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         options: {
           redirectTo: redirectUrl,
           skipBrowserRedirect: true,
-          queryParams: {
-            prompt: "select_account",
-          },
         },
       });
 
       if (error) {
         console.log("[Auth] OAuth error:", error.message);
+        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
         set({ loading: false, error: translateAuthError(error) });
         return { success: false, error: translateAuthError(error) };
       }
@@ -227,10 +234,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (data.url) {
         // Open browser for OAuth flow
         console.log("[Auth] Opening browser...");
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
-        console.log("[Auth] OAuth result type:", result.type);
-        console.log("[Auth] OAuth result:", JSON.stringify(result, null, 2));
+        let result;
+        try {
+          result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+          console.log("[Auth] OAuth result type:", result.type);
+          console.log("[Auth] OAuth result:", JSON.stringify(result, null, 2));
+        } catch (browserError) {
+          console.error("[Auth] Browser error:", browserError);
+          if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+          set({ loading: false, error: "Falha ao abrir navegador. Verifique se o Chrome está instalado." });
+          return { success: false, error: "Falha ao abrir navegador" };
+        }
+
+        // Cool down after session
+        if (Platform.OS === "android") {
+          await WebBrowser.coolDownAsync();
+        }
 
         if (result.type === "success" && result.url) {
           // Extract tokens from URL - try both hash fragment and query params
@@ -276,15 +296,19 @@ export const useAuthStore = create<AuthState>((set) => ({
               return { success: true };
             }
           }
+        } else if (result.type === "cancel" || result.type === "dismiss") {
+          set({ loading: false });
+          return { success: false, error: "Login cancelado pelo usuário" };
         }
 
         set({ loading: false });
-        return { success: false, error: "Login cancelado" };
+        return { success: false, error: "Login não concluído" };
       }
 
       set({ loading: false });
       return { success: false, error: "Falha ao iniciar login" };
     } catch (error) {
+      if (Platform.OS === "android") await WebBrowser.coolDownAsync();
       const message = error instanceof Error ? error.message : "Erro desconhecido";
       set({ loading: false, error: message });
       return { success: false, error: message };

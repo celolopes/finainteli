@@ -96,6 +96,8 @@ export const authHelpers = {
       .insert({
         id: userId,
         display_name: displayName || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();

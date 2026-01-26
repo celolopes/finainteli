@@ -302,8 +302,10 @@ export const FinancialService = {
         t.description = transaction.description || "";
         t.notes = transaction.notes || undefined;
         t.currencyCode = transaction.currency_code;
+        // Fix for date crash: Use new Date() constructor explicitly
         t.transactionDate = new Date(transaction.transaction_date);
-        // Relations
+
+        // Fix for relations
         if (transaction.category_id) t.category.id = transaction.category_id;
         if (transaction.account_id) t.account.id = transaction.account_id;
         if (transaction.credit_card_id) t.creditCard.id = transaction.credit_card_id;
@@ -466,16 +468,11 @@ export const FinancialService = {
         if (updates.account_id !== undefined) t.account.id = updates.account_id;
         if (updates.credit_card_id !== undefined) t.creditCard.id = updates.credit_card_id;
       });
-
-      // Update balances if amount, type or account changed
-      // This logic is complex for an update, but necessary for local consistency
-      // For simplicity, we can recalculate all balances if something changed
-      if (updates.amount !== undefined || updates.type !== undefined || updates.account_id !== undefined) {
-        // Simple way: reverse old, apply new
-        // But better to just recalculate the involved accounts
-        await this.recalculateAccountBalances();
-      }
     });
+
+    if (updates.amount !== undefined || updates.type !== undefined || updates.account_id !== undefined) {
+      await this.recalculateAccountBalances();
+    }
 
     mySync().catch(console.error);
     return updated!._raw;
@@ -486,7 +483,6 @@ export const FinancialService = {
    */
   async searchTransactionsByDescription(query: string, limit = 5) {
     if (!query || query.length < 2) return [];
-
     const records = await database
       .get<Transaction>("transactions")
       .query(Q.where("deleted_at", Q.eq(null)), Q.where("description", Q.like(`%${Q.sanitizeLikeString(query)}%`)), Q.sortBy("created_at", Q.desc), Q.take(20))

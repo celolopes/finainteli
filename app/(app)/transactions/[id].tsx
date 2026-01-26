@@ -66,7 +66,12 @@ export default function TransactionDetails() {
         if (txn) {
           setTransaction(txn);
           setType(txn.type);
-          setAmount(txn.amount.toString());
+          setAmount(
+            txn.amount.toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+          );
           setDescription(txn.description || "");
           setDate(txn.transaction_date.split("T")[0]);
 
@@ -99,7 +104,16 @@ export default function TransactionDetails() {
 
     setSaving(true);
     try {
-      const value = parseFloat(amount.replace(",", "."));
+      // Parse BRL amount (e.g., "1.234,56" -> 1234.56)
+      // Remove thousands separators (.) and replace decimal separator (,) with dot (.)
+      const cleanAmount = amount.replace(/\./g, "").replace(",", ".");
+      const value = parseFloat(cleanAmount);
+
+      if (isNaN(value)) {
+        Alert.alert(t("common.error"), "Valor inválido");
+        setSaving(false);
+        return;
+      }
 
       const updates: any = {
         type: type as any,
@@ -126,6 +140,9 @@ export default function TransactionDetails() {
 
   const handleDelete = async () => {
     if (!id) return;
+
+    // Close dialog immediately to prevent it from getting stuck
+    setShowDeleteDialog(false);
 
     try {
       await FinancialService.deleteTransaction(id);
@@ -182,7 +199,21 @@ export default function TransactionDetails() {
             </Text>
             <TextInput
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(text) => {
+                // Remove non-numeric characters
+                const cleanText = text.replace(/\D/g, "");
+
+                // Convert to decimal (cents)
+                const value = parseInt(cleanText || "0", 10) / 100;
+
+                // Format back to locale string
+                setAmount(
+                  value.toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
+                );
+              }}
               keyboardType="numeric"
               placeholder="0,00"
               placeholderTextColor={theme.colors.onSurfaceDisabled}
@@ -190,14 +221,22 @@ export default function TransactionDetails() {
               contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
               underlineColor="transparent"
               activeUnderlineColor="transparent"
+              caretHidden={true} // Hide caret to act like a display
             />
           </View>
 
           {/* Description */}
-          <TextInput label={t("transactions.description", "Descrição")} value={description} onChangeText={setDescription} mode="outlined" style={styles.input} placeholder="Ex: Almoço, Uber..." />
+          <TextInput
+            label={t("transactions.description", "Descrição")}
+            value={description}
+            onChangeText={setDescription}
+            mode="outlined"
+            style={[styles.input, { backgroundColor: theme.colors.surface }]}
+            placeholder="Ex: Almoço, Uber..."
+          />
 
           {/* Category Selection */}
-          <TouchableOpacity onPress={() => setShowCatDialog(true)} style={styles.selector}>
+          <TouchableOpacity onPress={() => setShowCatDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
               {t("transactions.category", "Categoria")}
             </Text>
@@ -209,7 +248,7 @@ export default function TransactionDetails() {
           </TouchableOpacity>
 
           {/* Account/Card Selection */}
-          <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={styles.selector}>
+          <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
               {type === "expense" ? t("transactions.paidWith", "Pago com") : t("transactions.receivedIn", "Recebido em")}
             </Text>
@@ -223,7 +262,7 @@ export default function TransactionDetails() {
           </TouchableOpacity>
 
           {/* Date Input */}
-          <TextInput label={t("transactions.date", "Data (YYYY-MM-DD)")} value={date} onChangeText={setDate} mode="outlined" style={styles.input} />
+          <TextInput label={t("transactions.date", "Data (YYYY-MM-DD)")} value={date} onChangeText={setDate} mode="outlined" style={[styles.input, { backgroundColor: theme.colors.surface }]} />
 
           {/* Save Button */}
           <Button mode="contained" onPress={handleSave} loading={saving} style={[styles.button, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
@@ -366,15 +405,12 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
-    backgroundColor: "white",
   },
   selector: {
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "white",
   },
   selectorValue: {
     flexDirection: "row",
