@@ -9,6 +9,7 @@ import { useAuthStore } from "../../../src/store/authStore";
 import { useFinancialStore } from "../../../src/store/financialStore";
 
 // Components
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BalanceCard } from "../../../src/components/dashboard/BalanceCard";
 import { EmptyDashboard } from "../../../src/components/dashboard/EmptyDashboard";
 import { QuickActions } from "../../../src/components/dashboard/QuickActions";
@@ -16,7 +17,9 @@ import { UserHeader } from "../../../src/components/dashboard/UserHeader";
 import { SmartTipCard } from "../../../src/components/SmartTipCard";
 import { CoachMarkTarget } from "../../../src/components/tutorial/CoachMarkTarget";
 import { useTutorial } from "../../../src/context/TutorialContext";
+import { useAILimit } from "../../../src/hooks/useAILimit";
 import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
+import { usePremium } from "../../../src/hooks/usePremium";
 import { GeminiService } from "../../../src/services/gemini";
 
 export default function HomeScreen() {
@@ -34,11 +37,46 @@ export default function HomeScreen() {
   // AI Tip State
   const [aiTip, setAiTip] = useState<string>("");
   const [tipLoading, setTipLoading] = useState(false);
+  const { canUseTip, incrementTipUsage, isLoading: limitLoading } = useAILimit();
+  const { isPro } = usePremium();
 
-  // Fetch AI Tip
-  const fetchAiTip = useCallback(async () => {
+  // Load daily tip from cache or generate new one
+  const loadDailyTip = useCallback(async () => {
     if (!accounts.length) return;
 
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const CACHE_KEY = "@finainteli_daily_tip";
+      const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+
+      if (cachedData) {
+        const { date, tip } = JSON.parse(cachedData);
+        if (date === today && tip) {
+          setAiTip(tip);
+          return;
+        }
+      }
+
+      // If no valid cache, check limit before generating
+      if (!isPro && !canUseTip) {
+        return;
+      }
+
+      // Try to increment usage for the new auto-generated tip
+      // If we are here, it means it's the first time today or cache is cleared
+      if (!isPro) {
+        const success = await incrementTipUsage();
+        if (!success) return;
+      }
+
+      await generateNewTip();
+    } catch (error) {
+      console.error("Error loading daily tip:", error);
+    }
+  }, [accounts, canUseTip, isPro, i18n.language]);
+
+  // Generate a new tip from API
+  const generateNewTip = async () => {
     setTipLoading(true);
     try {
       const context = {
@@ -53,31 +91,37 @@ export default function HomeScreen() {
 
       const tip = await GeminiService.generateSmartTip(context, i18n.language);
       setAiTip(tip);
+
+      // Cache the new tip
+      const today = new Date().toISOString().split("T")[0];
+      await AsyncStorage.setItem("@finainteli_daily_tip", JSON.stringify({ date: today, tip }));
     } catch (error) {
-      console.error("Error fetching AI tip:", error);
+      console.error("Error generating AI tip:", error);
       setAiTip(t("dashboard.mockTip"));
     } finally {
       setTipLoading(false);
     }
-  }, [accounts, monthlySummary, spendingByCategory, i18n.language, t]);
+  };
 
   // Carregar dados ao entrar na tela
   useFocusEffect(
     useCallback(() => {
+      // Always refresh data on focus to ensure sync changes are reflected
       if (session) {
+        console.log("[Home] Focusing and refreshing dashboard data...");
         fetchDashboardData();
-        // Verificar orçamentos e disparar alertas se necessário
         checkBudgets();
       }
     }, [session]),
   );
 
-  // Fetch AI tip when data is loaded
+  // Fetch AI tip when data is loaded and limits are ready
+  // Only runs once per session/mount effectively via checks
   React.useEffect(() => {
-    if (accounts.length > 0 && !aiTip && !tipLoading) {
-      fetchAiTip();
+    if (accounts.length > 0 && !aiTip && !tipLoading && !limitLoading) {
+      loadDailyTip();
     }
-  }, [accounts.length]);
+  }, [accounts.length, limitLoading]);
 
   const hasData = accounts.length > 0;
 
@@ -154,7 +198,7 @@ export default function HomeScreen() {
 
                 {/* Dica IA */}
                 <CoachMarkTarget id="tips">
-                  <SmartTipCard tip={aiTip || t("reports.advisor.analyzing")} loading={tipLoading} onPressReport={() => router.push("/reports/ai-advisor" as any)} onRefreshTip={fetchAiTip} />
+                  <SmartTipCard tip={aiTip || t("reports.advisor.analyzing")} loading={tipLoading} onPressReport={() => router.push("/reports/ai-advisor" as any)} onRefreshTip={generateNewTip} />
                 </CoachMarkTarget>
 
                 {/* Maiores Gastos (Simples por enquanto) */}

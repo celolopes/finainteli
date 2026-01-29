@@ -4,12 +4,14 @@ import { supabase } from "../services/supabase";
 import { Database } from "../types/schema";
 
 type BankAccount = Database["public"]["Tables"]["bank_accounts"]["Row"];
+type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"];
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"] & {
   category: { name: string; icon: string | null; color: string | null } | null;
 };
 
 interface FinancialState {
   accounts: BankAccount[];
+  creditCards: CreditCard[];
   transactions: Transaction[];
   monthlySummary: { income: number; expense: number; savings: number };
   spendingByCategory: { x: string; y: number; color: string }[];
@@ -23,6 +25,7 @@ interface FinancialState {
 
 export const useFinancialStore = create<FinancialState>((set, get) => ({
   accounts: [],
+  creditCards: [],
   transactions: [],
   monthlySummary: { income: 0, expense: 0, savings: 0 },
   spendingByCategory: [],
@@ -39,6 +42,7 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       if (!session) {
         set({
           accounts: [],
+          creditCards: [],
           transactions: [],
           monthlySummary: { income: 0, expense: 0, savings: 0 },
           isLoading: false,
@@ -50,8 +54,9 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       await FinancialService.recalculateAccountBalances();
 
       // Parallel fetching for performance
-      const [accounts, transactions, summary, spending] = await Promise.all([
+      const [accounts, creditCards, transactions, summary, spending] = await Promise.all([
         FinancialService.getAccounts(),
+        FinancialService.getCreditCards(),
         FinancialService.getRecentTransactions(5),
         FinancialService.getMonthlySummary(),
         FinancialService.getSpendingByCategory(),
@@ -61,6 +66,7 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       // but simpler to accept `any` in implementation or cast correctly.
       set({
         accounts,
+        creditCards,
         transactions: transactions as unknown as Transaction[],
         monthlySummary: summary,
         spendingByCategory: spending,
@@ -77,6 +83,7 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   reset: () => {
     set({
       accounts: [],
+      creditCards: [],
       transactions: [],
       monthlySummary: { income: 0, expense: 0, savings: 0 },
       initialized: false,

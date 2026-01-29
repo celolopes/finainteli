@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stack, useRouter } from "expo-router";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Avatar, Button, Dialog, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { FinancialService } from "../../src/services/financial";
@@ -31,11 +32,34 @@ export default function AddTransactionScreen() {
   const [cards, setCards] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Installment State
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installments, setInstallments] = useState("2");
+  const [installmentMode, setInstallmentMode] = useState<"total" | "parcel">("total");
+
+  // Recurrence State
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceFreq, setRecurrenceFreq] = useState<"weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual">("monthly");
+  const [recurrenceCount, setRecurrenceCount] = useState("12");
+
   const [showCatDialog, setShowCatDialog] = useState(false);
   const [showSourceDialog, setShowSourceDialog] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS until user closes (or handle differently) - simpler: close on Android, valid on iOS
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    setDate(currentDate);
+  };
 
   const schema = useMemo(() => createSchema(t), [t]);
   type FormData = z.infer<typeof schema>;
+
+  const { preselectedCardId } = useLocalSearchParams<{ preselectedCardId: string }>();
 
   const {
     control,
@@ -50,7 +74,8 @@ export default function AddTransactionScreen() {
       amount: "",
       type: "expense",
       category_id: "",
-      use_card: false,
+      use_card: !!preselectedCardId,
+      credit_card_id: preselectedCardId || "", // Initialize if present
     },
   });
 
@@ -81,6 +106,21 @@ export default function AddTransactionScreen() {
   const selectedAccount = accounts.find((a) => a.id === accountId);
   const selectedCard = cards.find((c) => c.id === cardId);
 
+  // Auto-switch category when type changes
+  useEffect(() => {
+    if (categories.length > 0 && type) {
+      // Check if current category is valid for new type
+      const current = categories.find((c) => c.id === categoryId);
+      if (current && (current.type === type || current.type === "both")) {
+        return; // Valid, keep it
+      }
+
+      // Find new default
+      const first = categories.find((c) => c.type === type || c.type === "both");
+      if (first) setValue("category_id", first.id);
+    }
+  }, [type, categories]);
+
   const onSubmit = async (data: FormData) => {
     if (!data.use_card && !data.account_id) {
       Alert.alert(t("common.error"), "Selecione uma conta");
@@ -93,18 +133,30 @@ export default function AddTransactionScreen() {
 
     setSubmitting(true);
     try {
-      await FinancialService.createTransaction({
+      // Logic for Installments / Recurrence
+      const amountVal = CurrencyUtils.parse(data.amount);
+      const baseTransaction = {
         description: data.title,
-        amount: CurrencyUtils.parse(data.amount),
+        amount: amountVal,
         type: data.type,
         account_id: data.use_card ? null : data.account_id,
         credit_card_id: data.use_card ? data.credit_card_id : null,
         category_id: data.category_id,
-        transaction_date: new Date().toISOString(),
-        status: "completed",
-        currency_code: "BRL", // Todo: fallback based on account
+        transaction_date: date.toISOString(),
+        status: "completed" as "completed",
+        currency_code: "BRL",
         user_id: undefined as any,
-      } as any);
+      };
+
+      await FinancialService.createComplexTransaction(baseTransaction, {
+        isInstallment: data.use_card && isInstallment,
+        installments: parseInt(installments) || 1,
+        installmentMode,
+        isRecurring,
+        recurrenceFreq,
+        recurrenceCount: parseInt(recurrenceCount) || 1,
+      });
+
       router.back();
     } catch (e) {
       console.error(e);
@@ -157,17 +209,34 @@ export default function AddTransactionScreen() {
             name="amount"
             render={({ field: { onChange, value } }) => (
               <TextInput
-                value={value}
+                value={value || "0,00"}
                 onChangeText={(text) => {
-                  // Currency Formatting Logic
-                  const cleanText = text.replace(/\D/g, "");
-                  const val = parseInt(cleanText || "0", 10) / 100;
-                  onChange(
-                    val.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }),
-                  );
+                  // Only allow digits
+                  const raw = text.replace(/\D/g, "");
+
+                  // If empty, reset
+                  if (!raw) {
+                    onChange("0,00");
+                    return;
+                  }
+
+                  // Parse as integer
+                  const amount = parseInt(raw, 10);
+
+                  // Convert to currency string manually to avoid locale issues on Android/iOS
+                  // 595 -> 5,95
+                  // 5 -> 0,05
+                  const result = (amount / 100).toFixed(2);
+
+                  // Replace dot with comma for PT-BR visuals
+                  const formatted = result.replace(".", ",");
+
+                  // Add thousand separators if needed (e.g. 1000,00 -> 1.000,00)
+                  const parts = formatted.split(",");
+                  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                  const finalString = parts.join(",");
+
+                  onChange(finalString);
                 }}
                 keyboardType="numeric"
                 placeholder="0,00"
@@ -176,7 +245,7 @@ export default function AddTransactionScreen() {
                 contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
                 underlineColor="transparent"
                 activeUnderlineColor="transparent"
-                caretHidden={true}
+                caretHidden={true} // Hide caret to enforce "calculator" feel
                 error={!!errors.amount}
               />
             )}
@@ -218,20 +287,131 @@ export default function AddTransactionScreen() {
         </TouchableOpacity>
 
         {/* Source Selector (Account/Card) */}
+        {/* Source Selector (Account/Card) */}
         <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {type === "expense" ? "Pago com" : "Recebido em"}
+            {t("transactions.source") || "Pago com"}
           </Text>
           <View style={styles.selectorValue}>
-            <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: (useCard ? selectedCard?.color : selectedAccount?.color) || theme.colors.surfaceVariant }} />
+            <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: theme.colors.surfaceVariant }} />
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              {useCard ? selectedCard?.name || "Selecionar Cartão" : selectedAccount?.name || "Selecionar Conta"}
+              {useCard ? selectedCard?.name : selectedAccount?.name || "Selecionar"}
             </Text>
           </View>
         </TouchableOpacity>
 
+        {/* Date Selector */}
+        <View style={styles.formGroup}>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+            Data
+          </Text>
+          <TouchableOpacity style={[styles.selector, { marginBottom: 0 }]} onPress={() => setShowDatePicker(true)}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Avatar.Icon size={32} icon="calendar" style={{ backgroundColor: theme.colors.surfaceVariant }} />
+              <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
+            </View>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={date}
+              mode="date"
+              is24Hour={true}
+              onChange={onChangeDate}
+              display={Platform.OS === "ios" ? "spinner" : "default"} // Spinner is safer for Modal-like behavior on iOS if not in a real modal
+            />
+          )}
+          {Platform.OS === "ios" && showDatePicker && <Button onPress={() => setShowDatePicker(false)}>Confirmar Data</Button>}
+        </View>
+
+        {/* Installment Options (Only for Credit Card) */}
+        {useCard && (
+          <View style={[styles.optionGroup, { borderColor: theme.colors.outline }]}>
+            <TouchableOpacity style={styles.optionHeader} onPress={() => setIsInstallment(!isInstallment)}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Avatar.Icon size={32} icon="calendar-month" style={{ backgroundColor: isInstallment ? theme.colors.primaryContainer : theme.colors.surfaceVariant }} />
+                <Text variant="bodyLarge">Parcelamento</Text>
+              </View>
+              <RadioButton value="yes" status={isInstallment ? "checked" : "unchecked"} onPress={() => setIsInstallment(!isInstallment)} />
+            </TouchableOpacity>
+
+            {isInstallment && (
+              <View style={styles.optionBody}>
+                <View style={styles.row}>
+                  <Text>Número de Parcelas</Text>
+                  <TextInput value={installments} onChangeText={setInstallments} keyboardType="numeric" style={styles.smallInput} dense />
+                </View>
+                <Divider style={{ marginVertical: 12 }} />
+                <SegmentedButtons
+                  value={installmentMode}
+                  onValueChange={(v) => setInstallmentMode(v as any)}
+                  buttons={[
+                    { value: "total", label: "Valor Total" },
+                    { value: "parcel", label: "Valor da Parcela" },
+                  ]}
+                />
+                <HelperText type="info" visible>
+                  {installmentMode === "total"
+                    ? `Serão ${installments}x de ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") / (parseInt(installments) || 1))}`
+                    : `Total será ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") * (parseInt(installments) || 1))}`}
+                </HelperText>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Recurrence Options (Fixed Launch) */}
+        {!isInstallment && (
+          <View style={[styles.optionGroup, { borderColor: theme.colors.outline, marginTop: 16 }]}>
+            <TouchableOpacity style={styles.optionHeader} onPress={() => setIsRecurring(!isRecurring)}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Avatar.Icon size={32} icon="update" style={{ backgroundColor: isRecurring ? theme.colors.tertiaryContainer : theme.colors.surfaceVariant }} />
+                <Text variant="bodyLarge">Lançamento Fixo / Recorrente</Text>
+              </View>
+              <RadioButton value="yes" status={isRecurring ? "checked" : "unchecked"} onPress={() => setIsRecurring(!isRecurring)} />
+            </TouchableOpacity>
+
+            {isRecurring && (
+              <View style={styles.optionBody}>
+                <Text style={{ marginBottom: 8 }}>Frequência</Text>
+                <SegmentedButtons
+                  value={recurrenceFreq}
+                  onValueChange={(v) => setRecurrenceFreq(v as any)}
+                  buttons={[
+                    { value: "weekly", label: "Seman" },
+                    { value: "monthly", label: "Mensal" },
+                    { value: "bimonthly", label: "Bimest" },
+                  ]}
+                  style={{ marginBottom: 8 }}
+                />
+                {/* Additional options via another row or dropdown if needed, currently showing top 3 */}
+                <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 12 }}>
+                  {["daily", "biweekly", "semiannual", "annual"].map((opt) => (
+                    <TouchableOpacity key={opt} onPress={() => setRecurrenceFreq(opt as any)}>
+                      <Text style={{ color: recurrenceFreq === opt ? theme.colors.primary : theme.colors.onSurfaceVariant, fontWeight: recurrenceFreq === opt ? "bold" : "normal" }}>
+                        {opt === "daily" ? "Diário" : opt === "biweekly" ? "Quinz" : opt === "semiannual" ? "Semest" : "Anual"}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.row}>
+                  <Text>Validar por (vezes)</Text>
+                  <TextInput value={recurrenceCount} onChangeText={setRecurrenceCount} keyboardType="numeric" style={styles.smallInput} dense />
+                </View>
+                <HelperText type="info" visible>
+                  Serão gerados {recurrenceCount} lançamentos futuros.
+                </HelperText>
+              </View>
+            )}
+          </View>
+        )}
+
         <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={submitting} style={[styles.saveButton, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
           {t("common.save")}
+        </Button>
+        <Button mode="outlined" onPress={() => router.replace("/")} style={{ marginTop: 12, borderColor: theme.colors.outline }} textColor={theme.colors.onSurfaceVariant}>
+          {t("common.cancel") || "Cancelar"}
         </Button>
       </ScrollView>
 
@@ -258,6 +438,19 @@ export default function AddTransactionScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
+
+              <TouchableOpacity
+                style={styles.gridItem}
+                onPress={() => {
+                  setShowCatDialog(false);
+                  Alert.alert("Em breve", "Criação de categorias personalizadas será implementada na próxima atualização.");
+                }}
+              >
+                <Avatar.Icon size={48} icon="plus" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />
+                <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurface }}>
+                  Adicionar
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
@@ -378,5 +571,32 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     opacity: 0.6,
     fontWeight: "bold",
+  },
+  optionGroup: {
+    borderWidth: 1,
+    borderColor: "#444", // Force visible border in dark mode
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  optionHeader: {
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  optionBody: {
+    padding: 16,
+    backgroundColor: "#f5f5f5", // TODO: Use theme surface variant
+  },
+  smallInput: {
+    width: 60,
+    backgroundColor: "white",
+    textAlign: "center",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 });

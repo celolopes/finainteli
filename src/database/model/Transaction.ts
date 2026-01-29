@@ -19,6 +19,7 @@ export default class Transaction extends Model {
   @field("description") description!: string;
   @field("notes") notes?: string;
   @field("currency_code") currencyCode!: string;
+  @field("status") status?: "pending" | "completed" | "cancelled";
 
   @date("transaction_date") transactionDate!: Date;
   @readonly @date("created_at") createdAt!: Date;

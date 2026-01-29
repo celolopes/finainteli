@@ -1,14 +1,13 @@
 {
   "active": [
     {
-      "slug": "offline-sync",
-      "path": "plans/offline-sync.md",
-      "title": "Feature F1: Sincronização Offline",
-      "summary": "Permitir que usuários criem, editem e visualizem transações mesmo sem conexão à internet, com sincronização automática ao reconectar.",
-      "linkedAt": "2026-01-23T14:52:51.742Z",
+      "slug": "feature-credit-card-details",
+      "path": "plans/feature-credit-card-details.md",
+      "title": "Credit Card Details & Invoice Feature",
+      "linkedAt": "2026-01-29T19:43:14.420Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "offline-sync"
+  "primary": "feature-credit-card-details"
 }

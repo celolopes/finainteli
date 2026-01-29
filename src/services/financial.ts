@@ -66,6 +66,48 @@ export const FinancialService = {
   },
 
   /**
+   * Realiza o pagamento de uma fatura de cartão
+   * Cria uma transação do tipo TRANSFER da conta para o cartão
+   * Atualiza saldos de ambos
+   */
+  async payInvoice(cardId: string, accountId: string, amount: number, date: Date) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuário não autenticado");
+
+    await database.write(async () => {
+      // 1. Criar Transação de Pagamento (Transferência)
+      await database.get<Transaction>("transactions").create((t) => {
+        t.userId = user.id;
+        t.amount = amount;
+        t.type = "transfer"; // Transfer não soma em despesas
+        t.description = "Pagamento de Fatura";
+        t.transactionDate = date;
+        t.account.id = accountId;
+        t.creditCard.id = cardId;
+        t.currencyCode = "BRL"; // Deveria vir do input, mas assumindo BRL por enquanto ou pegar da conta
+      });
+
+      // 2. Debitar da Conta Bancária (Saída)
+      const account = await database.get<Account>("bank_accounts").find(accountId);
+      await account.update((a) => {
+        a.currentBalance -= amount;
+      });
+
+      // 3. Abater do Cartão de Crédito (Reduzir dívida / Liberar limite)
+      // Se currentBalance é a dívida, subtraímos.
+      const card = await database.get<any>("credit_cards").find(cardId);
+      await card.update((c: any) => {
+        c.currentBalance -= amount;
+      });
+    });
+
+    mySync().catch(console.error);
+    return true;
+  },
+
+  /**
    * Busca transações recentes para o dashboard
    */
   async getRecentTransactions(limit = 5) {
@@ -123,6 +165,21 @@ export const FinancialService = {
       .get<Transaction>("transactions")
       .query(Q.where("deleted_at", Q.eq(null)), Q.where("currency_code", currencyCode), Q.where("transaction_date", Q.gte(firstDay)), Q.where("transaction_date", Q.lte(lastDay)))
       .fetch();
+
+    console.log(`[Financial] Monthly Summary (${now.toISOString()}): Range ${new Date(firstDay).toISOString()} - ${new Date(lastDay).toISOString()}`);
+    console.log(`[Financial] Found ${transactions.length} transactions in this range.`);
+    if (transactions.length === 0) {
+      // Debug: check if there are ANY transactions in the DB
+      const allCount = await database.get("transactions").query().fetchCount();
+      console.log(`[Financial] TOTAL transactions in DB: ${allCount}`);
+      if (allCount > 0) {
+        const sample = await database.get<Transaction>("transactions").query(Q.take(3)).fetch();
+        console.log(
+          `[Financial] Sample transaction dates:`,
+          sample.map((t) => t.transactionDate.toISOString()),
+        );
+      }
+    }
 
     let income = 0;
     let expense = 0;
@@ -345,6 +402,153 @@ export const FinancialService = {
     BudgetService.checkAndNotifyBudgets(user.id).catch(console.error);
     mySync().catch(console.error);
     return newTransactionRecord!._raw;
+  },
+
+  /**
+   * Cria transações complexas (Parceladas ou Recorrentes)
+   */
+  async createComplexTransaction(
+    baseData: Partial<TransactionRow>,
+    options: {
+      isInstallment?: boolean;
+      installments?: number;
+      installmentMode?: "total" | "parcel";
+      isRecurring?: boolean;
+      recurrenceFreq?: "daily" | "weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual";
+      recurrenceCount?: number;
+    },
+  ) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuário não autenticado");
+
+    const userId = user.id;
+    const recordsToCreate: any[] = [];
+    const createdDate = new Date();
+
+    // Determinar quantas transações criar
+    let count = 1;
+    let isInstallment = false;
+
+    if (options.isInstallment && options.installments && options.installments > 1) {
+      count = options.installments;
+      isInstallment = true;
+    } else if (options.isRecurring && options.recurrenceCount && options.recurrenceCount > 1) {
+      count = options.recurrenceCount;
+    }
+
+    const baseDate = new Date(baseData.transaction_date || createdDate);
+    const baseAmount = Number(baseData.amount || 0);
+
+    // Calcular valor por transação (se parcelado total)
+    let amountPerTx = baseAmount;
+    if (isInstallment && options.installmentMode === "total") {
+      amountPerTx = baseAmount / count;
+    }
+
+    // Gerar objetos de transação
+    for (let i = 0; i < count; i++) {
+      // Calcular Data
+      const txDate = new Date(baseDate);
+
+      if (isInstallment) {
+        // Parcelas mensais
+        txDate.setMonth(txDate.getMonth() + i);
+      } else if (options.isRecurring && options.recurrenceFreq) {
+        const f = options.recurrenceFreq;
+        if (f === "daily") txDate.setDate(txDate.getDate() + i);
+        if (f === "weekly") txDate.setDate(txDate.getDate() + i * 7);
+        if (f === "biweekly") txDate.setDate(txDate.getDate() + i * 14); // 14 dias (2 semanas)
+        if (f === "monthly") txDate.setMonth(txDate.getMonth() + i);
+        if (f === "bimonthly") txDate.setMonth(txDate.getMonth() + i * 2);
+        if (f === "semiannual") txDate.setMonth(txDate.getMonth() + i * 6);
+        if (f === "annual") txDate.setFullYear(txDate.getFullYear() + i);
+      }
+
+      // Descrição
+      let desc = baseData.description || "";
+      if (isInstallment) {
+        desc = `${desc} (${i + 1}/${count})`;
+      } else if (options.isRecurring && count > 1) {
+        desc = `${desc} (Recorrente)`; // Pode adicionar contagem se quiser
+      }
+
+      recordsToCreate.push({
+        ...baseData,
+        amount: amountPerTx,
+        transaction_date: txDate.toISOString(),
+        description: desc,
+        user_id: userId,
+        created_at: createdDate.toISOString(),
+        updated_at: createdDate.toISOString(),
+        _status: "created",
+      });
+    }
+
+    // Batch Write
+    await database.write(async () => {
+      const batchOps = [];
+      const transactionCollection = database.get<Transaction>("transactions");
+
+      // 1. Criar Transações
+      for (const record of recordsToCreate) {
+        batchOps.push(
+          transactionCollection.prepareCreate((t) => {
+            t.userId = userId;
+            t.amount = record.amount;
+            t.type = record.type as any;
+            t.description = record.description;
+            t.transactionDate = new Date(record.transaction_date);
+            t.currencyCode = record.currency_code || "BRL";
+            if (record.category_id) t.category.id = record.category_id;
+            if (record.account_id) t.account.id = record.account_id;
+            if (record.credit_card_id) t.creditCard.id = record.credit_card_id;
+          }),
+        );
+      }
+
+      // 2. Atualizar Saldos (Agregado)
+      // Agrupar por conta/cartão para update único se possível, ou updates individuais na batch
+      // Para simplificar, vamos iterar e preparar updates. Note que prepareUpdate requer o objeto record.
+
+      // Calcular impacto total na conta/cartão
+      const totalImpact = amountPerTx * count;
+
+      // Atualizar Conta
+      if (baseData.account_id && baseData.type !== "transfer") {
+        try {
+          const acc = await database.get<Account>("bank_accounts").find(baseData.account_id);
+          batchOps.push(
+            acc.prepareUpdate((a) => {
+              if (baseData.type === "income") a.currentBalance += totalImpact;
+              else a.currentBalance -= totalImpact;
+            }),
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Atualizar Cartão
+      if (baseData.credit_card_id && baseData.type === "expense") {
+        try {
+          const card = await database.get<any>("credit_cards").find(baseData.credit_card_id);
+          batchOps.push(
+            card.prepareUpdate((c: any) => {
+              c.currentBalance += totalImpact; // Dívida aumenta
+            }),
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      await database.batch(...batchOps);
+    });
+
+    mySync().catch(console.error);
+    return true;
   },
 
   /**
@@ -663,5 +867,158 @@ export const FinancialService = {
       expense: item.expense,
       balance: item.income - item.expense,
     }));
+  },
+
+  /**
+   * Busca detalhes de um cartão específico
+   */
+  async getCardById(id: string) {
+    try {
+      // Use 'any' type for table as we are mapping manually and TS might complain about validation
+      const r = await database.get<any>("credit_cards").find(id);
+      if (!r || r.deletedAt) return null;
+
+      return {
+        id: r.id,
+        user_id: r.userId,
+        name: r.name,
+        currency_code: r.currencyCode,
+        credit_limit: r.creditLimit,
+        current_balance: r.currentBalance,
+        available_limit: r.creditLimit - r.currentBalance,
+        closing_day: r.closingDay,
+        due_day: r.dueDay,
+        brand: r.brand,
+        color: r.color,
+        icon: null,
+        is_active: r.isActive,
+        created_at: "",
+        updated_at: r.updatedAt?.toISOString() || "",
+      } as CreditCardRow;
+    } catch (error) {
+      console.error("Card not found", error);
+      return null;
+    }
+  },
+
+  /**
+   * Busca transações para uma fatura específica de cartão
+   * @param cardId ID do cartão
+   * @param month Mês da fatura (0-11, JS Date format)
+   * @param year Ano da fatura
+   */
+  async getCardTransactions(cardId: string, month: number, year: number) {
+    // 1. Buscar cartão para saber o dia de fechamento
+    const card = await database.get<any>("credit_cards").find(cardId);
+    if (!card) throw new Error("Card not found");
+
+    const closingDay = card.closingDay || 1; // Default 1 se não definido
+
+    // 2. Calcular range de datas da fatura
+    // Exemplo: Fechamento dia 5. Fatura de Abril(3)
+    // Início: 5 de Março. Fim: 4 de Abril (23:59:59)
+    // Se hoje é dia 10 de Março, entra na fatura de Abril.
+
+    // Data de fechamento DESTE mês de referência
+    const invoiceCloseDate = new Date(year, month, closingDay);
+    // Data de fechamento do MÊS ANTERIOR (início do ciclo)
+    const invoiceStartDate = new Date(year, month - 1, closingDay);
+
+    // Ajuste: O ciclo começa exatamente no dia do fechamento do mês anterior?
+    // Geralmente fecha dia X. Compras do dia X entram na próxima?
+    // Convenção comum: "Melhor dia de compra" é o dia do fechamento.
+    // Então fechamento dia 5 -> Compras do dia 5 entram na próxima (Fatura M+1).
+    // Fatura de Mês X: Vai de (Dia Fechamento M-1) até (Dia Fechamento M - 1 milisegundo)
+
+    // Ajuste fino de horários
+    invoiceStartDate.setHours(0, 0, 0, 0); // Início do dia
+    // invoiceCloseDate é o dia que FECHA. Se compra no dia DO fechamento,
+    // normalmente já cai na PRÓXIMA. Então o limite superior é o dia do fechamento (exclusive).
+    invoiceCloseDate.setHours(0, 0, 0, 0);
+
+    const transactions = await database
+      .get<Transaction>("transactions")
+      .query(
+        Q.where("deleted_at", Q.eq(null)),
+        Q.where("credit_card_id", cardId),
+        Q.where("transaction_date", Q.gte(invoiceStartDate.getTime())),
+        Q.where("transaction_date", Q.lt(invoiceCloseDate.getTime())),
+        Q.sortBy("transaction_date", Q.desc),
+      )
+      .fetch();
+
+    const result = await Promise.all(
+      transactions.map(async (t) => {
+        const category = await t.category.fetch();
+        return {
+          id: t.id,
+          amount: t.amount,
+          type: t.type,
+          description: t.description,
+          transaction_date: t.transactionDate.toISOString(),
+          category: category ? { name: category.name, icon: category.icon, color: category.color } : null,
+        };
+      }),
+    );
+
+    // Calcular total da fatura
+    // Expenses add to total. Income/Transfer reduce total (refunds or payments).
+    const total = result.reduce((acc, t) => {
+      if (t.type === "expense") return acc + t.amount;
+      return acc - t.amount;
+    }, 0);
+
+    return {
+      transactions: result,
+      total,
+      period: {
+        start: invoiceStartDate.toISOString(),
+        end: invoiceCloseDate.toISOString(),
+      },
+    };
+  },
+
+  /**
+   * Realiza o pagamento de uma fatura de cartão
+   */
+  async payInvoice(cardId: string, accountId: string, amount: number, date: Date) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuário não autenticado");
+
+    await database.write(async () => {
+      // 1. Debitar da Conta Bancária
+      const account = await database.get<Account>("bank_accounts").find(accountId);
+      await account.update((a) => {
+        a.currentBalance -= amount;
+      });
+
+      // 2. Creditar no Cartão (Reduzir dívida)
+      const card = await database.get<any>("credit_cards").find(cardId);
+      await card.update((c: any) => {
+        c.currentBalance -= amount; // Reduz o saldo devedor
+      });
+
+      // 3. Registrar Transação de Pagamento
+      // Criamos como 'income' no contexto da fatura para abater o valor,
+      // mas idealmente seria 'transfer'.
+      // Para o getCardTransactions funcionar (acc - amount), qualquer type != expense funciona.
+      // Vamos usar 'transfer' para semântica.
+      await database.get<Transaction>("transactions").create((t) => {
+        t.userId = user.id;
+        t.amount = amount;
+        t.type = "transfer"; // Pagamento
+        t.description = `Pagamento de Fatura`;
+        t.account.id = accountId;
+        t.creditCard.id = cardId;
+        t.transactionDate = date;
+        t.currencyCode = account.currencyCode;
+        t.status = "completed";
+      });
+    });
+
+    mySync().catch(console.error);
+    return true;
   },
 };

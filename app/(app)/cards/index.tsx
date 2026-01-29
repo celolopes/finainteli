@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, FAB, ProgressBar, Surface, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
+import { CurrencyUtils } from "../../../src/utils/currency";
 
 type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"];
 
@@ -31,7 +32,7 @@ export default function CardsList() {
   useFocusEffect(
     useCallback(() => {
       loadCards();
-    }, [])
+    }, []),
   );
 
   const onRefresh = () => {
@@ -45,44 +46,50 @@ export default function CardsList() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 100).springify()}>
-        <Surface style={styles.card} elevation={1}>
-          <View style={styles.cardHeader}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: item.color || theme.colors.tertiaryContainer }]}>
-                <Avatar.Icon size={40} icon="credit-card" style={{ backgroundColor: "transparent" }} color={item.color ? "white" : theme.colors.tertiary} />
+        <TouchableOpacity onPress={() => router.push(`/(app)/cards/${item.id}` as any)} activeOpacity={0.9}>
+          <Surface style={styles.card} elevation={1}>
+            <View style={styles.cardHeader}>
+              <View style={styles.headerLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: item.color || theme.colors.tertiaryContainer }]}>
+                  <Avatar.Icon size={40} icon="credit-card" style={{ backgroundColor: "transparent" }} color={item.color ? "white" : theme.colors.tertiary} />
+                </View>
+                <View>
+                  <Text variant="titleMedium" style={styles.name}>
+                    {item.name}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.brand}>
+                    {item.brand || "Cartão de Crédito"}
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text variant="titleMedium" style={styles.name}>
-                  {item.name}
+              <Text variant="bodySmall">Dia {item.due_day} (Vec.)</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <View style={styles.row}>
+                <Text variant="bodyMedium">Fatura Atual</Text>
+                <Text variant="titleMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
+                  {CurrencyUtils.format(item.current_balance || 0, item.currency_code)}
                 </Text>
-                <Text variant="bodySmall" style={styles.brand}>
-                  {item.brand || "Cartão de Crédito"}
+              </View>
+
+              <ProgressBar progress={usage} color={usage > 0.8 ? theme.colors.error : theme.colors.primary} style={styles.progress} />
+
+              <View style={[styles.row, { marginTop: 4 }]}>
+                <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                  Limite: {CurrencyUtils.format(item.credit_limit, item.currency_code)}
+                </Text>
+                <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                  Disp:{" "}
+                  {CurrencyUtils.format(
+                    item.available_limit !== null && item.available_limit !== undefined ? item.available_limit : item.credit_limit - (item.current_balance || 0),
+                    item.currency_code,
+                  )}
                 </Text>
               </View>
             </View>
-            <Text variant="bodySmall">Dia {item.due_day} (Vec.)</Text>
-          </View>
-
-          <View style={styles.cardBody}>
-            <View style={styles.row}>
-              <Text variant="bodyMedium">Fatura Atual</Text>
-              <Text variant="titleMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
-                {item.currency_code} {item.current_balance?.toFixed(2)}
-              </Text>
-            </View>
-
-            <ProgressBar progress={usage} color={usage > 0.8 ? theme.colors.error : theme.colors.primary} style={styles.progress} />
-
-            <View style={[styles.row, { marginTop: 4 }]}>
-              <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                Limite: {item.credit_limit.toFixed(0)}
-              </Text>
-              <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                Disp: {(item.available_limit !== null && item.available_limit !== undefined ? item.available_limit : item.credit_limit - (item.current_balance || 0)).toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        </Surface>
+          </Surface>
+        </TouchableOpacity>
       </Animated.View>
     );
   };
@@ -135,7 +142,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     marginBottom: 16,
-    backgroundColor: "white",
   },
   cardHeader: {
     flexDirection: "row",

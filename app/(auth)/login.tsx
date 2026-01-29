@@ -9,9 +9,11 @@ import { Animated, Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, 
 import { ActivityIndicator, Button, Snackbar, TextInput } from "react-native-paper";
 import { z } from "zod";
 
+import { SyncLoadingScreen } from "../../src/components/ui/SyncLoadingScreen";
 import { ThemedContainer } from "../../src/components/ui/ThemedContainer";
 import { ThemedText } from "../../src/components/ui/ThemedText";
 import { useAppTheme } from "../../src/context/ThemeContext";
+import { mySync } from "../../src/services/sync";
 import { useAuthStore } from "../../src/store/authStore";
 
 // Validation schema creators
@@ -47,6 +49,7 @@ export default function LoginScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Animation for logo
   const logoScale = React.useRef(new Animated.Value(0)).current;
@@ -73,19 +76,16 @@ export default function LoginScreen() {
     }).start();
   }, []);
 
-  // Redirect if user is authenticated
+  // Track if we are in the middle of a manual login process
+  const isLoggingIn = React.useRef(false);
+
+  // Redirect if user is authenticated (but not if we are manually logging in,
+  // because we want to show the sync screen first)
   useEffect(() => {
-    if (initialized && user) {
+    if (initialized && user && !isLoggingIn.current) {
       router.replace("/");
     }
   }, [initialized, user]);
-
-  // Show error snackbar
-  useEffect(() => {
-    if (error) {
-      setSnackbarVisible(true);
-    }
-  }, [error]);
 
   // Login form
   const loginForm = useForm<LoginFormData>({
@@ -107,33 +107,61 @@ export default function LoginScreen() {
     },
   });
 
+  // Handle post-login sync and navigation
+  const handlePostLogin = async () => {
+    setIsSyncing(true);
+    try {
+      console.log("[Login] Starting initial sync...");
+      await mySync();
+      console.log("[Login] Initial sync complete.");
+    } catch (e) {
+      console.warn("[Login] Sync warning:", e);
+    } finally {
+      setIsSyncing(false);
+      isLoggingIn.current = false; // Reset lock
+      router.replace("/");
+    }
+  };
+
   const handleLogin = async (data: LoginFormData) => {
     Keyboard.dismiss();
+    isLoggingIn.current = true; // Lock redirection
     const result = await signInWithEmail(data.email, data.password);
     if (result.success) {
-      router.replace("/");
+      await handlePostLogin();
+    } else {
+      isLoggingIn.current = false; // Unlock on failure
     }
   };
 
   const handleSignUp = async (data: SignUpFormData) => {
     Keyboard.dismiss();
+    isLoggingIn.current = true;
     const result = await signUpWithEmail(data.email, data.password, data.displayName);
     if (result.success) {
-      router.replace("/");
+      await handlePostLogin();
+    } else {
+      isLoggingIn.current = false;
     }
   };
 
   const handleGoogleLogin = async () => {
+    isLoggingIn.current = true;
     const result = await signInWithGoogle();
     if (result.success) {
-      router.replace("/");
+      await handlePostLogin();
+    } else {
+      isLoggingIn.current = false;
     }
   };
 
   const handleAppleLogin = async () => {
+    isLoggingIn.current = true;
     const result = await signInWithApple();
     if (result.success) {
-      router.replace("/");
+      await handlePostLogin();
+    } else {
+      isLoggingIn.current = false;
     }
   };
 
@@ -368,7 +396,6 @@ export default function LoginScreen() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Error Snackbar */}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => {
@@ -383,6 +410,8 @@ export default function LoginScreen() {
       >
         {error}
       </Snackbar>
+
+      <SyncLoadingScreen visible={isSyncing} />
     </Background>
   );
 }

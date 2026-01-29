@@ -1,3 +1,4 @@
+import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -5,13 +6,30 @@ import { ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Appbar, Avatar, Button, Divider, List, Text, useTheme } from "react-native-paper";
 import { authHelpers } from "../../../src/services/supabase";
 import { useAuthStore } from "../../../src/store/authStore";
+import { useSecurityStore } from "../../../src/store/securityStore";
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const { user, profile, signOut } = useAuthStore();
+  const { isSecurityEnabled, toggleSecurity, isBiosEnabled, toggleBiometrics, hasPinSet } = useSecurityStore();
   const [notifEnabled, setNotifEnabled] = useState(profile?.notifications_enabled ?? true);
+  const [bioSupported, setBioSupported] = useState(false);
+
+  React.useEffect(() => {
+    LocalAuthentication.supportedAuthenticationTypesAsync().then((types) => {
+      setBioSupported(types.length > 0);
+    });
+  }, []);
+
+  const handleSecurityToggle = async (value: boolean) => {
+    if (value && !hasPinSet) {
+      router.push("/(app)/settings/security/pin-setup");
+    } else {
+      await toggleSecurity(value);
+    }
+  };
 
   const toggleNotifications = async (value: boolean) => {
     setNotifEnabled(value);
@@ -34,6 +52,7 @@ export default function SettingsScreen() {
       <Appbar.Header elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("profile.settings")} />
+        <Appbar.Action icon="logout" onPress={handleSignOut} color={theme.colors.error} />
       </Appbar.Header>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -91,6 +110,39 @@ export default function SettingsScreen() {
               </Text>
             )}
           />
+        </List.Section>
+
+        <Divider />
+
+        <List.Section>
+          <List.Subheader>Segurança</List.Subheader>
+
+          <List.Item
+            title="Bloqueio de App"
+            description="Exigir PIN ao abrir"
+            left={(props) => <List.Icon {...props} icon="lock-outline" />}
+            right={() => <Switch value={isSecurityEnabled} onValueChange={handleSecurityToggle} />}
+          />
+
+          {isSecurityEnabled && (
+            <>
+              {bioSupported && (
+                <List.Item
+                  title="Biometria"
+                  description="Usar Face ID / Touch ID"
+                  left={(props) => <List.Icon {...props} icon="fingerprint" />}
+                  right={() => <Switch value={isBiosEnabled} onValueChange={toggleBiometrics} />}
+                />
+              )}
+
+              <List.Item
+                title="Alterar PIN"
+                left={(props) => <List.Icon {...props} icon="key-outline" />}
+                right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                onPress={() => router.push("/(app)/settings/security/pin-setup")}
+              />
+            </>
+          )}
         </List.Section>
 
         <Divider />

@@ -4,7 +4,9 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { LockScreen } from "../src/components/security/LockScreen";
 import { TutorialOverlay } from "../src/components/tutorial/TutorialOverlay";
 import { OfflineBanner } from "../src/components/ui/OfflineBanner";
 import { AppThemeProvider } from "../src/context/ThemeContext";
@@ -13,6 +15,7 @@ import { database } from "../src/database";
 import "../src/i18n";
 import { mySync } from "../src/services/sync";
 import { useAuthStore } from "../src/store/authStore";
+import { useSecurityStore } from "../src/store/securityStore";
 import { useStore } from "../src/store/useStore";
 
 SplashScreen.preventAutoHideAsync();
@@ -24,14 +27,28 @@ export default function RootLayout() {
 
   const { initialize } = useStore();
   const { initialize: initAuth } = useAuthStore();
+  const { initialize: initSecurity, lockApp } = useSecurityStore();
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "background") {
+        lockApp();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     initialize();
     initAuth();
+    initSecurity();
     if (loaded) {
       SplashScreen.hideAsync().catch(() => {});
-      // Trigger background sync
-      mySync().catch((err) => console.error("Initial Sync Error:", err));
+      // Trigger background sync only if authenticated
+      const { session } = useAuthStore.getState();
+      if (session) {
+        mySync().catch((err) => console.error("Initial Sync Error:", err));
+      }
     }
   }, [loaded]);
 
@@ -44,6 +61,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider database={database}>
         <AppThemeProvider>
+          <LockScreen />
           <OfflineBanner />
           <TutorialProvider>
             <Stack screenOptions={{ headerShown: false }}>

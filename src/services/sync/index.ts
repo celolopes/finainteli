@@ -44,6 +44,9 @@ export async function mySync() {
         if (budgets.error) throw budgets.error;
         if (cards.error) throw cards.error;
 
+        console.log(`[SYNC DEBUG] User: ${user.id}`);
+        console.log(`[SYNC DEBUG] Pulled: ${transactions.data.length} transactions, ${accounts.data.length} accounts`);
+
         // Group changes by created/updated vs deleted (using deleted_at)
         const mapChanges = (items: any[]) => ({
           created: items.filter((i) => !i.deleted_at && new Date(i.created_at) > new Date(lastPulledAt || 0)),

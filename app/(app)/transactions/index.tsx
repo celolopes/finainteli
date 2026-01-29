@@ -181,9 +181,12 @@ export default function TransactionsScreen() {
 
           {/* Info */}
           <View style={styles.transactionInfo}>
-            <Text variant="titleMedium" numberOfLines={1}>
-              {item.description || t("transactions.noDescription", "Sem descrição")}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text variant="titleMedium" numberOfLines={1}>
+                {item.description || t("transactions.noDescription", "Sem descrição")}
+              </Text>
+              {item.credit_card_id && <Icon source="credit-card-outline" size={16} color={theme.colors.onSurfaceVariant} />}
+            </View>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               {category?.name || "Sem categoria"}
             </Text>

@@ -110,7 +110,8 @@ export const SmartTipCard = ({ tip, onPressReport, onRefreshTip, loading }: Prop
                 style={[
                   styles.usageBadge,
                   {
-                    backgroundColor: remainingTips > 1 ? theme.colors.primaryContainer : theme.colors.errorContainer,
+                    backgroundColor: remainingTips > 1 ? theme.colors.primary : theme.colors.error,
+                    color: remainingTips > 1 ? theme.colors.onPrimary : theme.colors.onError,
                   },
                 ]}
               >

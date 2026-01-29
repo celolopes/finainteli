@@ -30,7 +30,7 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   // Initial state
   user: null,
   session: null,
@@ -76,21 +76,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         console.log("[Auth] State changed:", event);
 
         if (event === "SIGNED_IN" && session?.user) {
-          console.log("[Auth] Getting profile for:", session.user.id);
-          try {
-            const profile = await authHelpers.ensureUserProfile(session.user.id, session.user.user_metadata?.full_name || session.user.email?.split("@")[0]);
-            console.log("[Auth] Profile loaded:", profile ? "Success" : "NULL");
-
-            set({
-              user: session.user,
-              session,
-              profile,
-              loading: false,
-            });
-          } catch (e) {
-            console.error("[Auth] Profile load failed:", e);
-            set({ loading: false });
-          }
+          // REMOVED AUTOMATIC PROFILE FETCH TO PREVENT LOOPS
+          // The specific login methods (signInWithEmail, signInWithGoogle) are responsible
+          // for fetching the profile and setting the state.
+          // This prevents the listener from fighting with the imperative login flow.
+          console.log("[Auth] Signed In event received. Initialization handoff.");
         } else if (event === "SIGNED_OUT") {
           set({
             user: null,
@@ -283,22 +273,39 @@ export const useAuthStore = create<AuthState>((set) => ({
               return { success: false, error: translateAuthError(sessionError) };
             }
 
+            // Session is set successfully. We can proceed.
+            // We'll try to fetch the profile, but won't block indefinitely if it hangs.
+            // onAuthStateChange will also fire, so we're covered.
+
+            // Session set successfully. Fetch profile manually now.
             if (sessionData.user) {
-              const profile = await authHelpers.ensureUserProfile(sessionData.user.id, sessionData.user.user_metadata?.full_name);
+              let profile = get().profile;
+              if (!profile) {
+                try {
+                  const fullName = sessionData.user.user_metadata?.full_name || sessionData.user.email?.split("@")[0];
+                  profile = await authHelpers.ensureUserProfile(sessionData.user.id, fullName);
+                } catch (e) {
+                  console.warn("[Auth] internal profile fetch warning:", e);
+                }
+              }
 
               set({
                 user: sessionData.user,
                 session: sessionData.session,
-                profile,
+                profile: profile || null,
                 loading: false,
               });
 
               return { success: true };
             }
+
+            set({ loading: false });
+            return { success: true };
           }
         } else if (result.type === "cancel" || result.type === "dismiss") {
           set({ loading: false });
-          return { success: false, error: "Login cancelado pelo usuário" };
+          // User cancelled, not an error
+          return { success: false };
         }
 
         set({ loading: false });
