@@ -18,7 +18,13 @@ export async function mySync() {
 
         let timestamp: string;
         try {
-          const date = lastPulledAt ? new Date(lastPulledAt) : new Date(0);
+          // FORCE SYNC RESET: If the sync was done with the broken version (which saved 1970 dates),
+          // we force a full pull (lastPulledAt = 0) to repair the local database.
+          // The broken sync likely happened around 2026-01-29.
+          const REPAIR_THRESHOLD = 1838191600000; // Future date to force repair
+          const safeLastPulledAt = lastPulledAt && lastPulledAt > REPAIR_THRESHOLD ? lastPulledAt : 0;
+
+          const date = safeLastPulledAt ? new Date(safeLastPulledAt) : new Date(0);
           // Sanity check: if date is invalid or too far in future/past, reset
           if (isNaN(date.getTime()) || date.getFullYear() > 2100) {
             timestamp = new Date(0).toISOString();
@@ -48,11 +54,46 @@ export async function mySync() {
         console.log(`[SYNC DEBUG] Pulled: ${transactions.data.length} transactions, ${accounts.data.length} accounts`);
 
         // Group changes by created/updated vs deleted (using deleted_at)
-        const mapChanges = (items: any[]) => ({
-          created: items.filter((i) => !i.deleted_at && new Date(i.created_at) > new Date(lastPulledAt || 0)),
-          updated: items.filter((i) => !i.deleted_at && new Date(i.created_at) <= new Date(lastPulledAt || 0)),
-          deleted: items.filter((i) => i.deleted_at).map((i) => i.id),
-        });
+        const dateFields = ["created_at", "updated_at", "deleted_at", "transaction_date", "date", "last_alert_sent_at"];
+
+        const mapChanges = (items: any[]) => {
+          const processedItems = items.map((item) => {
+            const newItem = { ...item };
+            dateFields.forEach((field) => {
+              if (newItem[field] && typeof newItem[field] === "string") {
+                // Better date parsing for React Native / Hermes
+                // Convert "2026-01-29 18:00:00" to "2026-01-29T18:00:00"
+                // And ensure "2026-01-29" is parsed as noon UTC to avoid timezone shifts
+                let dateStr = newItem[field].replace(" ", "T");
+                if (dateStr.length === 10) {
+                  dateStr += "T12:00:00Z";
+                }
+
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                  newItem[field] = date.getTime();
+                } else {
+                  console.warn(`[Sync] Failed to parse date: ${newItem[field]} for field ${field}`);
+                  // Fallback for critical fields
+                  if (field === "transaction_date" || field === "created_at") {
+                    newItem[field] = Date.now();
+                  }
+                }
+              }
+            });
+            return newItem;
+          });
+
+          // Logic for first pull vs incremental pull
+          // If safeLastPulledAt was 0, we consider everything updated (to overwrite existing corrupted local data)
+          const isFreshPull = !lastPulledAt || lastPulledAt <= 1838191600000;
+
+          return {
+            created: isFreshPull ? [] : processedItems.filter((i) => !i.deleted_at && i.created_at > (lastPulledAt || 0)),
+            updated: isFreshPull ? processedItems.filter((i) => !i.deleted_at) : processedItems.filter((i) => !i.deleted_at && i.created_at <= (lastPulledAt || 0)),
+            deleted: processedItems.filter((i) => i.deleted_at).map((i) => i.id),
+          };
+        };
 
         return {
           changes: {
@@ -90,8 +131,15 @@ export async function mySync() {
               const dateFields = ["created_at", "updated_at", "deleted_at", "transaction_date", "date"];
 
               dateFields.forEach((field) => {
-                if (typeof converted[field] === "number") {
+                if (typeof converted[field] === "number" && converted[field] > 0) {
                   converted[field] = new Date(converted[field]).toISOString();
+                } else if (typeof converted[field] === "number") {
+                  // Se o timestamp for 0 ou inválido, evitamos enviar 1970 se possível
+                  if (field === "transaction_date") {
+                    converted[field] = new Date().toISOString();
+                  } else {
+                    delete converted[field];
+                  }
                 }
               });
 

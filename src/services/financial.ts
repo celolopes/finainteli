@@ -66,48 +66,6 @@ export const FinancialService = {
   },
 
   /**
-   * Realiza o pagamento de uma fatura de cartão
-   * Cria uma transação do tipo TRANSFER da conta para o cartão
-   * Atualiza saldos de ambos
-   */
-  async payInvoice(cardId: string, accountId: string, amount: number, date: Date) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
-
-    await database.write(async () => {
-      // 1. Criar Transação de Pagamento (Transferência)
-      await database.get<Transaction>("transactions").create((t) => {
-        t.userId = user.id;
-        t.amount = amount;
-        t.type = "transfer"; // Transfer não soma em despesas
-        t.description = "Pagamento de Fatura";
-        t.transactionDate = date;
-        t.account.id = accountId;
-        t.creditCard.id = cardId;
-        t.currencyCode = "BRL"; // Deveria vir do input, mas assumindo BRL por enquanto ou pegar da conta
-      });
-
-      // 2. Debitar da Conta Bancária (Saída)
-      const account = await database.get<Account>("bank_accounts").find(accountId);
-      await account.update((a) => {
-        a.currentBalance -= amount;
-      });
-
-      // 3. Abater do Cartão de Crédito (Reduzir dívida / Liberar limite)
-      // Se currentBalance é a dívida, subtraímos.
-      const card = await database.get<any>("credit_cards").find(cardId);
-      await card.update((c: any) => {
-        c.currentBalance -= amount;
-      });
-    });
-
-    mySync().catch(console.error);
-    return true;
-  },
-
-  /**
    * Busca transações recentes para o dashboard
    */
   async getRecentTransactions(limit = 5) {
@@ -128,7 +86,7 @@ export const FinancialService = {
           description: t.description,
           notes: t.notes,
           currency_code: t.currencyCode,
-          transaction_date: t.transactionDate.toISOString(),
+          transaction_date: t.transactionDate.toISOString().split("T")[0],
           category_id: t.category.id,
           account_id: t.account.id,
           credit_card_id: t.creditCard.id,
@@ -583,7 +541,7 @@ export const FinancialService = {
           description: t.description,
           notes: t.notes,
           currency_code: t.currencyCode,
-          transaction_date: t.transactionDate.toISOString(),
+          transaction_date: t.transactionDate.toISOString().split("T")[0],
           category_id: t.category.id,
           account_id: t.account.id,
           credit_card_id: t.creditCard.id,
@@ -611,7 +569,7 @@ export const FinancialService = {
         description: t.description,
         notes: t.notes,
         currency_code: t.currencyCode,
-        transaction_date: t.transactionDate.toISOString(),
+        transaction_date: t.transactionDate.toISOString().split("T")[0],
         category_id: t.category.id,
         account_id: t.account.id,
         credit_card_id: t.creditCard.id,
@@ -955,7 +913,7 @@ export const FinancialService = {
           amount: t.amount,
           type: t.type,
           description: t.description,
-          transaction_date: t.transactionDate.toISOString(),
+          transaction_date: t.transactionDate.toISOString().split("T")[0],
           category: category ? { name: category.name, icon: category.icon, color: category.color } : null,
         };
       }),
