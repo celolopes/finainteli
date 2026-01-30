@@ -1,0 +1,13 @@
+{
+  "active": [
+    {
+      "slug": "feature-credit-card-details",
+      "path": "plans/feature-credit-card-details.md",
+      "title": "Credit Card Details & Invoice Feature",
+      "linkedAt": "2026-01-29T19:43:14.420Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "feature-credit-card-details"
+}

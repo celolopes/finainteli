@@ -1,13 +1,13 @@
 {
   "active": [
     {
-      "slug": "feature-credit-card-details",
-      "path": "plans/feature-credit-card-details.md",
-      "title": "Credit Card Details & Invoice Feature",
-      "linkedAt": "2026-01-29T19:43:14.420Z",
+      "slug": "ai-usage-tracking",
+      "path": "plans/ai-usage-tracking.md",
+      "title": "Plan: AI Usage Tracking & Debug Dashboard",
+      "linkedAt": "2026-01-30T17:40:19.043Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "feature-credit-card-details"
+  "primary": "ai-usage-tracking"
 }
