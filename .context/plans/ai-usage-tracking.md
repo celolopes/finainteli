@@ -69,10 +69,10 @@ Implementation of a developer feature to monitor AI model usage, token consumpti
 
 ## Success Criteria
 
-- [ ] Every Gemini API call is logged with correct token counts.
-- [ ] Cost is calculated correctly in BRL.
-- [ ] Debug Dashboard shows a clear breakdown of usage.
-- [ ] UI is responsive and follows the project's premium design.
+- [x] Every Gemini API call is logged with correct token counts.
+- [x] Cost is calculated correctly in BRL.
+- [x] Debug Dashboard shows a clear breakdown of usage.
+- [x] UI is responsive and follows the project's premium design.
 
 ## Rollback Plan
 

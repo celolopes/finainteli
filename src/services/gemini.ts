@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { calculateAICost } from "../constants/aiPricing";
+import { AIUsageRepository } from "../database/repositories/aiUsageRepository";
+import { supabase } from "./supabase";
 
 // Initialize Gemini
-// Note: In a real app, ensure EXPO_PUBLIC_GEMINI_API_KEY is in your .env
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+const MODEL_NAME = "gemini-3-flash-preview";
+const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 export interface FinancialContext {
   monthlyIncome: number;
@@ -20,12 +23,44 @@ export interface FinancialContext {
 
 export const GeminiService = {
   /**
+   * Private helper to log usage
+   */
+  async _logUsage(result: any, featureName: string) {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const response = await result.response;
+      const usage = response.usageMetadata;
+
+      if (!usage) return;
+
+      const costBrl = calculateAICost(MODEL_NAME, usage.promptTokenCount, usage.candidatesTokenCount);
+
+      await AIUsageRepository.saveLog({
+        userId: user.id,
+        modelId: MODEL_NAME,
+        promptTokens: usage.promptTokenCount,
+        candidatesTokens: usage.candidatesTokenCount,
+        totalTokens: usage.totalTokenCount,
+        costBrl,
+        featureName,
+      });
+    } catch (error) {
+      console.warn("AI Usage Log failed:", error);
+    }
+  },
+
+  /**
    * Generic method to generate content explicitly
    */
   async generateContent(prompt: string): Promise<string> {
     if (!apiKey) throw new Error("API Key not configured");
     try {
       const result = await model.generateContent(prompt);
+      await this._logUsage(result, "Generic Content");
       const response = await result.response;
       return response.text();
     } catch (error) {
@@ -59,6 +94,7 @@ export const GeminiService = {
 
     try {
       const result = await model.generateContent(prompt);
+      await this._logUsage(result, "Smart Tip");
       const response = await result.response;
       return response.text();
     } catch (error) {
@@ -91,6 +127,7 @@ export const GeminiService = {
 
     try {
       const result = await model.generateContent(prompt);
+      await this._logUsage(result, "Monthly Report");
       return (await result.response).text();
     } catch (error) {
       return "Could not generate report at this time.";
@@ -116,6 +153,7 @@ export const GeminiService = {
 
     try {
       const result = await model.generateContent(prompt);
+      await this._logUsage(result, "Goal Plan");
       return (await result.response).text();
     } catch (error) {
       return "Could not generate plan.";
@@ -152,6 +190,7 @@ export const GeminiService = {
 
     try {
       const result = await chat.sendMessage(message);
+      await this._logUsage(result, "Chat");
       return (await result.response).text();
     } catch (e) {
       return "I'm having trouble connecting to my brain right now.";

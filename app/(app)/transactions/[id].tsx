@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   },
   optionBody: {
     padding: 16,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "rgba(18, 18, 18, 0.02)",
   },
   smallInput: {
     width: 60,

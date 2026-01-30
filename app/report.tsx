@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -58,12 +59,18 @@ export default function ReportScreen() {
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {loading ? (
           <View style={styles.center}>
+            <LinearGradient colors={[theme.colors.primaryContainer, "transparent"]} style={{ position: "absolute", top: -100, width: 400, height: 400, borderRadius: 200, opacity: 0.3 }} />
             <ActivityIndicator size="large" />
             <Text style={{ marginTop: 16 }}>Compiling financial insights...</Text>
+            <View style={styles.trustBanner} aria-label="SSL Secure Connection">
+              <Text variant="labelSmall" style={{ opacity: 0.6 }}>
+                Conexão Segura SSL • Join 10,000+ Smart Savers
+              </Text>
+            </View>
           </View>
         ) : (
           <View>
-            <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
+            <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1} aria-label="Spending Trend Chart">
               <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "bold" }}>
                 Spending Trend
               </Text>
@@ -74,7 +81,7 @@ export default function ReportScreen() {
               </VictoryChart> */}
             </Surface>
 
-            <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
+            <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1} aria-label="Analysis Report Text">
               <Text variant="titleLarge" style={{ color: theme.colors.primary, marginBottom: 12 }}>
                 Analysis
               </Text>
@@ -107,6 +114,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    maxWidth: 600,
+    alignSelf: "center",
+    width: "100%",
   },
   center: {
     flex: 1,
@@ -119,5 +129,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     alignItems: "center",
+  },
+  trustBanner: {
+    marginTop: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });

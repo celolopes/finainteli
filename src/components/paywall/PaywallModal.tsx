@@ -66,7 +66,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
   const FeatureItem = ({ icon, text, delay }: { icon: string; text: string; delay: number }) => (
     <Animated.View entering={FadeInDown.delay(delay).duration(500)} style={styles.featureItem}>
       <BlurView intensity={20} tint="dark" style={styles.featureIconContainer}>
-        <Ionicons name={icon as any} size={22} color="#a855f7" />
+        <Ionicons name={icon as any} size={22} color="#14b8a6" />
       </BlurView>
       <Text variant="bodyLarge" style={styles.featureText}>
         {text}
@@ -76,7 +76,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onDismiss}>
-      <LinearGradient colors={["#0f172a", "#1e1b4b", "#000000"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+      <LinearGradient colors={["#0f172a", "#1b1b1b", "#121212"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container} aria-label="Paywall Display">
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
@@ -108,7 +108,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
 
           {packages.length === 0 ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color="#a855f7" size="small" />
+              <ActivityIndicator color="#14b8a6" size="small" />
               <Text style={styles.loadingText}>{t("paywall.loading", "Carregando ofertas...")}</Text>
             </View>
           ) : (
@@ -121,7 +121,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
                 return (
                   <TouchableOpacity key={pack.identifier} onPress={() => setSelectedPackage(pack)} activeOpacity={0.9} style={styles.planWrapper}>
                     <Animated.View style={[styles.planCard, isSelected && styles.selectedPlanCard]}>
-                      {isSelected && <LinearGradient colors={["rgba(168, 85, 247, 0.15)", "transparent"]} style={StyleSheet.absoluteFillObject} />}
+                      {isSelected && <LinearGradient colors={["rgba(20, 184, 166, 0.15)", "transparent"]} style={StyleSheet.absoluteFillObject} />}
 
                       <View style={styles.planHeader}>
                         <Text style={[styles.planTitle, isSelected && styles.selectedText]} numberOfLines={1}>
@@ -143,7 +143,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
 
                       {isSelected && (
                         <View style={styles.checkIcon}>
-                          <Ionicons name="checkmark-circle" size={24} color="#a855f7" />
+                          <Ionicons name="checkmark-circle" size={24} color="#14b8a6" />
                         </View>
                       )}
                     </Animated.View>
@@ -158,7 +158,7 @@ export function PaywallModal({ visible, onDismiss, onSuccess }: { visible: boole
 
           {/* CTA */}
           <TouchableOpacity style={styles.ctaButton} onPress={handlePurchase} disabled={loading || !selectedPackage}>
-            <LinearGradient colors={["#a855f7", "#7c3aed"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientButton}>
+            <LinearGradient colors={["#14b8a6", "#0d9488"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientButton}>
               {loading ? <ActivityIndicator color="white" /> : <Text style={styles.ctaText}>{t("paywall.cta", "Assinar Agora")}</Text>}
             </LinearGradient>
           </TouchableOpacity>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   headerIconContainer: {
     marginBottom: 5,
-    shadowColor: "#a855f7",
+    shadowColor: "#14b8a6",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   highlight: {
-    color: "#a855f7",
+    color: "#14b8a6",
   },
   subtitle: {
     color: "#94a3b8",
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 16,
     overflow: "hidden",
-    backgroundColor: "rgba(168, 85, 247, 0.1)",
+    backgroundColor: "rgba(20, 184, 166, 0.1)",
   },
   featureText: {
     color: "#e2e8f0",
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   selectedPlanCard: {
-    borderColor: "#a855f7",
-    backgroundColor: "#2e1065", // Darker purple bg
+    borderColor: "#14b8a6",
+    backgroundColor: "#134e4a", // Darker teal bg
   },
   planHeader: {
     flexDirection: "row",
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 8,
     elevation: 8,
-    shadowColor: "#a855f7",
+    shadowColor: "#14b8a6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

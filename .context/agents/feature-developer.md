@@ -4,7 +4,7 @@ name: Feature Developer
 description: Implement new features according to specifications
 agentType: feature-developer
 phases: [P, E]
-generated: 2026-01-20
+generated: 2026-01-30
 status: unfilled
 scaffoldVersion: "2.0.0"
 ---

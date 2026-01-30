@@ -98,13 +98,23 @@ export const BudgetModal = ({ visible, onDismiss, onSave, categories, existingBu
                 style={styles.catChip}
                 compact
                 buttonColor={categoryId === cat.id ? theme.colors.primary : undefined}
+                accessibilityLabel={cat.name}
               >
                 {cat.name}
               </Button>
             ))}
           </View>
 
-          <TextInput label="Valor Mensal (R$)" value={amount} onChangeText={setAmount} keyboardType="numeric" mode="outlined" style={styles.input} left={<TextInput.Affix text="R$" />} />
+          <TextInput
+            label="Valor Mensal (R$)"
+            value={amount}
+            onChangeText={setAmount}
+            keyboardType="numeric"
+            mode="outlined"
+            style={styles.input}
+            left={<TextInput.Affix text="R$" />}
+            accessibilityLabel="Valor Mensal (R$)"
+          />
 
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Alertas

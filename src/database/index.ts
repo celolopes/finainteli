@@ -17,6 +17,7 @@ import SQLiteAdapter from "@nozbe/watermelondb/adapters/sqlite";
 
 import migrations from "./migrations";
 import Account from "./model/Account";
+import AIUsageLog from "./model/AIUsageLog";
 import Budget from "./model/Budget";
 import Category from "./model/Category";
 import CreditCard from "./model/CreditCard";
@@ -40,5 +41,5 @@ const adapter = new SQLiteAdapter({
 // 2. Create the database
 export const database = new Database({
   adapter,
-  modelClasses: [Transaction, Category, Account, Budget, CreditCard],
+  modelClasses: [Transaction, Category, Account, Budget, CreditCard, AIUsageLog],
 });

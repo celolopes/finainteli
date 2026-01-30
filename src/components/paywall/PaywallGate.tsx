@@ -14,7 +14,7 @@ export function PaywallGate({ feature, description, onUnlock, variant = "fullscr
 
   if (variant === "card") {
     return (
-      <View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
+      <View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]} aria-label="Acesso Premium Requerido">
         <Icon source="lock-outline" size={32} color={theme.colors.primary} />
         <View style={{ gap: 4, flex: 1 }}>
           <Text variant="titleMedium" style={{ fontWeight: "bold" }}>
@@ -22,7 +22,7 @@ export function PaywallGate({ feature, description, onUnlock, variant = "fullscr
           </Text>
           <Text variant="bodySmall">{description}</Text>
         </View>
-        <Button mode="contained" onPress={onUnlock} compact>
+        <Button mode="contained" onPress={onUnlock} compact aria-label="Desbloquear Funcionalidade">
           Desbloquear
         </Button>
       </View>
@@ -30,7 +30,7 @@ export function PaywallGate({ feature, description, onUnlock, variant = "fullscr
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} aria-label="Acesso Premium Total Requerido">
       <Icon source="crown" size={64} color={theme.colors.primary} />
       <Text variant="headlineSmall" style={{ marginTop: 24, fontWeight: "bold", textAlign: "center" }}>
         {feature}
@@ -38,7 +38,7 @@ export function PaywallGate({ feature, description, onUnlock, variant = "fullscr
       <Text variant="bodyLarge" style={{ textAlign: "center", marginTop: 8, marginBottom: 32, opacity: 0.7, paddingHorizontal: 32 }}>
         {description}
       </Text>
-      <Button mode="contained" onPress={onUnlock} icon="lock-open" contentStyle={{ height: 48 }}>
+      <Button mode="contained" onPress={onUnlock} icon="lock-open" contentStyle={{ height: 48 }} aria-label="Assinar Premium">
         Desbloquear Premium
       </Button>
     </View>

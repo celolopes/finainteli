@@ -16,6 +16,7 @@ This directory contains plans for coordinating work across documentation and pla
 11. [Redesign And I18n](./redesign-and-i18n.md)
 12. [Supabase Authentication](./supabase-authentication.md)
 13. [Total Assets Expansion](./total-assets-expansion.md)
+14. [Ux Audit Fixes](./ux-audit-fixes.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 24,
     overflow: "hidden",
     // Shadow for depth
-    shadowColor: "#000",
+    shadowColor: "#121212",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

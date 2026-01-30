@@ -64,7 +64,13 @@ export default function RootLayout() {
           <LockScreen />
           <OfflineBanner />
           <TutorialProvider>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "fade", // page transition: fade route
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            >
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(app)" options={{ headerShown: false }} />

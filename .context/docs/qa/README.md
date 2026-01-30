@@ -2,7 +2,7 @@
 
 Project type: **mobile-app**
 
-Generated: 2026-01-20T19:03:31.136Z
+Generated: 2026-01-30T18:02:30.578Z
 
 ## Getting-started
 
@@ -15,7 +15,13 @@ Generated: 2026-01-20T19:03:31.136Z
 ## Features
 
 - [How does authentication work?](./authentication.md)
+- [How is data stored and accessed?](./database.md)
 
 ## Operations
 
+- [How are errors handled?](./error-handling.md)
 - [How do background jobs work?](./background-jobs.md)
+
+## Testing
+
+- [How do I run and write tests?](./testing.md)

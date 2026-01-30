@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-  version: 4,
+  version: 5,
   tables: [
     tableSchema({
       name: "transactions",
@@ -82,6 +82,20 @@ export default appSchema({
         { name: "is_active", type: "boolean" },
         { name: "updated_at", type: "number" },
         { name: "deleted_at", type: "number", isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: "ai_usage_logs",
+      columns: [
+        { name: "user_id", type: "string", isIndexed: true },
+        { name: "model_id", type: "string" },
+        { name: "prompt_tokens", type: "number" },
+        { name: "candidates_tokens", type: "number" },
+        { name: "total_tokens", type: "number" },
+        { name: "cost_brl", type: "number" },
+        { name: "feature_name", type: "string" },
+        { name: "created_at", type: "number" },
+        { name: "updated_at", type: "number" },
       ],
     }),
   ],

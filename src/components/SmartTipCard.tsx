@@ -93,7 +93,7 @@ export const SmartTipCard = ({ tip, onPressReport, onRefreshTip, loading }: Prop
   return (
     <>
       <Animated.View entering={FadeInUp.delay(300)}>
-        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level2 }]} elevation={2}>
+        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level2 }]} elevation={2} aria-label="Smart AI Insight Card">
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>

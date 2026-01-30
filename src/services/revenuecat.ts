@@ -26,6 +26,7 @@ class RevenueCatService {
 
     if (Platform.OS === "ios" || Platform.OS === "android") {
       try {
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.WARN);
         await Purchases.configure({ apiKey: API_KEY });
         this.initialized = true;
       } catch (e) {

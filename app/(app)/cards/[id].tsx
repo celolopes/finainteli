@@ -2,7 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Avatar, Button, Divider, FAB, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, FAB, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
@@ -30,6 +30,45 @@ export default function CardDetails() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [paying, setPaying] = useState(false);
+
+  // Edit Balance State
+  const [editBalanceVisible, setEditBalanceVisible] = useState(false);
+  const [newBalance, setNewBalance] = useState("");
+
+  const handleUpdateBalance = async () => {
+    if (!card) return;
+    try {
+      const targetBalance = CurrencyUtils.parse(newBalance, card.currency_code);
+      const currentBalance = card.current_balance || 0;
+      const difference = targetBalance - currentBalance;
+
+      // Only act if there is a difference
+      if (Math.abs(difference) > 0.01) {
+        await FinancialService.createTransaction({
+          amount: Math.abs(difference),
+          type: difference > 0 ? "expense" : "income", // If debt increases (target > current), it's an expense.
+          description: "Auste de Saldo / Fatura Importada",
+          credit_card_id: card.id,
+          transaction_date: new Date().toISOString(),
+          currency_code: card.currency_code,
+          category_id: null,
+          account_id: null,
+          destination_account_id: null,
+          notes: null,
+          status: "completed",
+        } as any);
+      }
+
+      setEditBalanceVisible(false);
+      // Wait a bit for sync
+      setTimeout(() => {
+        loadCardDetails();
+        loadInvoice(currentDate);
+      }, 500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -151,7 +190,7 @@ export default function CardDetails() {
     if (!card || !selectedAccountId) return;
     try {
       setPaying(true);
-      await FinancialService.payInvoice(card.id, selectedAccountId, invoiceTotal, new Date());
+      await FinancialService.payInvoice(card.id, invoiceTotal, selectedAccountId, new Date());
       setPayModalVisible(false);
       // Reload logic
       loadCardDetails();
@@ -237,7 +276,7 @@ export default function CardDetails() {
             <ProgressBar progress={usage > 1 ? 1 : usage} color={usage > 0.9 ? theme.colors.error : theme.colors.primary} style={styles.progressBar} />
             <View style={styles.row}>
               <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                Fatura Atual: {CurrencyUtils.format(card.current_balance || 0, card.currency_code)}
+                Fatura Atual: {CurrencyUtils.format((card.current_balance || 0) + (isInvoiceClosed() ? 0 : invoiceTotal), card.currency_code)}
               </Text>
               <Text variant="bodySmall">Fecha dia {card.closing_day}</Text>
             </View>
@@ -255,7 +294,7 @@ export default function CardDetails() {
               Vence dia {card.due_day}
             </Text>
           </View>
-          <IconButton icon="chevron-right" onPress={() => changeMonth(1)} />
+          <IconButton icon="chevron-right" onPress={() => changeMonth(1)} accessibilityLabel="Próximo Mês" aria-label="Próximo Mês" />
         </View>
 
         <Surface style={styles.invoiceTotalCard} elevation={1}>
@@ -272,6 +311,21 @@ export default function CardDetails() {
         </Surface>
 
         <Portal>
+          {/* Edit Balance Dialog */}
+          <Dialog visible={editBalanceVisible} onDismiss={() => setEditBalanceVisible(false)}>
+            <Dialog.Title>Ajustar Saldo</Dialog.Title>
+            <Dialog.Content>
+              <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                Defina o valor correto para a fatura atual. Isso ajustará o saldo inicial.
+              </Text>
+              <TextInput label="Novo Saldo" value={newBalance} onChangeText={(t) => setNewBalance(CurrencyUtils.maskInput(t))} keyboardType="numeric" mode="outlined" />
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setEditBalanceVisible(false)}>Cancelar</Button>
+              <Button onPress={handleUpdateBalance}>Salvar</Button>
+            </Dialog.Actions>
+          </Dialog>
+
           <Modal visible={payModalVisible} onDismiss={() => setPayModalVisible(false)} contentContainerStyle={styles.modalContainer}>
             <Text variant="titleLarge" style={{ marginBottom: 16 }}>
               Pagar Fatura
@@ -326,12 +380,25 @@ export default function CardDetails() {
                           <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
                             {t.description}
                           </Text>
-                          {/* Credit Card Icon Indicator (if needed, though this is already inside a card details screen) */}
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                            <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                              {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
+                          {/* Special case: Edit Initial Balance */}
+                          {t.id === "initial_balance_adjustment" ? (
+                            <Text
+                              variant="bodySmall"
+                              style={{ color: theme.colors.primary, fontWeight: "bold", marginTop: 2 }}
+                              onPress={() => {
+                                setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
+                                setEditBalanceVisible(true);
+                              }}
+                            >
+                              Toque para ajustar saldo
                             </Text>
-                          </View>
+                          ) : (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                              <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                                {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                       </View>
                       <Text variant="bodyLarge" style={{ fontWeight: "bold" }}>

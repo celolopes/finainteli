@@ -48,6 +48,123 @@ export const FinancialService = {
   },
 
   /**
+   * Busca uma conta pelo ID
+   */
+  async getAccountById(id: string) {
+    try {
+      const record = await database.get<Account>("bank_accounts").find(id);
+      return {
+        id: record.id,
+        user_id: record.userId,
+        name: record.name,
+        account_type: record.accountType,
+        currency_code: record.currencyCode,
+        initial_balance: record.initialBalance,
+        current_balance: record.currentBalance,
+        color: record.color,
+        icon: record.icon,
+        is_active: true,
+      } as BankAccountRow;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  /**
+   * Atualiza uma conta
+   */
+  async updateAccount(id: string, updates: Partial<Database["public"]["Tables"]["bank_accounts"]["Update"]>) {
+    await database.write(async () => {
+      const account = await database.get<Account>("bank_accounts").find(id);
+      await account.update((a) => {
+        if (updates.name !== undefined) a.name = updates.name;
+        if (updates.account_type !== undefined) a.accountType = updates.account_type;
+        if (updates.currency_code !== undefined) a.currencyCode = updates.currency_code;
+        if (updates.initial_balance !== undefined) a.initialBalance = Number(updates.initial_balance);
+        if (updates.current_balance !== undefined) a.currentBalance = Number(updates.current_balance);
+        if (updates.color !== undefined) a.color = updates.color || undefined;
+        if (updates.icon !== undefined) a.icon = updates.icon || undefined;
+      });
+    });
+    mySync().catch(console.error);
+    return true;
+  },
+
+  /**
+   * Define o saldo ATUAL da conta, ajustando o saldo INICIAL para que a matemática feche.
+   * NewInitial = NewCurrent - (Transações Acumuladas)
+   */
+  async setAccountCurrentBalance(id: string, newCurrentBalance: number) {
+    const transactions = await database
+      .get<Transaction>("transactions")
+      .query(Q.where("account_id", id), Q.where("deleted_at", Q.eq(null)), Q.where("status", Q.notEq("pending")), Q.where("type", Q.notEq("transfer")))
+      .fetch();
+
+    let accumulated = 0;
+
+    transactions.forEach((t) => {
+      if (t.type === "income") accumulated += t.amount;
+      else if (t.type === "expense") accumulated -= t.amount;
+    });
+
+    const newInitialIdx = newCurrentBalance - accumulated;
+
+    await this.updateAccount(id, {
+      initial_balance: newInitialIdx,
+      current_balance: newCurrentBalance,
+    });
+
+    return true;
+  },
+
+  /**
+   * Deleta uma conta (Soft delete)
+   */
+  async deleteAccount(id: string) {
+    await database.write(async () => {
+      const account = await database.get<Account>("bank_accounts").find(id);
+      await account.markAsDeleted(); // Soft delete compatible with sync
+    });
+    mySync().catch(console.error);
+    return true;
+  },
+
+  /**
+   * Verifica se uma conta pode ser excluída
+   */
+  async checkAccountCanBeDeleted(id: string): Promise<{ allowed: boolean; reason?: string }> {
+    try {
+      const account = await database.get<Account>("bank_accounts").find(id);
+
+      // 1. Check Balance
+      if (Math.abs(account.currentBalance) > 0.01) {
+        return {
+          allowed: false,
+          reason: "A conta possui saldo diferente de zero. Zere o saldo antes de excluir.",
+        };
+      }
+
+      // 2. Check Pending Transactions
+      const pendingCount = await database
+        .get<Transaction>("transactions")
+        .query(Q.where("account_id", id), Q.where("status", "pending"), Q.where("deleted_at", Q.eq(null)))
+        .fetchCount();
+
+      if (pendingCount > 0) {
+        return {
+          allowed: false,
+          reason: "Existem transações pendentes vinculadas a esta conta.",
+        };
+      }
+
+      return { allowed: true };
+    } catch (e) {
+      console.error(e);
+      return { allowed: false, reason: "Erro ao verificar conta." };
+    }
+  },
+
+  /**
    * Busca todos os cartões de crédito
    */
   async getCreditCards() {
@@ -56,23 +173,82 @@ export const FinancialService = {
       .query(Q.where("deleted_at", Q.eq(null)), Q.where("is_active", true))
       .fetch();
 
-    return records.map((r: any) => ({
-      id: r.id,
-      user_id: r.userId,
-      name: r.name,
-      currency_code: r.currencyCode,
-      credit_limit: r.creditLimit,
-      current_balance: r.currentBalance,
-      available_limit: r.creditLimit - r.currentBalance,
-      closing_day: r.closingDay,
-      due_day: r.dueDay,
-      brand: r.brand,
-      color: r.color,
-      icon: null,
-      is_active: r.isActive,
-      created_at: "",
-      updated_at: r.updatedAt?.toISOString() || "",
-    })) as CreditCardRow[];
+    return await Promise.all(
+      records.map(async (r: any) => {
+        // Calculate Next Invoice Estimate (Open Invoice)
+        const now = new Date();
+        const closingDay = r.closingDay || 1;
+        let lastClosingDate = new Date(now.getFullYear(), now.getMonth(), closingDay);
+        lastClosingDate.setHours(23, 59, 59, 999);
+
+        // If today is before closing day, the last closing was last month
+        if (now.getDate() < closingDay) {
+          lastClosingDate.setMonth(lastClosingDate.getMonth() - 1);
+        }
+
+        const openTransactions = await database
+          .get<Transaction>("transactions")
+          .query(
+            Q.where("credit_card_id", r.id),
+            Q.where("deleted_at", Q.eq(null)),
+            Q.where("status", Q.notEq("pending")), // Assuming pending doesn't count for total yet? Or should? Usually only completed.
+            Q.where("transaction_date", Q.gt(lastClosingDate.getTime())),
+          )
+          .fetch();
+
+        const openEstimate = openTransactions.reduce((acc, t) => {
+          if (t.type === "expense") return acc + t.amount;
+          if (t.type === "income") return acc - t.amount;
+          return acc;
+        }, 0);
+
+        return {
+          id: r.id,
+          user_id: r.userId,
+          name: r.name,
+          currency_code: r.currencyCode,
+          credit_limit: r.creditLimit,
+          current_balance: r.currentBalance,
+          available_limit: r.creditLimit - r.currentBalance,
+          closing_day: r.closingDay,
+          due_day: r.dueDay,
+          brand: r.brand,
+          color: r.color,
+          icon: null,
+          is_active: r.isActive,
+          created_at: "",
+          updated_at: r.updatedAt?.toISOString() || "",
+          next_invoice_estimate: openEstimate,
+        } as CreditCardRow & { next_invoice_estimate: number };
+      }),
+    );
+  },
+
+  /**
+   * Busca um cartão pelo ID
+   */
+  async getCardById(id: string) {
+    try {
+      const record = await database.get<any>("credit_cards").find(id);
+      return {
+        id: record.id,
+        user_id: record.userId,
+        name: record.name,
+        currency_code: record.currencyCode,
+        credit_limit: record.creditLimit,
+        current_balance: record.currentBalance,
+        available_limit: record.creditLimit - record.currentBalance,
+        closing_day: record.closingDay,
+        due_day: record.dueDay,
+        brand: record.brand,
+        color: record.color,
+        is_active: record.isActive,
+        created_at: record.createdAt?.toISOString() || "",
+        updated_at: record.updatedAt?.toISOString() || "",
+      } as CreditCardRow;
+    } catch (e) {
+      return null;
+    }
   },
 
   /**
@@ -301,6 +477,24 @@ export const FinancialService = {
 
     mySync().catch(console.error);
     return newRecord!._raw;
+  },
+
+  async updateCreditCard(id: string, updates: Partial<Database["public"]["Tables"]["credit_cards"]["Update"]>) {
+    await database.write(async () => {
+      const card = await database.get<any>("credit_cards").find(id);
+      await card.update((c: any) => {
+        if (updates.name !== undefined) c.name = updates.name;
+        if (updates.brand !== undefined) c.brand = updates.brand;
+        if (updates.credit_limit !== undefined) c.creditLimit = Number(updates.credit_limit);
+        if (updates.current_balance !== undefined) c.currentBalance = Number(updates.current_balance);
+        if (updates.closing_day !== undefined) c.closingDay = updates.closing_day;
+        if (updates.due_day !== undefined) c.dueDay = updates.due_day;
+        if (updates.color !== undefined) c.color = updates.color;
+        if (updates.is_active !== undefined) c.isActive = updates.is_active;
+      });
+    });
+    mySync().catch(console.error);
+    return true;
   },
 
   async createTransaction(transaction: Omit<Database["public"]["Tables"]["transactions"]["Insert"], "user_id">) {
@@ -956,11 +1150,19 @@ export const FinancialService = {
     });
 
     return Object.entries(result)
-      .map(([month, data]) => ({ month, ...data }))
+      .map(([month, data]) => ({ month, ...data, balance: data.income - data.expense }))
       .sort((a, b) => a.month.localeCompare(b.month));
   },
 
-  async getCardTransactions(cardId: string, invoiceStartDate: Date, invoiceCloseDate: Date) {
+  async getCardTransactions(cardId: string, month: number, year: number) {
+    const card = await database.get<any>("credit_cards").find(cardId);
+    const closingDay = card.closingDay || 1;
+
+    // A fatura fecha no dia closingDay do mês/ano solicitado.
+    // Ela começa no dia closingDay+1 do mês anterior.
+    const invoiceCloseDate = new Date(year, month, closingDay, 23, 59, 59, 999);
+    const invoiceStartDate = new Date(year, month - 1, closingDay + 1, 0, 0, 0, 0);
+
     const start = invoiceStartDate.getTime();
     const end = invoiceCloseDate.getTime();
 
@@ -975,7 +1177,7 @@ export const FinancialService = {
       )
       .fetch();
 
-    return await Promise.all(
+    const transactions = await Promise.all(
       records.map(async (t) => {
         const category = await t.category.fetch();
         return {
@@ -983,12 +1185,17 @@ export const FinancialService = {
           amount: t.amount,
           type: t.type,
           description: t.description,
-          transaction_date: t.transactionDate.toISOString().split("T")[0],
+          transaction_date: t.transactionDate.toISOString(),
           status: t.status || "completed",
           category: category ? { name: category.name, icon: category.icon, color: category.color } : null,
+          currency_code: t.currencyCode,
         };
       }),
     );
+
+    const total = transactions.reduce((acc, t) => acc + t.amount, 0);
+
+    return { transactions, total };
   },
 
   async payInvoice(cardId: string, amount: number, accountId: string, date: Date) {

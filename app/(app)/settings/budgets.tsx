@@ -130,7 +130,7 @@ export default function BudgetsScreen() {
             </View>
           ) : (
             budgets.map((status) => (
-              <View key={status.budget_id} style={[styles.budgetCard, { backgroundColor: theme.colors.surface }]}>
+              <View key={status.budget_id} style={[styles.budgetCard, { backgroundColor: theme.colors.surface }]} aria-label={`Orçamento ${status.category_name}`}>
                 <View style={styles.cardHeader}>
                   <View style={styles.categoryInfo}>
                     <View style={[styles.categoryDot, { backgroundColor: categories.find((c) => c.id === status.category_id)?.color || "#ccc" }]} />

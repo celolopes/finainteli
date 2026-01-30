@@ -287,9 +287,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
+    borderTopColor: "rgba(18, 18, 18, 0.05)",
     elevation: 10,
-    shadowColor: "#000",
+    shadowColor: "#121212",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

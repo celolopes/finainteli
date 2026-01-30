@@ -252,7 +252,7 @@ export default function TransactionsScreen() {
   const hasActiveFilters = filterType !== "all" || filterCategoryId !== null || searchQuery.trim() !== "";
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]} aria-label="Lista de Transações">
       {/* Header */}
       <Appbar.Header elevated>
         <Appbar.BackAction onPress={() => router.back()} />

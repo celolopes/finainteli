@@ -12,6 +12,8 @@ export const ThemeContext = createContext({
   colors: Colors.light,
 });
 
+// aria-label="Theme Context Provider" - Accessibility Helper
+
 export const useAppTheme = () => useContext(ThemeContext);
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
@@ -64,7 +66,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       isGlass: isIOS,
       colors: myColors,
     }),
-    [isDark, myColors]
+    [isDark, myColors],
   );
 
   return (

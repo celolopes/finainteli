@@ -135,4 +135,39 @@ export const authHelpers = {
 
     return data as UserProfile;
   },
+
+  /**
+   * Reset user account data
+   * Deletes all data associated with the user but keeps the account
+   */
+  async resetAccount(userId: string): Promise<boolean> {
+    try {
+      console.log("[Supabase] Resetting account data for:", userId);
+
+      // Delete data from all tables (order matters for foreign keys if not cascaded, but Supabase usually handles specific order or we can just spam delete)
+      // Assuming cascade delete is NOT set up or we want to be explicit
+      const tables = ["transactions", "budgets", "credit_cards", "bank_accounts", "categories", "ai_usage_logs"];
+
+      for (const table of tables) {
+        const { error } = await supabase.from(table).delete().eq("user_id", userId);
+        if (error) {
+          console.error(`[Supabase] Failed to delete from ${table}:`, error);
+          // Continue deleting other tables even if one fails
+        }
+      }
+
+      // Reset profile flags
+      const { error: profileError } = await supabase.from("user_profiles").update({ onboarding_completed: false }).eq("id", userId);
+
+      if (profileError) {
+        console.error("[Supabase] Failed to reset profile:", profileError);
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      console.error("[Supabase] Account reset exception:", e);
+      return false;
+    }
+  },
 };

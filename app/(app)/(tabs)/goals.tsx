@@ -127,6 +127,8 @@ export default function GoalsScreen() {
                     mode="outlined"
                     style={styles.input}
                     left={<TextInput.Icon icon="cash" />}
+                    accessibilityLabel={t("goals.targetAmount", "Valor Alvo (R$)")}
+                    aria-label={t("goals.targetAmount", "Valor Alvo (R$)")}
                   />
                 )}
               />
@@ -140,6 +142,8 @@ export default function GoalsScreen() {
                     style={styles.input}
                     left={<TextInput.Icon icon="calendar" />}
                     editable={false}
+                    accessibilityLabel={t("goals.deadline", "Prazo")}
+                    aria-label={t("goals.deadline", "Prazo")}
                   />
                 </View>
               </TouchableOpacity>
@@ -237,7 +241,7 @@ const styles = StyleSheet.create({
   heroIcon: {
     alignSelf: "center",
     marginBottom: 24,
-    backgroundColor: "rgba(108, 99, 255, 0.1)",
+    backgroundColor: "rgba(0, 77, 64, 0.1)", // Deep Teal override
     padding: 24,
     borderRadius: 64,
   },
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginTop: 8,
-    backgroundColor: "rgba(0,0,0,0.05)",
+    backgroundColor: "rgba(18, 18, 18, 0.05)",
     padding: 16,
     borderRadius: 16,
   },
@@ -277,10 +281,10 @@ const styles = StyleSheet.create({
   },
   aiEmpty: {
     padding: 24,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "rgba(18, 18, 18, 0.02)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: "rgba(18, 18, 18, 0.05)",
     borderStyle: "dashed",
     alignItems: "center",
   },

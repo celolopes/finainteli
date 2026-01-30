@@ -2,7 +2,7 @@ import { AuthError, Session, User } from "@supabase/supabase-js";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import { Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 import { create } from "zustand";
 
 import { database } from "../database";
@@ -377,12 +377,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // Android/Web: Use OAuth flow
-      const redirectUrl = makeRedirectUri({
-        // Don't pass scheme - let Expo figure out the correct one
-        path: "auth/callback",
-      });
+      if (Platform.OS === "android") {
+        await WebBrowser.warmUpAsync();
+      }
 
-      console.log("[Auth] Apple OAuth redirect URL:", redirectUrl);
+      const redirectUrl = "finainteli://auth/callback";
+
+      console.log("[Auth] Apple OAuth redirect URL (Full):", redirectUrl);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
@@ -393,17 +394,73 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (error) {
+        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
         set({ loading: false, error: translateAuthError(error) });
         return { success: false, error: translateAuthError(error) };
       }
 
       if (data.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        console.log("[Auth] Opening browser with URL:", data.url);
 
-        console.log("[Auth] Apple OAuth result:", result.type);
+        let initialUrlListener: any = null;
 
-        if (result.type === "success" && result.url) {
-          const resultUrl = result.url;
+        // Check if app was opened by deep link immediately (cold start case)
+        const checkInitialUrl = async () => {
+          const url = await Linking.getInitialURL();
+          if (url && url.startsWith("finainteli://")) {
+            console.log("[Auth] Found initial URL:", url);
+            return { type: "success", url };
+          }
+          return null;
+        };
+
+        // Create a promise that resolves if Linking catches the URL
+        const linkingPromise = new Promise<{ type: string; url?: string }>((resolve) => {
+          const handler = ({ url }: { url: string }) => {
+            if (url.startsWith("finainteli://")) {
+              console.log("[Auth] Linking listener caught URL:", url);
+              if (Platform.OS === "android") WebBrowser.dismissBrowser(); // Ensure browser closes
+              resolve({ type: "success", url });
+            }
+          };
+          initialUrlListener = Linking.addEventListener("url", handler);
+        });
+
+        // Use openBrowserAsync on Android as a fallback when AuthSession fails
+        // It simply opens Chrome and relies 100% on the Deep Link to get back
+        let browserResult;
+        try {
+          if (Platform.OS === "android") {
+            // On Android, check if we already have an initial URL pending
+            const initial = await checkInitialUrl();
+            if (initial) {
+              browserResult = initial;
+            } else {
+              WebBrowser.openBrowserAsync(data.url);
+              browserResult = await linkingPromise;
+            }
+          } else {
+            // iOS usually behaves well with openAuthSessionAsync
+            browserResult = await Promise.race([WebBrowser.openAuthSessionAsync(data.url, redirectUrl), linkingPromise]);
+          }
+        } catch (err) {
+          console.error("[Auth] WebBrowser/Link error:", err);
+          if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+          set({ loading: false, error: "Erro ao abrir navegador" });
+          return { success: false, error: "Erro ao abrir navegador" };
+        } finally {
+          // Cleanup listener
+          if (initialUrlListener) initialUrlListener.remove();
+        }
+
+        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+
+        console.log("[Auth] Auth Result:", JSON.stringify(browserResult));
+
+        if (browserResult && browserResult.type === "success" && browserResult.url) {
+          const resultUrl = browserResult.url;
+          console.log("[Auth] Redirect received:", resultUrl);
+
           let accessToken: string | null = null;
           let refreshToken: string | null = null;
 
@@ -414,9 +471,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
 
           if (!accessToken) {
-            const url = new URL(resultUrl);
-            accessToken = url.searchParams.get("access_token");
-            refreshToken = url.searchParams.get("refresh_token");
+            try {
+              const url = new URL(resultUrl);
+              accessToken = url.searchParams.get("access_token");
+              refreshToken = url.searchParams.get("refresh_token");
+            } catch (e) {
+              console.warn("[Auth] Failed to parse URL search params:", e);
+            }
           }
 
           if (accessToken && refreshToken) {
@@ -426,11 +487,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             });
 
             if (sessionError) {
+              console.error("[Auth] Session error:", sessionError);
               set({ loading: false, error: translateAuthError(sessionError) });
               return { success: false, error: translateAuthError(sessionError) };
             }
 
             if (sessionData.user) {
+              console.log("[Auth] Session established successfully for:", sessionData.user.email);
               const profile = await authHelpers.ensureUserProfile(sessionData.user.id, sessionData.user.user_metadata?.full_name, sessionData.user.user_metadata?.avatar_url);
 
               set({
@@ -442,17 +505,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
               return { success: true };
             }
+          } else {
+            console.warn("[Auth] Tokens not found in URL. URL was:", resultUrl);
           }
+        } else {
+          console.log("[Auth] WebBrowser did not return success:", browserResult?.type);
         }
 
         set({ loading: false });
-        return { success: false, error: "Login cancelado" };
+        // Se chegamos aqui sem sucesso mas sem erro explícito
+        return { success: false, error: "Login não concluído (retorno inválido)" };
       }
 
       set({ loading: false });
       return { success: false, error: "Falha ao iniciar login" };
     } catch (error) {
-      if ((error as { code?: string }).code === "ERR_REQUEST_CANCELED") {
+      if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+
+      console.error("[Auth] Apple login exception:", error);
+      const err = error as any;
+      if (err?.code === "ERR_REQUEST_CANCELED") {
         set({ loading: false });
         return { success: false, error: "Login cancelado" };
       }

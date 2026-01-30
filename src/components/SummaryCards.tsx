@@ -27,7 +27,7 @@ const Card = ({ title, amount, color }: { title: string; amount: number; color: 
   const theme = useTheme();
 
   return (
-    <Surface style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]} elevation={1}>
+    <Surface style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]} elevation={1} aria-label={`Relatório de ${title}`}>
       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
         {title}
       </Text>

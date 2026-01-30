@@ -185,8 +185,8 @@ export default function LoginScreen() {
   const Background = ({ children }: { children: React.ReactNode }) => {
     if (isGlass) {
       const gradientColors: [string, string, ...string[]] = isDark
-        ? ["#0F0C29", "#302B63", "#24243E"] // Deep Purple
-        : ["#667eea", "#764ba2"]; // Vibrant Purple
+        ? ["#002420", "#004D40", "#121212"] // Deep Teal/Green for Finance
+        : ["#00695C", "#4DB6AC"]; // Vibrant Teal
 
       return (
         <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -235,8 +235,9 @@ export default function LoginScreen() {
                         theme={{ roundness: 12 }}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        autoComplete="email"
                         left={<TextInput.Icon icon="email-outline" />}
+                        accessibilityLabel={t("auth.email")}
+                        aria-label={t("auth.email")}
                       />
                     )}
                   />
@@ -254,9 +255,10 @@ export default function LoginScreen() {
                         style={[styles.input, isGlass && styles.glassInput]}
                         error={!!loginForm.formState.errors.password}
                         theme={{ roundness: 12 }}
-                        autoCapitalize="none"
                         left={<TextInput.Icon icon="lock-outline" />}
                         right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
+                        accessibilityLabel={t("auth.password")}
+                        aria-label={t("auth.password")}
                       />
                     )}
                   />
@@ -283,6 +285,7 @@ export default function LoginScreen() {
                         error={!!signUpForm.formState.errors.displayName}
                         theme={{ roundness: 12 }}
                         left={<TextInput.Icon icon="account-outline" />}
+                        accessibilityLabel={t("auth.displayName")}
                       />
                     )}
                   />
@@ -342,6 +345,7 @@ export default function LoginScreen() {
                         theme={{ roundness: 12 }}
                         autoCapitalize="none"
                         left={<TextInput.Icon icon="lock-check-outline" />}
+                        accessibilityLabel={t("auth.confirmPassword")}
                       />
                     )}
                   />
@@ -380,7 +384,7 @@ export default function LoginScreen() {
                 style={[styles.socialButton, styles.appleButton]}
                 contentStyle={styles.socialButtonContent}
                 icon={() => <Ionicons name="logo-apple" size={20} color="#FFFFFF" />}
-                buttonColor="#000000"
+                buttonColor="#121212"
                 textColor="#FFFFFF"
                 disabled={loading}
               >
@@ -391,6 +395,12 @@ export default function LoginScreen() {
               <Button mode="text" onPress={toggleMode} style={styles.toggleButton} textColor={colors.primary} disabled={loading}>
                 {isSignUp ? t("auth.alreadyHaveAccount") : t("auth.createAccount")}
               </Button>
+
+              {/* Security Indicator */}
+              <View style={styles.securityIndicator}>
+                <Ionicons name="shield-checkmark" size={12} color={colors.primary} style={{ opacity: 0.6 }} />
+                <ThemedText style={styles.securityText}>{t("auth.secureConnection", "Conexão Criptografada & Segura")}</ThemedText>
+              </View>
             </ThemedContainer>
           </View>
         </TouchableWithoutFeedback>
@@ -495,9 +505,22 @@ const styles = StyleSheet.create({
     height: 48,
   },
   appleButton: {
-    backgroundColor: "#000000",
+    backgroundColor: "#121212",
   },
   toggleButton: {
     marginTop: 8,
+  },
+  securityIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    gap: 4,
+    opacity: 0.6,
+  },
+  securityText: {
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

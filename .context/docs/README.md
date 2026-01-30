@@ -12,18 +12,28 @@ Welcome to the repository knowledge base. Start with the project overview, then 
 - [Tooling & Productivity Guide](./tooling.md)
 
 ## Repository Snapshot
+- `AGENTS.md/`
+- `android/`
 - `app/`
 - `app.json/`
 - `assets/`
 - `babel.config.js/`
 - `components/`
 - `constants/`
+- `docs/` — Living documentation produced by this tool.
+- `eas.json/`
 - `expo-env.d.ts/`
+- `jest.config.js/`
+- `jest.setup.js/`
 - `package-lock.json/`
 - `package.json/`
 - `README.md/`
+- `scripts/`
+- `services/`
 - `src/` — TypeScript source files and CLI entrypoints.
+- `stores/`
 - `tsconfig.json/`
+- `ux_audit_report.txt/`
 
 ## Document Map
 | Guide | File | Primary Inputs |

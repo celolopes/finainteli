@@ -1,8 +1,10 @@
 ---
 slug: authentication
 category: features
-generatedAt: 2026-01-20T19:03:31.118Z
+generatedAt: 2026-01-30T18:02:25.441Z
 relevantFiles:
+  - ..\..\..\AppData\Local\Programs\Antigravity\src\store\authStore.ts
+  - ..\..\..\AppData\Local\Programs\Antigravity\app\auth\callback.tsx
   - ..\..\..\AppData\Local\Programs\Antigravity\app\(auth)\_layout.tsx
   - ..\..\..\AppData\Local\Programs\Antigravity\app\(auth)\login.tsx
 ---
@@ -13,5 +15,7 @@ relevantFiles:
 
 ### Implementation Details
 
+- Auth-related symbol: AuthState
+- Auth-related symbol: AuthCallbackScreen
 - Auth-related symbol: AuthLayout
-- Auth-related symbol: LoginScreen
+- Auth-related symbol: LoginFormData

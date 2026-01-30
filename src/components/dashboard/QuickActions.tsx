@@ -27,7 +27,7 @@ export const QuickActions = () => {
         {actions.map((action, index) => (
           <Animated.View key={action.label} entering={FadeInRight.delay(300 + index * 100).springify()} style={styles.actionWrapper}>
             <TouchableOpacity activeOpacity={0.7} onPress={() => action.route !== "#" && router.push(action.route as any)}>
-              <Surface style={[styles.iconContainer, { backgroundColor: theme.colors.elevation.level1 }]} elevation={1}>
+              <Surface style={[styles.iconContainer, { backgroundColor: theme.colors.elevation.level1 }]} elevation={1} aria-label={action.label}>
                 <Icon source={action.icon} size={24} color={action.color} />
               </Surface>
               <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>

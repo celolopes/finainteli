@@ -147,6 +147,7 @@ export default function ReportsScreen() {
             { value: "year", label: "Ano" },
           ]}
           style={styles.segmented}
+          aria-label="Seletor de Período do Relatório"
         />
 
         <View style={styles.section}>
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginBottom: 24,
-    backgroundColor: "rgba(108, 99, 255, 0.1)", // Primary with opacity
+    backgroundColor: "rgba(0, 150, 136, 0.1)", // Teal override
     padding: 24,
     borderRadius: 32,
   },

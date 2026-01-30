@@ -14,7 +14,7 @@ export const AIInsightsCard = ({ insights, loading, onRefresh }: AIInsightsCardP
 
   if (loading) {
     return (
-      <Card style={styles.card}>
+      <Card style={styles.card} aria-label="Carregando Análise da IA">
         <Card.Content>
           <Text>Carregando análise da IA...</Text>
         </Card.Content>
@@ -27,7 +27,7 @@ export const AIInsightsCard = ({ insights, loading, onRefresh }: AIInsightsCardP
   return (
     <View style={styles.container}>
       {insights.map((insight, index) => (
-        <Card key={index} style={[styles.card, { borderLeftColor: getImpactColor(insight.type, theme), borderLeftWidth: 4 }]}>
+        <Card key={index} style={[styles.card, { borderLeftColor: getImpactColor(insight.type, theme), borderLeftWidth: 4 }]} aria-label={`Dica de IA: ${insight.title}`}>
           <Card.Content style={styles.content}>
             <View style={styles.header}>
               <Text style={styles.icon}>{insight.icon}</Text>

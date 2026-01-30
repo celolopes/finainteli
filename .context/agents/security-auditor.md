@@ -4,7 +4,7 @@ name: Security Auditor
 description: Identify security vulnerabilities
 agentType: security-auditor
 phases: [R, V]
-generated: 2026-01-20
+generated: 2026-01-30
 status: unfilled
 scaffoldVersion: "2.0.0"
 ---

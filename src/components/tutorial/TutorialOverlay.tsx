@@ -80,7 +80,7 @@ export const TutorialOverlay = () => {
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 9999 }]} pointerEvents="box-none">
       {/* O Spotlight Overlay (Mascara) */}
-      <Animated.View style={[styles.spotlight, { borderColor: "rgba(0,0,0,0.85)" }, overlayStyle]} />
+      <Animated.View style={[styles.spotlight, { borderColor: "rgba(18, 18, 18, 0.85)" }, overlayStyle]} aria-label="Foco do Tutorial" />
 
       {/* Borda de Destaque (Visual Indicator) */}
       <Animated.View
@@ -101,7 +101,7 @@ export const TutorialOverlay = () => {
 
       {/* Tooltip Card */}
       <Animated.View style={tooltipStyle}>
-        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level3 }]} elevation={5}>
+        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level3 }]} elevation={5} aria-label={`Passo do Tutorial: ${currentStep.title}`}>
           <View style={styles.cardContent}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <View style={styles.headerRow}>
@@ -113,7 +113,7 @@ export const TutorialOverlay = () => {
                 {currentStep.description}
               </Text>
             </View>
-            <IconButton icon="close" size={20} onPress={skipTutorial} iconColor={theme.colors.onSurfaceVariant} />
+            <IconButton icon="close" size={20} onPress={skipTutorial} iconColor={theme.colors.onSurfaceVariant} aria-label="Fechar Tutorial" />
           </View>
 
           <View style={styles.actions}>

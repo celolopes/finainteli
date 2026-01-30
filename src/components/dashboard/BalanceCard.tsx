@@ -5,6 +5,9 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Icon, Surface, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInUp, Layout, ZoomIn } from "react-native-reanimated";
 import { useFinancialStore } from "../../store/financialStore";
+import { Database } from "../../types/schema";
+
+type ExtendedCreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & { next_invoice_estimate?: number };
 
 const STORAGE_KEY = "@finainteli_balance_expanded";
 
@@ -75,7 +78,7 @@ export const BalanceCard = () => {
     <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.container}>
       {/* Card 1: Patrimônio Total (Expandable) */}
       <Pressable onPress={toggleExpanded} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1 })}>
-        <Surface style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]} elevation={2}>
+        <Surface style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]} elevation={2} aria-label="Patrimônio Total">
           <View style={styles.header}>
             <Text variant="labelLarge" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}>
               {t("dashboard.patrimony", "Patrimônio Total")}
@@ -141,12 +144,60 @@ export const BalanceCard = () => {
                         </Text>
                       </View>
                       <View style={{ alignItems: "flex-end" }}>
-                        <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-                          {formatMoney(card.current_balance)}
-                        </Text>
-                        <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7 }}>
-                          Limit: {formatMoney(card.credit_limit)}
-                        </Text>
+                        {/* Fatura Fechada (Se fechada e com saldo) */}
+                        {(() => {
+                          const now = new Date();
+                          const closingDay = card.closing_day || 1;
+                          const isClosed = now.getDate() >= closingDay;
+                          const nextInvoice = (card as ExtendedCreditCard).next_invoice_estimate || 0;
+                          // Show "Fatura Fechada" only if there is balance EXCEEDING the open invoice estimate
+                          // This handles cases where the user pays the closed amount, leaving only the open amount.
+                          const hasClosedDebt = (card.current_balance || 0) > nextInvoice;
+
+                          if (isClosed && hasClosedDebt) {
+                            return (
+                              <>
+                                <View style={{ alignItems: "flex-end", marginBottom: 4 }}>
+                                  <Text variant="labelSmall" style={{ color: theme.colors.error, fontWeight: "bold" }}>
+                                    Fatura Fechada
+                                  </Text>
+                                  <Text variant="bodyMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
+                                    {formatMoney(card.current_balance)}
+                                  </Text>
+                                </View>
+
+                                {/* Show Open Invoice Preview too */}
+                                <View style={{ alignItems: "flex-end", marginBottom: 4, opacity: 0.7 }}>
+                                  <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer }}>
+                                    Fatura Aberta
+                                  </Text>
+                                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
+                                    {formatMoney(nextInvoice)}
+                                  </Text>
+                                </View>
+
+                                <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
+                                  Total
+                                </Text>
+                                <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
+                                  {formatMoney(card.current_balance + nextInvoice)}
+                                </Text>
+                              </>
+                            );
+                          }
+
+                          // Default view (Open Invoice only)
+                          return (
+                            <>
+                              <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7 }}>
+                                Total
+                              </Text>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
+                                {formatMoney(card.current_balance)}
+                              </Text>
+                            </>
+                          );
+                        })()}
                       </View>
                     </View>
                   ))}
@@ -158,7 +209,7 @@ export const BalanceCard = () => {
       </Pressable>
 
       {/* Card 2: Balanço Mensal */}
-      <Surface style={[styles.card, styles.monthlyCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+      <Surface style={[styles.card, styles.monthlyCard, { backgroundColor: theme.colors.surface }]} elevation={1} aria-label="Balanço Mensal">
         <View style={styles.header}>
           <Text variant="labelLarge" style={{ color: theme.colors.onSurface, opacity: 0.8 }}>
             {t("dashboard.monthlyBalance", "Balanço do Mês")}
@@ -263,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.05)",
+    borderBottomColor: "rgba(18, 18, 18, 0.05)",
   },
   itemLeft: {
     flexDirection: "row",

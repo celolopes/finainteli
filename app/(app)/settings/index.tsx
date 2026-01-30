@@ -5,8 +5,9 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
-import { Appbar, Avatar, Button, Divider, Icon, List, Surface, Text, useTheme } from "react-native-paper";
+import { Appbar, Avatar, Button, Dialog, Divider, Icon, List, Paragraph, Portal, Surface, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { database } from "../../../src/database";
 import { authHelpers, supabase } from "../../../src/services/supabase";
 import { useAuthStore } from "../../../src/store/authStore";
 import { useSecurityStore } from "../../../src/store/securityStore";
@@ -23,6 +24,9 @@ export default function SettingsScreen() {
   const [notifEnabled, setNotifEnabled] = useState(profile?.notifications_enabled ?? true);
   const [bioSupported, setBioSupported] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const tapCountRef = React.useRef(0);
 
   React.useEffect(() => {
     LocalAuthentication.supportedAuthenticationTypesAsync().then((types) => {
@@ -119,6 +123,42 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleVersionTap = () => {
+    tapCountRef.current += 1;
+    if (tapCountRef.current >= 7) {
+      tapCountRef.current = 0;
+      // Decouple navigation from the tap event loop to avoid Fabric measurement race conditions
+      setTimeout(() => {
+        router.push("/(app)/settings/debug" as any);
+      }, 100);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!user) return;
+    setIsDeleting(true);
+    try {
+      // 1. Reset Remote
+      const success = await authHelpers.resetAccount(user.id);
+      if (!success) throw new Error("Falha ao apagar dados remotos");
+
+      // 2. Reset Local
+      await database.write(async () => {
+        await database.unsafeResetDatabase();
+      });
+
+      // 3. Sign Out
+      await signOut();
+      router.replace("/(auth)/login");
+    } catch (e) {
+      Alert.alert("Erro", "Não foi possível apagar os dados. Tente novamente.");
+      console.error(e);
+      setIsDeleting(false);
+    } finally {
+      setDeleteVisible(false);
+    }
+  };
+
   const getInitials = () => {
     const name = profile?.display_name || user?.email || "User";
     return name.substring(0, 2).toUpperCase();
@@ -176,7 +216,7 @@ export default function SettingsScreen() {
               title={t("profile.notifications")}
               description={t("profile.notificationsDesc") || "Receber alertas de orçamento"}
               left={(props) => <List.Icon {...props} icon="bell-outline" color={theme.colors.primary} />}
-              right={() => <Switch value={notifEnabled} onValueChange={toggleNotifications} />}
+              right={() => <Switch value={notifEnabled} onValueChange={toggleNotifications} aria-label="Ativar Notificações" />}
               style={styles.listItem}
             />
           </List.Section>
@@ -207,7 +247,7 @@ export default function SettingsScreen() {
               title="Bloqueio de App"
               description="Exigir PIN ao abrir"
               left={(props) => <List.Icon {...props} icon="lock-outline" color={theme.colors.primary} />}
-              right={() => <Switch value={isSecurityEnabled} onValueChange={handleSecurityToggle} />}
+              right={() => <Switch value={isSecurityEnabled} onValueChange={handleSecurityToggle} aria-label="Ativar Bloqueio" />}
               style={styles.listItem}
             />
 
@@ -219,7 +259,7 @@ export default function SettingsScreen() {
                     title="Biometria"
                     description="Usar Face ID / Touch ID"
                     left={(props) => <List.Icon {...props} icon="fingerprint" color={theme.colors.primary} />}
-                    right={() => <Switch value={isBiosEnabled} onValueChange={toggleBiometrics} />}
+                    right={() => <Switch value={isBiosEnabled} onValueChange={toggleBiometrics} aria-label="Usar Biometria" />}
                     style={styles.listItem}
                   />
                 )}
@@ -237,16 +277,51 @@ export default function SettingsScreen() {
           </List.Section>
         </Surface>
 
+        <Surface style={[styles.section, { backgroundColor: theme.colors.errorContainer, borderRadius: 16 }]} elevation={1}>
+          <List.Section>
+            <List.Subheader style={[styles.subheader, { color: theme.colors.error }]}>Zona de Perigo</List.Subheader>
+            <List.Item
+              title="Resetar Dados do App"
+              description="Limpa transações e contas, mas mantém seu cadastro"
+              left={(props) => <List.Icon {...props} icon="delete-restore" color={theme.colors.error} />}
+              onPress={() => setDeleteVisible(true)}
+              titleStyle={{ color: theme.colors.error }}
+              descriptionStyle={{ color: theme.colors.error }}
+            />
+          </List.Section>
+        </Surface>
+
         <View style={styles.logoutContainer}>
           <Button mode="contained-tonal" onPress={handleSignOut} textColor={theme.colors.error} style={{ backgroundColor: theme.colors.errorContainer }} icon="logout">
             {t("auth.logout")}
           </Button>
 
-          <Text variant="bodySmall" style={{ textAlign: "center", marginTop: 16, color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
-            FinAInteli v1.0.0
-          </Text>
+          <TouchableOpacity onPress={handleVersionTap} activeOpacity={0.7}>
+            <Text variant="bodySmall" style={{ textAlign: "center", marginTop: 16, color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
+              FinAInteli v1.0.0
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Portal>
+        <Dialog visible={deleteVisible} onDismiss={() => setDeleteVisible(false)}>
+          <Dialog.Title style={{ color: theme.colors.error }}>RESETAR DADOS DO APP?</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Tem certeza? Isso apagará todas as suas movimentações financeiras para você recomeçar do zero.
+              {"\n\n"}
+              <Text style={{ fontWeight: "bold" }}>Sua conta e login NÃO serão excluídos.</Text>
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteVisible(false)}>Cancelar</Button>
+            <Button onPress={handleConfirmDelete} loading={isDeleting} textColor={theme.colors.error}>
+              Confirmar Reset
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }
@@ -266,7 +341,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 6,
     borderWidth: 2,
-    borderColor: "white", // Or match background
+    borderColor: "#e0e0e0",
   },
   section: {
     marginBottom: 16,

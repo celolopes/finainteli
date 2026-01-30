@@ -1,7 +1,7 @@
 ---
 slug: background-jobs
 category: operations
-generatedAt: 2026-01-20T19:03:31.118Z
+generatedAt: 2026-01-30T18:02:30.560Z
 relevantFiles:
   - ..\..\..\AppData\Local\Programs\Antigravity\app\(app)\(tabs)\chat.tsx
 ---

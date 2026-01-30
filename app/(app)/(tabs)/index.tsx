@@ -168,7 +168,11 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchDashboardData} tintColor={theme.colors.primary} />}>
+      <ScrollView
+        aria-label="Dashboard Principal"
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchDashboardData} tintColor={theme.colors.primary} />}
+      >
         {/* Header com Avatar e Saudação (Liquid Glass iOS / M3 Android) */}
         <CoachMarkTarget id="header">
           <UserHeader />
@@ -188,7 +192,7 @@ export default function HomeScreen() {
               <View style={styles.dashboardContent}>
                 {/* Saldo e Resumo */}
                 <CoachMarkTarget id="balance" style={{ marginBottom: 24 }}>
-                  <BalanceCard />
+                  <BalanceCard aria-label="Resumo do Saldo" />
                 </CoachMarkTarget>
 
                 {/* Ações Rápidas */}
@@ -198,7 +202,13 @@ export default function HomeScreen() {
 
                 {/* Dica IA */}
                 <CoachMarkTarget id="tips">
-                  <SmartTipCard tip={aiTip || t("reports.advisor.analyzing")} loading={tipLoading} onPressReport={() => router.push("/reports/ai-advisor" as any)} onRefreshTip={generateNewTip} />
+                  <SmartTipCard
+                    tip={aiTip || t("reports.advisor.analyzing")}
+                    loading={tipLoading}
+                    onPressReport={() => router.push("/reports/ai-advisor" as any)}
+                    onRefreshTip={generateNewTip}
+                    aria-label="Dica da IA"
+                  />
                 </CoachMarkTarget>
 
                 {/* Maiores Gastos (Simples por enquanto) */}
@@ -208,13 +218,17 @@ export default function HomeScreen() {
                       {t("dashboard.topSpending")}
                     </Text>
                     {spendingByCategory.map((cat, index) => (
-                      <View key={cat.x} style={styles.spendingItem}>
+                      <View key={cat.x} style={styles.spendingItem} aria-label={`Categoria ${cat.x}: ${formatMoney(cat.y)}`}>
                         <View style={[styles.dot, { backgroundColor: cat.color }]} />
-                        <Text style={styles.catName}>{cat.x}</Text>
-                        <View style={styles.barContainer}>
+                        <Text style={styles.catName} aria-label="Nome da Categoria">
+                          {cat.x}
+                        </Text>
+                        <View style={styles.barContainer} aria-label="Porcentagem de gasto">
                           <View style={[styles.bar, { width: `${Math.min((cat.y / monthlySummary.expense) * 100, 100)}%`, backgroundColor: cat.color }]} />
                         </View>
-                        <Text style={styles.amount}>{formatMoney(cat.y)}</Text>
+                        <Text style={styles.amount} aria-label="Valor total gasto">
+                          {formatMoney(cat.y)}
+                        </Text>
                       </View>
                     ))}
                   </View>
@@ -272,7 +286,7 @@ const styles = StyleSheet.create({
   barContainer: {
     flex: 1,
     height: 8,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "rgba(18, 18, 18, 0.1)",
     borderRadius: 4,
     marginRight: 12,
   },

@@ -8,7 +8,7 @@ export default function Index() {
   // Show loading spinner while auth is initializing
   if (!initialized) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
         <ActivityIndicator size="large" color="#10B981" />
       </View>
     );
