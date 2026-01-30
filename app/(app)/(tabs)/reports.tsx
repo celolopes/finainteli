@@ -94,7 +94,7 @@ export default function ReportsScreen() {
           </View>
 
           <Text variant="headlineMedium" style={styles.lockedTitle}>
-            {t("reports.locked.title", "Análises & IA")}
+            {t("reports.locked.title", "Análises & Insights")}
           </Text>
 
           <Text variant="bodyLarge" style={styles.lockedDesc}>

@@ -4,10 +4,14 @@ export interface Transaction {
   amount: number;
   type: "income" | "expense" | "transfer";
   category: string;
+  categoryIcon?: string;
+  categoryColor?: string;
   date: string;
   notes?: string;
   sync_status?: string;
   credit_card_id?: string | null;
+  account_id?: string | null;
+  category_id?: string | null;
 }
 
 export interface DetailedTransaction {

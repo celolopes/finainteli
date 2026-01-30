@@ -1,14 +1,16 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, FlatList, StyleSheet, View } from "react-native";
+import { Alert, SectionList, StyleSheet, View } from "react-native";
 import { Chip, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { TransactionItem } from "../../../src/components/TransactionItem";
+import { FiltersModal, FilterState } from "../../../src/components/transactions/FiltersModal";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { ExportService } from "../../../src/services/export";
 import { FinancialService } from "../../../src/services/financial";
 import { Transaction } from "../../../src/types";
+import { groupTransactionsByDate } from "../../../src/utils/transactions";
 
 export default function TransactionsScreen() {
   const theme = useTheme();
@@ -21,11 +23,18 @@ export default function TransactionsScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  // Local state for search/filter remains, but operates on fetched data
+  // Advanced Filters State
+  const [filters, setFilters] = useState<FilterState>({
+    type: "all",
+    accountIds: [],
+    categoryIds: [],
+    dateRange: { start: null, end: null },
+  });
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState("all");
 
-  const FILTERS = [
+  // Quick Filters for Type
+  const QUICK_FILTERS = [
     { key: "all", label: t("transactions.filter.all") },
     { key: "income", label: t("transactions.filter.income") },
     { key: "expense", label: t("transactions.filter.expense") },
@@ -37,17 +46,21 @@ export default function TransactionsScreen() {
       const data = await FinancialService.getTransactions();
 
       // Adapt DB data to UI format
-      const adapted =
+      const adapted: Transaction[] =
         data?.map((txn) => ({
           id: txn.id,
           title: txn.description || t("transactions.noDescription"),
           amount: txn.amount,
           type: txn.type,
           category: txn.category?.name || "Outros",
+          categoryIcon: txn.category?.icon,
+          categoryColor: txn.category?.color,
           date: txn.transaction_date,
           notes: txn.notes,
           sync_status: txn.sync_status,
           credit_card_id: txn.credit_card_id,
+          account_id: txn.account_id, // Ensure we map this for filtering
+          category_id: txn.category_id, // Ensure we map this for filtering
         })) || [];
 
       setTransactions(adapted);
@@ -104,11 +117,26 @@ export default function TransactionsScreen() {
     }, []),
   );
 
-  const filteredData = transactions.filter((tx) => {
-    const matchesSearch = tx.title?.toLowerCase().includes(searchQuery.toLowerCase()) || tx.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === "all" ? true : tx.type === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const sections = useMemo(() => {
+    const filtered = transactions.filter((tx) => {
+      const matchesSearch = tx.title?.toLowerCase().includes(searchQuery.toLowerCase()) || tx.category?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesType = filters.type === "all" ? true : tx.type === filters.type;
+
+      const matchesAccount =
+        filters.accountIds.length === 0 ? true : (tx.account_id && filters.accountIds.includes(tx.account_id)) || (tx.credit_card_id && filters.accountIds.includes(tx.credit_card_id!));
+
+      const matchesCategory = filters.categoryIds.length === 0 ? true : tx.category_id && filters.categoryIds.includes(tx.category_id as string);
+
+      // TODO: Date Range Logic if needed
+      // const matchesDate = ...
+
+      return matchesSearch && matchesType && matchesAccount && matchesCategory;
+    });
+    return groupTransactionsByDate(filtered);
+  }, [transactions, searchQuery, filters]);
+
+  const activeFiltersCount = filters.accountIds.length + filters.categoryIds.length + (filters.type !== "all" ? 1 : 0);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -118,23 +146,39 @@ export default function TransactionsScreen() {
           <IconButton icon="export" mode="contained" onPress={handleExport} loading={exporting} style={{ marginLeft: 8 }} />
         </View>
         <View style={styles.filters}>
-          {FILTERS.map((f) => (
-            <Chip key={f.key} selected={filter === f.key} onPress={() => setFilter(f.key)} style={styles.chip} showSelectedOverlay>
+          <IconButton
+            icon="tune"
+            mode={activeFiltersCount > 0 && filters.type === "all" ? "contained" : "outlined"} // visual feedback
+            onPress={() => setFiltersVisible(true)}
+            style={{ margin: 0, marginRight: 8 }}
+          />
+          {QUICK_FILTERS.map((f) => (
+            <Chip key={f.key} selected={filters.type === f.key} onPress={() => setFilters((prev) => ({ ...prev, type: f.key as any }))} style={styles.chip} showSelectedOverlay>
               {f.label}
             </Chip>
           ))}
         </View>
       </View>
 
-      <FlatList
-        data={filteredData}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <TransactionItem transaction={item} onPress={() => router.push(`/transactions/${item.id}`)} />}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={[styles.sectionHeader, { backgroundColor: theme.colors.background }]}>
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8, fontWeight: "bold" }}>
+              {title}
+            </Text>
+          </View>
+        )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 32, opacity: 0.5 }}>{t("transactions.noResults")}</Text>}
+        stickySectionHeadersEnabled={false}
       />
 
       <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} color={theme.colors.onPrimary} onPress={() => router.push("/add-transaction")} />
+
+      <FiltersModal visible={filtersVisible} onDismiss={() => setFiltersVisible(false)} onApply={setFilters} currentFilters={filters} />
 
       <PaywallModal
         visible={showPaywall}
@@ -167,6 +211,10 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: 80,
+  },
+  sectionHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   fab: {
     position: "absolute",

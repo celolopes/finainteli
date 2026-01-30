@@ -205,7 +205,7 @@ export default function LoginScreen() {
             <ThemedContainer style={styles.card} elevation={isGlass ? 0 : 3} intensity={45}>
               {/* Animated Logo */}
               <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
-                <Image source={require("../../assets/images/icon.png")} style={styles.logo} resizeMode="contain" />
+                <Image source={require("../../assets/images/adaptive-icon.png")} style={styles.logo} resizeMode="contain" />
               </Animated.View>
 
               {/* App Name */}

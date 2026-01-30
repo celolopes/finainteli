@@ -162,6 +162,7 @@ export async function mySync() {
         }
       },
       migrationsEnabledAtVersion: 1,
+      sendCreatedAsUpdated: true,
     });
   } finally {
     isSyncing = false;

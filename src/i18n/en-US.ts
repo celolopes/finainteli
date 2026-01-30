@@ -210,6 +210,10 @@ export default {
       intro: "Your personal financial advisor analyzed your spending in detail. Here is what they found:",
       empty: "No insights available for this period at the moment.",
     },
+    locked: {
+      title: "Reports & Insights",
+      desc: "Turn your data into wealth. Unlock powerful insights and make better decisions.",
+    },
     periods: {
       month: "This Month",
       year: "This Year",

@@ -1,17 +1,28 @@
 import { Drawer } from "expo-router/drawer";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useTheme } from "react-native-paper";
 
+import { SyncLoadingScreen } from "../../src/components/ui/SyncLoadingScreen";
 import { useBudgetMonitor } from "../../src/hooks/useBudgetMonitor";
 import { useSync } from "../../src/hooks/useSync";
+import { useFinancialStore } from "../../src/store/financialStore";
 
 export default function DrawerLayout() {
   const theme = useTheme();
   useBudgetMonitor();
-  useSync();
+  const { isSyncing } = useSync();
+  const { fetchDashboardData } = useFinancialStore();
+
+  useEffect(() => {
+    if (!isSyncing) {
+      fetchDashboardData();
+    }
+  }, [isSyncing]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <SyncLoadingScreen visible={isSyncing} />
       <Drawer
         screenOptions={{
           headerShown: false,

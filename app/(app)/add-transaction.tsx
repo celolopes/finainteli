@@ -1,13 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Avatar, Button, Dialog, Divider, HelperText, IconButton, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
+import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../src/components/DescriptionAutocomplete";
 import { FinancialService } from "../../src/services/financial";
 import { CurrencyUtils } from "../../src/utils/currency";
 
@@ -49,7 +51,7 @@ export default function AddTransactionScreen() {
 
   const onChangeDate = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS until user closes (or handle differently) - simpler: close on Android, valid on iOS
+    setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS until user closes (or handle differently)
     if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
@@ -66,6 +68,7 @@ export default function AddTransactionScreen() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -78,6 +81,43 @@ export default function AddTransactionScreen() {
       credit_card_id: preselectedCardId || "", // Initialize if present
     },
   });
+
+  // Reset form on focus to ensure clean state
+  useFocusEffect(
+    useCallback(() => {
+      // Clean form state when opening "Quick Access"
+      const timer = setTimeout(() => {
+        reset({
+          title: "",
+          amount: "",
+          type: "expense",
+          category_id: "",
+          use_card: !!preselectedCardId,
+          credit_card_id: preselectedCardId || "",
+          account_id: accounts.length > 0 ? accounts[0].id : "",
+        });
+        setDate(new Date());
+        setIsInstallment(false);
+        setIsRecurring(false);
+        setInstallments("2");
+        setRecurrenceCount("12");
+      }, 0);
+      return () => clearTimeout(timer);
+    }, [reset, preselectedCardId, accounts]),
+  );
+
+  const handleSuggestionSelect = (suggestion: AutocompleteSuggestion) => {
+    if (suggestion.category_id) setValue("category_id", suggestion.category_id);
+    if (suggestion.type) setValue("type", suggestion.type as "income" | "expense");
+
+    if (suggestion.credit_card_id) {
+      setValue("use_card", true);
+      setValue("credit_card_id", suggestion.credit_card_id);
+    } else if (suggestion.account_id) {
+      setValue("use_card", false);
+      setValue("account_id", suggestion.account_id);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -264,13 +304,11 @@ export default function AddTransactionScreen() {
             control={control}
             name="title"
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                label={t("transactions.description")}
+              <DescriptionAutocomplete
                 value={value}
                 onChangeText={onChange}
-                mode="outlined"
-                style={{ backgroundColor: theme.colors.surface }}
-                error={!!errors.title}
+                onSelectSuggestion={handleSuggestionSelect}
+                label={t("transactions.description")}
                 placeholder="Ex: Almoço, Uber, Salário..."
               />
             )}
@@ -293,7 +331,6 @@ export default function AddTransactionScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Source Selector (Account/Card) */}
         {/* Source Selector (Account/Card) */}
         <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -318,16 +355,7 @@ export default function AddTransactionScreen() {
               <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
             </View>
           </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={date}
-              mode="date"
-              is24Hour={true}
-              onChange={onChangeDate}
-              display={Platform.OS === "ios" ? "spinner" : "default"} // Spinner is safer for Modal-like behavior on iOS if not in a real modal
-            />
-          )}
+          {showDatePicker && <DateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChangeDate} display={Platform.OS === "ios" ? "spinner" : "default"} />}
           {Platform.OS === "ios" && showDatePicker && <Button onPress={() => setShowDatePicker(false)}>Confirmar Data</Button>}
         </View>
 
@@ -391,7 +419,6 @@ export default function AddTransactionScreen() {
                   ]}
                   style={{ marginBottom: 8 }}
                 />
-                {/* Additional options via another row or dropdown if needed, currently showing top 3 */}
                 <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 12 }}>
                   {["daily", "biweekly", "semiannual", "annual"].map((opt) => (
                     <TouchableOpacity key={opt} onPress={() => setRecurrenceFreq(opt as any)}>
