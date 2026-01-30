@@ -1,4 +1,4 @@
-import { Drawer } from "expo-router/drawer";
+import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useTheme } from "react-native-paper";
@@ -8,7 +8,7 @@ import { useBudgetMonitor } from "../../src/hooks/useBudgetMonitor";
 import { useSync } from "../../src/hooks/useSync";
 import { useFinancialStore } from "../../src/store/financialStore";
 
-export default function DrawerLayout() {
+export default function AppLayout() {
   const theme = useTheme();
   useBudgetMonitor();
   const { isSyncing } = useSync();
@@ -23,23 +23,15 @@ export default function DrawerLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SyncLoadingScreen visible={isSyncing} />
-      <Drawer
+      <Stack
         screenOptions={{
           headerShown: false,
-          drawerStyle: { backgroundColor: theme.colors.surface },
-          drawerActiveTintColor: theme.colors.primary,
-          drawerInactiveTintColor: theme.colors.onSurface,
+          contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
-        <Drawer.Screen
-          name="(tabs)"
-          options={{
-            drawerLabel: "Dashboard",
-            headerShown: false,
-          }}
-        />
-        {/* We can add more specific drawer screens if needed that are NOT tabs */}
-      </Drawer>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Detail screens and modals will be managed by this stack */}
+      </Stack>
     </GestureHandlerRootView>
   );
 }

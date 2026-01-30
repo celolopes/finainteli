@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: "transactions",
@@ -16,6 +16,7 @@ export default appSchema({
         { name: "notes", type: "string", isOptional: true },
         { name: "transaction_date", type: "number" }, // Use timestamp for simpler sync
         { name: "currency_code", type: "string" },
+        { name: "status", type: "string", isOptional: true },
         { name: "created_at", type: "number" },
         { name: "updated_at", type: "number" },
         { name: "deleted_at", type: "number", isOptional: true },

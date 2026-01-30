@@ -178,7 +178,20 @@ export default function TransactionDetails() {
         transaction_date: date.toISOString(),
       };
 
-      await FinancialService.updateTransaction(id, updates);
+      const complexOptions = {
+        isInstallment: data.use_card && isInstallment,
+        installments: parseInt(installments) || 1,
+        installmentMode,
+        isRecurring: !isInstallment && isRecurring,
+        recurrenceFreq,
+        recurrenceCount: parseInt(recurrenceCount) || 1,
+      };
+
+      if ((complexOptions.isInstallment && complexOptions.installments > 1) || (complexOptions.isRecurring && complexOptions.recurrenceCount > 1)) {
+        await FinancialService.updateTransactionToComplex(id, updates, complexOptions);
+      } else {
+        await FinancialService.updateTransaction(id, updates);
+      }
       router.back();
     } catch (e) {
       console.error(e);

@@ -23,5 +23,14 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 4,
+      steps: [
+        addColumns({
+          table: "transactions",
+          columns: [{ name: "status", type: "string", isOptional: true }],
+        }),
+      ],
+    },
   ],
 });

@@ -34,7 +34,7 @@ export const TransactionItem = ({ transaction, onPress }: Props) => {
   const iconColor = transaction.categoryColor || primaryColor;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.container}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={[styles.container, transaction.status === "pending" && { opacity: 0.5 }]}>
       {/* Icon Circle */}
       <View style={[styles.iconContainer, { backgroundColor: theme.colors.elevation.level2 }]}>
         <MaterialCommunityIcons name={iconName} size={24} color={iconColor} />

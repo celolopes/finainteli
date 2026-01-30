@@ -12,6 +12,7 @@ export interface Transaction {
   credit_card_id?: string | null;
   account_id?: string | null;
   category_id?: string | null;
+  status?: string;
 }
 
 export interface DetailedTransaction {

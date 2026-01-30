@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, SectionList, StyleSheet, View } from "react-native";
 import { Chip, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
@@ -17,6 +17,7 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isPro } = usePremium();
+  const listRef = useRef<SectionList>(null);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,7 @@ export default function TransactionsScreen() {
           credit_card_id: txn.credit_card_id,
           account_id: txn.account_id, // Ensure we map this for filtering
           category_id: txn.category_id, // Ensure we map this for filtering
+          status: txn.status,
         })) || [];
 
       setTransactions(adapted);
@@ -138,6 +140,26 @@ export default function TransactionsScreen() {
 
   const activeFiltersCount = filters.accountIds.length + filters.categoryIds.length + (filters.type !== "all" ? 1 : 0);
 
+  const hasScrolledRef = useRef(false);
+
+  useEffect(() => {
+    if (!loading && sections.length > 0 && !hasScrolledRef.current) {
+      const todayTitle = t("transactions.today");
+      const index = sections.findIndex((s) => s.title === todayTitle);
+      if (index !== -1) {
+        setTimeout(() => {
+          listRef.current?.scrollToLocation({
+            sectionIndex: index,
+            itemIndex: 0,
+            animated: true,
+            viewPosition: 0,
+          });
+        }, 500);
+      }
+      hasScrolledRef.current = true;
+    }
+  }, [loading, sections]);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
@@ -161,6 +183,7 @@ export default function TransactionsScreen() {
       </View>
 
       <SectionList
+        ref={listRef}
         sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <TransactionItem transaction={item} onPress={() => router.push(`/transactions/${item.id}`)} />}
