@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (session?.user) {
         // Fetch user profile
-        const profile = await authHelpers.ensureUserProfile(session.user.id, session.user.user_metadata?.full_name || session.user.email?.split("@")[0]);
+        const profile = await authHelpers.ensureUserProfile(session.user.id, session.user.user_metadata?.full_name || session.user.email?.split("@")[0], session.user.user_metadata?.avatar_url);
 
         set({
           user: session.user,
@@ -116,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (data.user) {
-        const profile = await authHelpers.ensureUserProfile(data.user.id, data.user.email?.split("@")[0]);
+        const profile = await authHelpers.ensureUserProfile(data.user.id, data.user.email?.split("@")[0], data.user.user_metadata?.avatar_url);
 
         set({
           user: data.user,
@@ -158,7 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Note: User may need to confirm email before session is created
       if (data.user && data.session) {
-        const profile = await authHelpers.ensureUserProfile(data.user.id, displayName);
+        const profile = await authHelpers.ensureUserProfile(data.user.id, displayName, data.user.user_metadata?.avatar_url);
 
         set({
           user: data.user,
@@ -283,7 +283,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               if (!profile) {
                 try {
                   const fullName = sessionData.user.user_metadata?.full_name || sessionData.user.email?.split("@")[0];
-                  profile = await authHelpers.ensureUserProfile(sessionData.user.id, fullName);
+                  profile = await authHelpers.ensureUserProfile(sessionData.user.id, fullName, sessionData.user.user_metadata?.avatar_url);
                 } catch (e) {
                   console.warn("[Auth] internal profile fetch warning:", e);
                 }
@@ -360,7 +360,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (data.user) {
           const fullName = credential.fullName ? `${credential.fullName.givenName || ""} ${credential.fullName.familyName || ""}`.trim() : undefined;
 
-          const profile = await authHelpers.ensureUserProfile(data.user.id, fullName);
+          const profile = await authHelpers.ensureUserProfile(data.user.id, fullName, data.user.user_metadata?.avatar_url);
 
           set({
             user: data.user,
@@ -431,7 +431,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
 
             if (sessionData.user) {
-              const profile = await authHelpers.ensureUserProfile(sessionData.user.id, sessionData.user.user_metadata?.full_name);
+              const profile = await authHelpers.ensureUserProfile(sessionData.user.id, sessionData.user.user_metadata?.full_name, sessionData.user.user_metadata?.avatar_url);
 
               set({
                 user: sessionData.user,

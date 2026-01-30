@@ -142,6 +142,12 @@ export default {
     title: "AI Advisor",
     greeting: "Hello! I am your financial assistant. Ask me about your spending trends or how to save for your goals.",
     placeholder: "Ask about your finances...",
+    suggestions: {
+      status: "📊 What is my status today?",
+      save: "💰 How can I save money?",
+      spending: "📉 Where did I spend the most?",
+      prediction: "🔮 Forecast for the month",
+    },
   },
   transactions: {
     today: "Today",

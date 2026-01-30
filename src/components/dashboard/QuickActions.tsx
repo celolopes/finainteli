@@ -12,7 +12,7 @@ export const QuickActions = () => {
   const { t } = useTranslation();
 
   const actions = [
-    { label: t("dashboard.actions.transaction"), icon: "plus", route: "/(app)/transactions/new", color: "#6C63FF" },
+    { label: t("dashboard.actions.transaction"), icon: "plus", route: "/add-transaction", color: "#6C63FF" },
     { label: t("dashboard.actions.account"), icon: "bank", route: "/(app)/accounts", color: "#03DAC6" },
     { label: t("dashboard.actions.card"), icon: "credit-card", route: "/(app)/cards", color: "#FF4081" },
     { label: t("dashboard.actions.goal"), icon: "target", route: "/(app)/(tabs)/goals", color: "#FF9100" },

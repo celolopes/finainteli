@@ -19,9 +19,13 @@ export const TransactionItem = ({ transaction, onPress }: Props) => {
 
   return (
     <List.Item
-      title={transaction.title}
-      titleStyle={{ color: theme.colors.onSurface }}
-      description={transaction.date.split("T")[0]}
+      title={() => (
+        <View style={styles.titleRow}>
+          <Text style={{ color: theme.colors.onSurface, fontSize: 16 }}>{transaction.title}</Text>
+          {!!transaction.credit_card_id && <List.Icon icon="credit-card" color={theme.colors.error} style={styles.cardIcon} />}
+        </View>
+      )}
+      description={new Date(transaction.date + "T12:00:00").toLocaleDateString("pt-BR")}
       descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
       left={(props) => <List.Icon {...props} icon={isIncome ? "arrow-up-circle" : "arrow-down-circle"} color={isIncome ? theme.colors.primary : theme.colors.error} />}
       right={() => (
@@ -54,5 +58,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-end",
     marginRight: 8,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardIcon: {
+    margin: 0,
+    width: 20,
+    height: 20,
   },
 });

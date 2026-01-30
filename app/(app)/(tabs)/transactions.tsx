@@ -47,6 +47,7 @@ export default function TransactionsScreen() {
           date: txn.transaction_date,
           notes: txn.notes,
           sync_status: txn.sync_status,
+          credit_card_id: txn.credit_card_id,
         })) || [];
 
       setTransactions(adapted);

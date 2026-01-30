@@ -69,7 +69,7 @@ export const authHelpers = {
   /**
    * Get or create user profile after authentication
    */
-  async ensureUserProfile(userId: string, displayName?: string): Promise<UserProfile | null> {
+  async ensureUserProfile(userId: string, displayName?: string, avatarUrl?: string): Promise<UserProfile | null> {
     // Check if profile exists
     console.log("[Supabase] Checking user profile for:", userId);
     try {
@@ -82,6 +82,14 @@ export const authHelpers = {
 
       if (existingProfile) {
         console.log("[Supabase] Profile found");
+
+        // Sync Avatar if available from provider and missing in profile
+        if (avatarUrl && !existingProfile.avatar_url) {
+          console.log("[Supabase] Syncing avatar from provider...");
+          const { data: updated } = await supabase.from("user_profiles").update({ avatar_url: avatarUrl }).eq("id", userId).select().single();
+          return updated as UserProfile;
+        }
+
         return existingProfile as UserProfile;
       }
     } catch (e) {
@@ -96,6 +104,7 @@ export const authHelpers = {
       .insert({
         id: userId,
         display_name: displayName || null,
+        avatar_url: avatarUrl || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

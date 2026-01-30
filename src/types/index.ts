@@ -7,6 +7,7 @@ export interface Transaction {
   date: string;
   notes?: string;
   sync_status?: string;
+  credit_card_id?: string | null;
 }
 
 export interface DetailedTransaction {

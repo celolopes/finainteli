@@ -15,9 +15,7 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "finainteli"
-            ]
+            "CFBundleURLSchemes": ["finainteli"]
           }
         ],
         "ITSAppUsesNonExemptEncryption": false,
@@ -46,10 +44,7 @@
               "pathPrefix": "/auth/v1/callback"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -72,7 +67,13 @@
           "sounds": []
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app precisa de acesso para você escolher sua foto de perfil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

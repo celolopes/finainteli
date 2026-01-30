@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { Avatar, Button, Dialog, Divider, HelperText, IconButton, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { FinancialService } from "../../src/services/financial";
@@ -170,7 +170,14 @@ export default function AddTransactionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Stack.Screen options={{ title: t("transactions.newTitle"), presentation: "modal", headerShown: true }} />
+      <Stack.Screen
+        options={{
+          title: t("transactions.newTitle"),
+          presentation: "modal",
+          headerShown: true,
+          headerLeft: () => <IconButton icon="close" onPress={() => router.back()} />,
+        }}
+      />
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.formGroup}>
           <Controller
@@ -410,7 +417,7 @@ export default function AddTransactionScreen() {
         <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={submitting} style={[styles.saveButton, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
           {t("common.save")}
         </Button>
-        <Button mode="outlined" onPress={() => router.replace("/")} style={{ marginTop: 12, borderColor: theme.colors.outline }} textColor={theme.colors.onSurfaceVariant}>
+        <Button mode="outlined" onPress={() => router.back()} style={{ marginTop: 12, borderColor: theme.colors.outline }} textColor={theme.colors.onSurfaceVariant}>
           {t("common.cancel") || "Cancelar"}
         </Button>
       </ScrollView>

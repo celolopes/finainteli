@@ -1,29 +1,53 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, ProgressBar, Text, TextInput, useTheme } from "react-native-paper";
+import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Appbar, Button, Card, Icon, IconButton, ProgressBar, Text, TextInput, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GeminiService } from "../../../src/services/gemini";
 import { useStore } from "../../../src/store/useStore";
+import { CurrencyUtils } from "../../../src/utils/currency";
 
 export default function GoalsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { goals, addGoal, setGoalPlan, transactions } = useStore();
-  const [generating, setGenerating] = useState(false);
 
-  const { control, handleSubmit } = useForm({
+  const [generating, setGenerating] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       targetAmount: "",
-      deadline: "",
       description: "",
     },
   });
 
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    setDate(currentDate);
+  };
+
   const onSubmit = (data: any) => {
+    // Parse currency string to number
+    const amount = CurrencyUtils.parse(data.targetAmount);
+
+    if (amount <= 0) return;
+
     addGoal({
-      targetAmount: parseFloat(data.targetAmount),
-      deadline: data.deadline,
+      targetAmount: amount,
+      deadline: date.toLocaleDateString("pt-BR"), // Store as string for display, or ISO if backend requires. User asked for Locale fix. Storing consistent format (e.g. YYYY-MM-DD or ISO) is better for logic, but for now matching existing pattern.
       currentAmount: 0,
     });
   };
@@ -50,107 +74,218 @@ export default function GoalsScreen() {
         : undefined,
     };
 
-    const plan = await GeminiService.generateGoalPlan(context, "Reach my savings target");
-    setGoalPlan(plan);
-    setGenerating(false);
+    try {
+      const plan = await GeminiService.generateGoalPlan(context, "Reach my savings target");
+      setGoalPlan(plan);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const currentGoal = goals[0];
+  const progress = currentGoal ? (currentGoal.currentAmount || 0) / currentGoal.targetAmount : 0;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={{ fontWeight: "bold", color: theme.colors.onBackground }}>
-          {t("goals.title")}
-        </Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <LinearGradient colors={[theme.colors.surfaceVariant, theme.colors.background]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.4 }} style={StyleSheet.absoluteFillObject} />
 
-      {!currentGoal ? (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium">{t("goals.setGoal")}</Text>
-            <Controller
-              control={control}
-              name="targetAmount"
-              render={({ field: { onChange, value } }) => (
-                <TextInput label={t("goals.targetAmount")} value={value} onChangeText={onChange} keyboardType="numeric" mode="outlined" style={styles.input} />
-              )}
-            />
-            <Controller
-              control={control}
-              name="deadline"
-              render={({ field: { onChange, value } }) => <TextInput label={t("goals.deadline")} value={value} onChangeText={onChange} mode="outlined" style={styles.input} />}
-            />
-            <Button mode="contained" onPress={handleSubmit(onSubmit)} style={styles.button}>
-              {t("goals.startGoal")}
-            </Button>
-          </Card.Content>
-        </Card>
-      ) : (
-        <View>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleLarge" style={{ color: theme.colors.primary, fontWeight: "bold" }}>
-                R$ {currentGoal.targetAmount} - {currentGoal.deadline}
-              </Text>
-              <View style={styles.progressContainer}>
-                <Text variant="bodySmall">{t("goals.progress")} (25%)</Text>
-                <ProgressBar progress={0.25} color={theme.colors.primary} style={styles.progress} />
-              </View>
-            </Card.Content>
-            <Card.Actions>
-              <Button onPress={() => {}}>{t("goals.edit")}</Button>
-            </Card.Actions>
-          </Card>
+      <Appbar.Header style={{ backgroundColor: "transparent" }}>
+        <Appbar.Content title={t("goals.title", "Metas Financeiras")} />
+      </Appbar.Header>
 
-          <View style={styles.aiSection}>
-            <Button mode="contained-tonal" icon="creation" onPress={generatePlan} loading={generating}>
-              {t("goals.generatePlan")}
-            </Button>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
+        {!currentGoal ? (
+          <View style={styles.formContainer}>
+            <View style={styles.heroIcon}>
+              <Icon source="target" size={64} color={theme.colors.primary} />
+            </View>
+            <Text variant="headlineSmall" style={{ textAlign: "center", marginBottom: 8, fontWeight: "bold" }}>
+              {t("goals.createTitle", "Defina seu Objetivo")}
+            </Text>
+            <Text variant="bodyMedium" style={{ textAlign: "center", marginBottom: 32, opacity: 0.7 }}>
+              {t("goals.createDesc", "O que você quer conquistar? Defina um valor e um prazo para começarmos.")}
+            </Text>
 
-            {currentGoal.aiPlan && (
-              <Card style={[styles.card, { marginTop: 16, backgroundColor: theme.colors.surfaceVariant }]}>
-                <Card.Content>
-                  <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-                    {t("goals.strategy")}
-                  </Text>
-                  <Text variant="bodyMedium">{currentGoal.aiPlan}</Text>
-                </Card.Content>
-              </Card>
-            )}
+            <View style={styles.cardForm}>
+              <Controller
+                control={control}
+                name="targetAmount"
+                rules={{ required: true }}
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    label={t("goals.targetAmount", "Valor Alvo (R$)")}
+                    value={value}
+                    onChangeText={(text) => {
+                      // Simple currency masking
+                      const numeric = text.replace(/\D/g, "");
+                      const formatted = (Number(numeric) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                      onChange(formatted);
+                    }}
+                    keyboardType="numeric"
+                    mode="outlined"
+                    style={styles.input}
+                    left={<TextInput.Icon icon="cash" />}
+                  />
+                )}
+              />
+
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <View pointerEvents="none">
+                  <TextInput
+                    label={t("goals.deadline", "Prazo")}
+                    value={date.toLocaleDateString("pt-BR")}
+                    mode="outlined"
+                    style={styles.input}
+                    left={<TextInput.Icon icon="calendar" />}
+                    editable={false}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {showDatePicker && <DateTimePicker value={date} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={onChangeDate} minimumDate={new Date()} />}
+              {Platform.OS === "ios" && showDatePicker && <Button onPress={() => setShowDatePicker(false)}>Confirmar Data</Button>}
+
+              <Button mode="contained" onPress={handleSubmit(onSubmit)} style={styles.button} contentStyle={{ height: 56 }}>
+                {t("goals.startGoal", "Iniciar Meta")}
+              </Button>
+            </View>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        ) : (
+          <View style={{ gap: 16 }}>
+            <Card style={styles.activeCard}>
+              <Card.Content>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <Icon source="flag-checkered" size={32} color={theme.colors.primary} />
+                  <IconButton icon="dots-vertical" onPress={() => {}} />
+                </View>
+
+                <Text variant="bodyMedium" style={{ opacity: 0.7 }}>
+                  Meta Atual
+                </Text>
+                <Text variant="displaySmall" style={{ fontWeight: "bold", color: theme.colors.primary, marginVertical: 4 }}>
+                  {CurrencyUtils.format(currentGoal.targetAmount)}
+                </Text>
+                <Text variant="bodyMedium" style={{ marginBottom: 24 }}>
+                  Até {currentGoal.deadline}
+                </Text>
+
+                <View style={styles.progressContainer}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+                    <Text variant="bodySmall" style={{ fontWeight: "bold" }}>
+                      Progresso
+                    </Text>
+                    <Text variant="bodySmall">{(progress * 100).toFixed(1)}%</Text>
+                  </View>
+                  <ProgressBar progress={progress} color={theme.colors.primary} style={styles.progress} />
+                  <Text variant="bodySmall" style={{ marginTop: 8, textAlign: "right", opacity: 0.6 }}>
+                    Faltam {CurrencyUtils.format(currentGoal.targetAmount - (currentGoal.currentAmount || 0))}
+                  </Text>
+                </View>
+              </Card.Content>
+            </Card>
+
+            <View style={styles.aiSection}>
+              <View style={styles.aiHeader}>
+                <Icon source="robot" size={24} color={theme.colors.secondary} />
+                <Text variant="titleMedium" style={{ fontWeight: "bold", flex: 1, marginLeft: 12 }}>
+                  {t("goals.advisorTitle", "Consultor IA")}
+                </Text>
+              </View>
+
+              {!currentGoal.aiPlan ? (
+                <View style={styles.aiEmpty}>
+                  <Text variant="bodyMedium" style={{ textAlign: "center", marginBottom: 16, opacity: 0.8 }}>
+                    Precisa de ajuda para atingir essa meta? Posso criar um plano personalizado para você.
+                  </Text>
+                  <Button mode="contained-tonal" icon="creation" onPress={generatePlan} loading={generating}>
+                    {t("goals.generatePlan", "Gerar Plano Estratégico")}
+                  </Button>
+                </View>
+              ) : (
+                <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                  <Card.Content>
+                    <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: "bold" }}>
+                      {t("goals.strategy", "Plano de Ação")}
+                    </Text>
+                    <Text variant="bodyMedium" style={{ lineHeight: 22 }}>
+                      {currentGoal.aiPlan}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              )}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
     padding: 16,
   },
-  header: {
-    marginBottom: 16,
+  formContainer: {
+    justifyContent: "center",
+    paddingTop: 32,
   },
-  card: {
-    marginBottom: 16,
+  heroIcon: {
+    alignSelf: "center",
+    marginBottom: 24,
+    backgroundColor: "rgba(108, 99, 255, 0.1)",
+    padding: 24,
+    borderRadius: 64,
+  },
+  cardForm: {
+    marginTop: 24,
+    gap: 16,
   },
   input: {
-    marginBottom: 12,
+    backgroundColor: "transparent",
   },
   button: {
-    marginTop: 8,
+    marginTop: 16,
+    borderRadius: 12,
+  },
+  activeCard: {
+    borderRadius: 24,
+    elevation: 4,
   },
   progressContainer: {
-    marginTop: 16,
+    marginTop: 8,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    padding: 16,
+    borderRadius: 16,
   },
   progress: {
-    height: 8,
-    borderRadius: 4,
-    marginTop: 4,
+    height: 12,
+    borderRadius: 6,
   },
   aiSection: {
     marginTop: 8,
+  },
+  aiHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  aiEmpty: {
+    padding: 24,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+    borderStyle: "dashed",
+    alignItems: "center",
+  },
+  card: {
+    marginBottom: 16,
+    borderRadius: 16,
   },
 });

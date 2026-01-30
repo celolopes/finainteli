@@ -176,19 +176,26 @@ export default function TransactionsScreen() {
           onLongPress={() => handleDelete(item.id)}
           activeOpacity={0.7}
         >
-          {/* Ícone da Categoria */}
-          <Avatar.Icon size={44} icon={category?.icon || "help-circle"} style={{ backgroundColor: category?.color || theme.colors.surfaceVariant }} />
+          {/* Ícone da Categoria ou Cartão */}
+          <Avatar.Icon
+            size={44}
+            icon={item.credit_card_id ? "credit-card" : category?.icon || "help-circle"}
+            style={{
+              backgroundColor: item.credit_card_id ? theme.colors.secondaryContainer : category?.color || theme.colors.surfaceVariant,
+            }}
+            color={item.credit_card_id ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant}
+          />
 
           {/* Info */}
           <View style={styles.transactionInfo}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Text variant="titleMedium" numberOfLines={1}>
+              <Text variant="titleMedium" numberOfLines={1} style={{ flexShrink: 1 }}>
                 {item.description || t("transactions.noDescription", "Sem descrição")}
               </Text>
-              {item.credit_card_id && <Icon source="credit-card-outline" size={16} color={theme.colors.onSurfaceVariant} />}
+              {!!item.credit_card_id && <Icon source="credit-card" size={20} color={theme.colors.primary} />}
             </View>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {category?.name || "Sem categoria"}
+              {new Date(item.transaction_date + "T12:00:00").toLocaleDateString("pt-BR")} • {category?.name || "Sem categoria"}
             </Text>
           </View>
 

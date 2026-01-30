@@ -47,6 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="reports"
         options={{
+          headerShown: false,
           title: "Relatórios",
           tabBarIcon: ({ color, size }) => <Icon source="chart-box" size={size} color={color} />,
         }}
@@ -54,6 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="goals"
         options={{
+          headerShown: false,
           title: t("tabs.goals"),
           tabBarIcon: ({ color, size }) => <Icon source="target" size={size} color={color} />,
         }}
@@ -61,6 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chat"
         options={{
+          headerShown: false,
           title: t("tabs.advisor"),
           tabBarIcon: ({ color, size }) => <Icon source="robot" size={size} color={color} />,
         }}
