@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
@@ -220,16 +219,7 @@ export default function AddTransactionScreen() {
         }}
       />
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]}>
-        <View style={styles.trustBanner}>
-          <View style={[styles.heroBadge, { backgroundColor: theme.colors.primaryContainer }]} aria-label="Confiabilidade">
-            <Ionicons name="shield-checkmark" size={14} color={theme.colors.primary} />
-            <Text style={[styles.securityText, { color: theme.colors.primary }]}>SSL Secure • Join 10,000+ Smart Savers</Text>
-          </View>
-          <View style={styles.trustDivider} />
-          <Text variant="labelSmall" style={{ opacity: 0.6 }}>
-            {t("transactions.trust.socialProof") || "+5.000 usuários ativos"}
-          </Text>
-        </View>
+        {/* Banner Removed per user request */}
         <View style={styles.formGroup}>
           <Controller
             control={control}

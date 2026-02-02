@@ -30,6 +30,7 @@ export default function AppLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="add-transaction" options={{ presentation: "modal", headerShown: false }} />
         {/* Detail screens and modals will be managed by this stack */}
       </Stack>
     </GestureHandlerRootView>

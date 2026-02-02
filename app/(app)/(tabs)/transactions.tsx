@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, SectionList, StyleSheet, View } from "react-native";
+import { Alert, Platform, SectionList, StyleSheet, View } from "react-native";
 import { Chip, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { TransactionItem } from "../../../src/components/TransactionItem";
@@ -199,7 +199,12 @@ export default function TransactionsScreen() {
         stickySectionHeadersEnabled={false}
       />
 
-      <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} color={theme.colors.onPrimary} onPress={() => router.push("/add-transaction")} />
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: Platform.OS === "ios" ? 90 : 16 }]}
+        color={theme.colors.onPrimary}
+        onPress={() => router.push("/add-transaction")}
+      />
 
       <FiltersModal visible={filtersVisible} onDismiss={() => setFiltersVisible(false)} onApply={setFilters} currentFilters={filters} />
 

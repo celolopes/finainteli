@@ -149,15 +149,25 @@ export async function mySync() {
               };
             });
 
-          if (toUpsert.length > 0) {
-            const { error } = await supabase.from(table).upsert(toUpsert);
-            if (error) throw error;
-          }
+          try {
+            if (toUpsert.length > 0) {
+              const { error } = await supabase.from(table).upsert(toUpsert);
+              if (error) throw error;
+            }
 
-          // Push Deleted (Soft Delete on Supabase)
-          if (change.deleted.length > 0) {
-            const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).in("id", change.deleted);
-            if (error) throw error;
+            // Push Deleted (Soft Delete on Supabase)
+            if (change.deleted.length > 0) {
+              const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).in("id", change.deleted);
+              if (error) throw error;
+            }
+          } catch (err: any) {
+            // Gracefully handle schema errors for new tables (like ai_usage_logs)
+            // PGRST204: Could not find the 'updated_at' column in the schema cache
+            if (table === "ai_usage_logs" && (err.code === "PGRST204" || err.message?.includes("schema cache"))) {
+              console.warn(`[Sync] Skipping ${table} due to schema mismatch. Check Supabase migrations.`);
+            } else {
+              throw err;
+            }
           }
         }
       },

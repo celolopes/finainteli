@@ -92,7 +92,27 @@ export default function OnboardingAccount() {
           <Text variant="titleMedium" style={styles.label}>
             {t("onboarding.form.balance")}
           </Text>
-          <TextInput mode="outlined" value={balance} onChangeText={setBalance} keyboardType="numeric" placeholder="R$ 0,00" left={<TextInput.Affix text="R$ " />} style={styles.input} />
+          <TextInput
+            mode="outlined"
+            value={balance}
+            onChangeText={(text) => {
+              const raw = text.replace(/\D/g, "");
+              if (!raw) {
+                setBalance("");
+                return;
+              }
+              const amount = parseInt(raw, 10);
+              const result = (amount / 100).toFixed(2);
+              const formatted = result.replace(".", ",");
+              const parts = formatted.split(",");
+              parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+              setBalance(parts.join(","));
+            }}
+            keyboardType="numeric"
+            placeholder="0,00"
+            left={<TextInput.Affix text="R$ " />}
+            style={styles.input}
+          />
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(600)} style={styles.footer}>

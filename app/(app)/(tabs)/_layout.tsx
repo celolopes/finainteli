@@ -24,7 +24,7 @@ export default function TabLayout() {
           paddingBottom: isIos ? 28 : 12,
           position: isIos ? "absolute" : "relative",
         },
-        tabBarBackground: () => (isIos ? <BlurView intensity={80} tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : undefined),
+        tabBarBackground: () => (isIos ? <BlurView intensity={80} tint="systemThinMaterial" style={StyleSheet.absoluteFill} /> : undefined),
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
       }}
