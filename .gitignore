@@ -43,3 +43,11 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+# Security - Service Account Keys
+# Rename your downloaded key to one of these or add your specific filename below
+service-account.json
+google-service-account.json
+credentials.json
+key.json
+*.key.json
+finainteli*.json
