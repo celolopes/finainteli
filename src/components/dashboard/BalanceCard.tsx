@@ -7,7 +7,11 @@ import Animated, { FadeInUp, Layout, ZoomIn } from "react-native-reanimated";
 import { useFinancialStore } from "../../store/financialStore";
 import { Database } from "../../types/schema";
 
-type ExtendedCreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & { next_invoice_estimate?: number };
+type ExtendedCreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & {
+  next_invoice_estimate?: number;
+  open_invoice_estimate?: number;
+  closed_invoice_outstanding?: number;
+};
 
 const STORAGE_KEY = "@finainteli_balance_expanded";
 
@@ -144,17 +148,13 @@ export const BalanceCard = () => {
                         </Text>
                       </View>
                       <View style={{ alignItems: "flex-end" }}>
-                        {/* Fatura Fechada (Se fechada e com saldo) */}
                         {(() => {
-                          const now = new Date();
-                          const closingDay = card.closing_day || 1;
-                          const isClosed = now.getDate() >= closingDay;
-                          const nextInvoice = (card as ExtendedCreditCard).next_invoice_estimate || 0;
-                          // Show "Fatura Fechada" only if there is balance EXCEEDING the open invoice estimate
-                          // This handles cases where the user pays the closed amount, leaving only the open amount.
-                          const hasClosedDebt = (card.current_balance || 0) > nextInvoice;
+                          const openEstimate = (card as ExtendedCreditCard).open_invoice_estimate ?? (card as ExtendedCreditCard).next_invoice_estimate ?? 0;
+                          const closedOutstanding =
+                            (card as ExtendedCreditCard).closed_invoice_outstanding ?? Math.max((card.current_balance || 0) - openEstimate, 0);
+                          const totalOutstanding = closedOutstanding + openEstimate;
 
-                          if (isClosed && hasClosedDebt) {
+                          if (closedOutstanding > 0) {
                             return (
                               <>
                                 <View style={{ alignItems: "flex-end", marginBottom: 4 }}>
@@ -162,38 +162,42 @@ export const BalanceCard = () => {
                                     Fatura Fechada
                                   </Text>
                                   <Text variant="bodyMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
-                                    {formatMoney(card.current_balance)}
+                                    {formatMoney(closedOutstanding)}
                                   </Text>
                                 </View>
 
-                                {/* Show Open Invoice Preview too */}
-                                <View style={{ alignItems: "flex-end", marginBottom: 4, opacity: 0.7 }}>
-                                  <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer }}>
-                                    Fatura Aberta
-                                  </Text>
-                                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-                                    {formatMoney(nextInvoice)}
-                                  </Text>
-                                </View>
+                                {openEstimate > 0 && (
+                                  <View style={{ alignItems: "flex-end", marginBottom: 4, opacity: 0.7 }}>
+                                    <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer }}>
+                                      Fatura Aberta
+                                    </Text>
+                                    <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
+                                      {formatMoney(openEstimate)}
+                                    </Text>
+                                  </View>
+                                )}
 
                                 <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
                                   Total
                                 </Text>
                                 <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
-                                  {formatMoney(card.current_balance + nextInvoice)}
+                                  {formatMoney(totalOutstanding)}
                                 </Text>
                               </>
                             );
                           }
 
-                          // Default view (Open Invoice only)
+                          const fallbackTotal = card.current_balance || 0;
+                          const openLabel = openEstimate > 0 ? "Fatura Aberta" : "Total";
+                          const openAmount = openEstimate > 0 ? openEstimate : fallbackTotal;
+
                           return (
                             <>
                               <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7 }}>
-                                Total
+                                {openLabel}
                               </Text>
                               <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-                                {formatMoney(card.current_balance)}
+                                {formatMoney(openAmount)}
                               </Text>
                             </>
                           );

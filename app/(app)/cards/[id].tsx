@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
@@ -204,6 +204,25 @@ export default function CardDetails() {
     }
   };
 
+  const groupedTransactions = useMemo(() => {
+    const groups: { key: string; label: string; items: any[] }[] = [];
+    let lastKey = "";
+
+    transactions.forEach((t) => {
+      const d = new Date(t.transaction_date);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      if (key !== lastKey) {
+        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+        groups.push({ key, label, items: [t] });
+        lastKey = key;
+      } else {
+        groups[groups.length - 1].items.push(t);
+      }
+    });
+
+    return groups;
+  }, [transactions]);
+
   const isInvoiceClosed = () => {
     if (!card) return false;
     // Data de fechamento da fatura visualizada (Mês/Ano do currentDate, dia do closing_day)
@@ -240,6 +259,8 @@ export default function CardDetails() {
 
   const usage = card.credit_limit > 0 ? (card.current_balance || 0) / card.credit_limit : 0;
   const available = card.available_limit ?? card.credit_limit - (card.current_balance || 0);
+
+  let animationIndex = 0;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -278,7 +299,7 @@ export default function CardDetails() {
             <ProgressBar progress={usage > 1 ? 1 : usage} color={usage > 0.9 ? theme.colors.error : theme.colors.primary} style={styles.progressBar} />
             <View style={styles.row}>
               <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                Fatura Atual: {CurrencyUtils.format((card.current_balance || 0) + (isInvoiceClosed() ? 0 : invoiceTotal), card.currency_code)}
+                Fatura Atual: {CurrencyUtils.format(card.current_balance || 0, card.currency_code)}
               </Text>
               <Text variant="bodySmall">Fecha dia {card.closing_day}</Text>
             </View>
@@ -372,44 +393,55 @@ export default function CardDetails() {
             {transactions.length === 0 ? (
               <Text style={{ textAlign: "center", marginTop: 20, opacity: 0.5 }}>Nenhuma transação nesta fatura.</Text>
             ) : (
-              transactions.map((t, index) => (
-                <Animated.View key={t.id} entering={FadeInUp.delay(index * 50)}>
-                  <Surface style={styles.transactionItem} elevation={0}>
-                    <View style={styles.row}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                        <Avatar.Icon size={36} icon={t.category?.icon || "help"} style={{ backgroundColor: t.category?.color || theme.colors.secondaryContainer }} color="white" />
-                        <View>
-                          <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
-                            {t.description}
-                          </Text>
-                          {/* Special case: Edit Initial Balance */}
-                          {t.id === "initial_balance_adjustment" ? (
-                            <Text
-                              variant="bodySmall"
-                              style={{ color: theme.colors.primary, fontWeight: "bold", marginTop: 2 }}
-                              onPress={() => {
-                                setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
-                                setEditBalanceVisible(true);
-                              }}
-                            >
-                              Toque para ajustar saldo
-                            </Text>
-                          ) : (
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                              <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                                {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
-                              </Text>
+              groupedTransactions.map((group) => (
+                <View key={group.key} style={styles.transactionGroup}>
+                  <Text variant="labelSmall" style={[styles.transactionGroupTitle, { color: theme.colors.onSurfaceVariant }]}>
+                    {group.label}
+                  </Text>
+                  {group.items.map((t) => {
+                    const delay = animationIndex * 50;
+                    animationIndex += 1;
+                    return (
+                      <Animated.View key={t.id} entering={FadeInUp.delay(delay)}>
+                        <Surface style={styles.transactionItem} elevation={0}>
+                          <View style={styles.row}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                              <Avatar.Icon size={36} icon={t.category?.icon || "help"} style={{ backgroundColor: t.category?.color || theme.colors.secondaryContainer }} color="white" />
+                              <View>
+                                <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
+                                  {t.description}
+                                </Text>
+                                {/* Special case: Edit Initial Balance */}
+                                {t.id === "initial_balance_adjustment" ? (
+                                  <Text
+                                    variant="bodySmall"
+                                    style={{ color: theme.colors.primary, fontWeight: "bold", marginTop: 2 }}
+                                    onPress={() => {
+                                      setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
+                                      setEditBalanceVisible(true);
+                                    }}
+                                  >
+                                    Toque para ajustar saldo
+                                  </Text>
+                                ) : (
+                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                    <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                                      {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
                             </View>
-                          )}
-                        </View>
-                      </View>
-                      <Text variant="bodyLarge" style={{ fontWeight: "bold" }}>
-                        {CurrencyUtils.format(t.amount, t.currency_code || card.currency_code)}
-                      </Text>
-                    </View>
-                  </Surface>
-                  <Divider />
-                </Animated.View>
+                            <Text variant="bodyLarge" style={{ fontWeight: "bold" }}>
+                              {CurrencyUtils.format(t.amount, t.currency_code || card.currency_code)}
+                            </Text>
+                          </View>
+                        </Surface>
+                        <Divider />
+                      </Animated.View>
+                    );
+                  })}
+                </View>
               ))
             )}
           </View>
@@ -457,6 +489,14 @@ const styles = StyleSheet.create({
   },
   transactionsList: {
     marginTop: 0,
+  },
+  transactionGroup: {
+    marginBottom: 12,
+  },
+  transactionGroupTitle: {
+    marginBottom: 6,
+    marginLeft: 4,
+    textTransform: "capitalize",
   },
   transactionItem: {
     paddingVertical: 12,

@@ -17,10 +17,30 @@ import { mySync } from "../src/services/sync";
 import { useAuthStore } from "../src/store/authStore";
 import { useSecurityStore } from "../src/store/securityStore";
 import { useStore } from "../src/store/useStore";
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://99345603a9e7a1fdd171a862da9d8e83@o4510343644512256.ingest.us.sentry.io/4510822647791616',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -83,4 +103,4 @@ export default function RootLayout() {
       </DatabaseProvider>
     </GestureHandlerRootView>
   );
-}
+});

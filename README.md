@@ -64,6 +64,16 @@ A cross-platform React Native app (Expo) that uses Gemini AI and Supabase to emp
    npx expo start
    ```
 
+## 🛡️ Sentry (EAS Build)
+
+Para upload automático de sourcemaps no EAS Build, configure a variável secreta `SENTRY_AUTH_TOKEN` nas variáveis do EAS (Project → Environment Variables).
+
+Se você usa EAS Update, após cada `eas update` rode:
+
+```bash
+npm run sentry:upload-sourcemaps
+```
+
 ---
 
 ## 💎 Premium Plans (Coming Soon)

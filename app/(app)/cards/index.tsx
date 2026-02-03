@@ -9,7 +9,11 @@ import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
 import { CurrencyUtils } from "../../../src/utils/currency";
 
-type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & { next_invoice_estimate?: number };
+type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & {
+  next_invoice_estimate?: number;
+  open_invoice_estimate?: number;
+  closed_invoice_outstanding?: number;
+};
 
 export default function CardsList() {
   const theme = useTheme();
@@ -67,16 +71,11 @@ export default function CardsList() {
   };
 
   const renderItem = ({ item, index }: { item: CreditCard; index: number }) => {
-    // Check if invoice is closed logic (simplified check, ideal would be shared utility)
-    const now = new Date();
-    const closingDay = item.closing_day || 1;
-    const isClosed = now.getDate() >= closingDay;
+    const openEstimate = item.open_invoice_estimate ?? item.next_invoice_estimate ?? 0;
+    const totalOutstanding = Math.max(item.current_balance || 0, openEstimate);
 
-    // Total Debt = `current_balance` + `next_invoice_estimate`.
-    const displayBalance = (item.current_balance || 0) + (item.next_invoice_estimate || 0);
-
-    const usage = item.credit_limit > 0 ? displayBalance / item.credit_limit : 0;
-    const available = item.credit_limit - displayBalance;
+    const usage = item.credit_limit > 0 ? totalOutstanding / item.credit_limit : 0;
+    const available = item.credit_limit - totalOutstanding;
     const logoUrl = getBrandLogo(item.brand);
 
     return (
@@ -113,7 +112,7 @@ export default function CardsList() {
                 <View style={styles.row}>
                   <Text variant="bodyMedium">Fatura Atual</Text>
                   <Text variant="titleMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
-                    {CurrencyUtils.format(displayBalance, item.currency_code)}
+                    {CurrencyUtils.format(totalOutstanding, item.currency_code)}
                   </Text>
                 </View>
 

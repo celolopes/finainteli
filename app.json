@@ -15,7 +15,9 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["finainteli"]
+            "CFBundleURLSchemes": [
+              "finainteli"
+            ]
           }
         ],
         "ITSAppUsesNonExemptEncryption": false,
@@ -44,7 +46,10 @@
               "pathPrefix": "/auth/v1/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -72,6 +77,14 @@
         "expo-image-picker",
         {
           "photosPermission": "O app precisa de acesso para você escolher sua foto de perfil."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "finainteli",
+          "organization": "marcelo-lopes-gw"
         }
       ]
     ],

@@ -51,3 +51,5 @@ credentials.json
 key.json
 *.key.json
 finainteli*.json
+
+.env.local

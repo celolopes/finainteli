@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
-import React, { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { AppState, Dimensions, Keyboard, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSecurityStore } from "../../store/securityStore";
 
 const { width } = Dimensions.get("window");
@@ -12,6 +12,8 @@ export const LockScreen = () => {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
   const [biometryType, setBiometryType] = useState<LocalAuthentication.AuthenticationType | null>(null);
+  const autoAttemptRef = useRef(false);
+  const appStateRef = useRef(AppState.currentState);
 
   useEffect(() => {
     LocalAuthentication.supportedAuthenticationTypesAsync().then((types) => {
@@ -23,13 +25,28 @@ export const LockScreen = () => {
 
   useEffect(() => {
     if (isLocked) {
+      Keyboard.dismiss();
       setPin("");
       setError(false);
-      // Auto-trigger bio only if enabled and screen is focused/visible (which it is if locked)
-      if (isBiosEnabled) {
+      autoAttemptRef.current = false;
+      // Auto-trigger bio when the app is active
+      if (isBiosEnabled && appStateRef.current === "active") {
+        autoAttemptRef.current = true;
         authenticate();
       }
     }
+  }, [isLocked, isBiosEnabled]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      appStateRef.current = nextState;
+      if (nextState === "active" && isLocked && isBiosEnabled && !autoAttemptRef.current) {
+        autoAttemptRef.current = true;
+        authenticate();
+      }
+    });
+
+    return () => subscription.remove();
   }, [isLocked, isBiosEnabled]);
 
   const authenticate = async () => {
@@ -52,6 +69,7 @@ export const LockScreen = () => {
   if (!isLocked) return null;
 
   const handlePress = async (val: string) => {
+    Keyboard.dismiss();
     if (val === "delete") {
       setPin((prev) => prev.slice(0, -1));
       setError(false);

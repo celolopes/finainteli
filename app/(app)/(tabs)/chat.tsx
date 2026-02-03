@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -23,6 +24,8 @@ export default function ChatScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const bottomInset = Platform.OS === "ios" ? tabBarHeight : insets.bottom;
   const { isPro } = usePremium();
   const { goals } = useStore();
 
@@ -31,6 +34,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
+  const [inputHeight, setInputHeight] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -142,7 +146,7 @@ export default function ChatScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient colors={[theme.colors.surfaceVariant, theme.colors.background]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.3 }} style={StyleSheet.absoluteFillObject} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? tabBarHeight : 0}>
         {/* Header / Limit Indicator */}
         {!isPro && (
           <View style={[styles.limitContainer, { top: insets.top + 10 }]}>
@@ -159,7 +163,13 @@ export default function ChatScreen() {
           ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, { paddingTop: !isPro ? insets.top + 50 : insets.top + 20 }]}
+          contentContainerStyle={[
+            styles.list,
+            {
+              paddingTop: !isPro ? insets.top + 50 : insets.top + 20,
+              paddingBottom: inputHeight + bottomInset,
+            },
+          ]}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <View style={[styles.bubbleContainer, item.role === "user" ? styles.userContainer : styles.modelContainer]}>
@@ -189,7 +199,15 @@ export default function ChatScreen() {
           )}
         />
 
-        <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: insets.bottom + 10 }]}>
+        <View
+          style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: bottomInset + 10 }]}
+          onLayout={(event) => {
+            const height = event.nativeEvent.layout.height;
+            if (height !== inputHeight) {
+              setInputHeight(height);
+            }
+          }}
+        >
           {messages.length < 3 && !loading && (
             <View style={{ height: 40, marginBottom: 12 }}>
               <FlatList

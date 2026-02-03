@@ -4,7 +4,11 @@ import { supabase } from "../services/supabase";
 import { Database } from "../types/schema";
 
 type BankAccount = Database["public"]["Tables"]["bank_accounts"]["Row"];
-type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"];
+type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & {
+  next_invoice_estimate?: number;
+  open_invoice_estimate?: number;
+  closed_invoice_outstanding?: number;
+};
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"] & {
   category: { name: string; icon: string | null; color: string | null } | null;
 };

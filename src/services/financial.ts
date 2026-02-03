@@ -4,6 +4,7 @@ import Account from "../database/model/Account";
 import Category from "../database/model/Category";
 import Transaction from "../database/model/Transaction";
 import { Database } from "../types/schema";
+import { calcInvoiceTotal, getInvoiceCycle, getOpenInvoiceRange } from "../utils/creditCardInvoice";
 import { BudgetService } from "./budget";
 import { supabase } from "./supabase";
 import { mySync } from "./sync";
@@ -175,32 +176,27 @@ export const FinancialService = {
 
     return await Promise.all(
       records.map(async (r: any) => {
-        // Calculate Next Invoice Estimate (Open Invoice)
         const now = new Date();
         const closingDay = r.closingDay || 1;
-        let lastClosingDate = new Date(now.getFullYear(), now.getMonth(), closingDay);
-        lastClosingDate.setHours(23, 59, 59, 999);
-
-        // If today is before closing day, the last closing was last month
-        if (now.getDate() < closingDay) {
-          lastClosingDate.setMonth(lastClosingDate.getMonth() - 1);
-        }
+        const openRange = getOpenInvoiceRange(now, closingDay);
 
         const openTransactions = await database
           .get<Transaction>("transactions")
           .query(
             Q.where("credit_card_id", r.id),
             Q.where("deleted_at", Q.eq(null)),
-            Q.where("status", Q.notEq("pending")), // Assuming pending doesn't count for total yet? Or should? Usually only completed.
-            Q.where("transaction_date", Q.gt(lastClosingDate.getTime())),
+            Q.where("transaction_date", Q.gt(openRange.lastClosingDate.getTime())),
+            Q.where("transaction_date", Q.lte(now.getTime())),
           )
           .fetch();
 
-        const openEstimate = openTransactions.reduce((acc, t) => {
-          if (t.type === "expense") return acc + t.amount;
-          if (t.type === "income") return acc - t.amount;
-          return acc;
-        }, 0);
+        const openEstimate = calcInvoiceTotal(
+          openTransactions.map((t) => ({ amount: t.amount, type: t.type, status: t.status })),
+          { includePending: false },
+        );
+
+        const currentBalance = Number(r.currentBalance || 0);
+        const closedOutstanding = Math.max(currentBalance - openEstimate, 0);
 
         return {
           id: r.id,
@@ -208,8 +204,8 @@ export const FinancialService = {
           name: r.name,
           currency_code: r.currencyCode,
           credit_limit: r.creditLimit,
-          current_balance: r.currentBalance,
-          available_limit: r.creditLimit - r.currentBalance,
+          current_balance: currentBalance,
+          available_limit: r.creditLimit - currentBalance,
           closing_day: r.closingDay,
           due_day: r.dueDay,
           brand: r.brand,
@@ -219,6 +215,8 @@ export const FinancialService = {
           created_at: "",
           updated_at: r.updatedAt?.toISOString() || "",
           next_invoice_estimate: openEstimate,
+          open_invoice_estimate: openEstimate,
+          closed_invoice_outstanding: closedOutstanding,
         } as CreditCardRow & { next_invoice_estimate: number };
       }),
     );
@@ -459,6 +457,8 @@ export const FinancialService = {
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado");
 
+    const initialInvoice = Number(card.current_balance || 0);
+
     let newRecord: any;
     await database.write(async () => {
       newRecord = await database.get("credit_cards").create((c: any) => {
@@ -468,12 +468,28 @@ export const FinancialService = {
         c.closingDay = card.closing_day;
         c.dueDay = card.due_day;
         c.creditLimit = Number(card.credit_limit);
-        c.currentBalance = Number(card.current_balance || 0);
+        c.currentBalance = 0;
         c.currencyCode = card.currency_code;
         c.color = card.color;
         c.isActive = card.is_active ?? true;
       });
     });
+
+    if (initialInvoice > 0) {
+      await this.createTransaction({
+        amount: initialInvoice,
+        type: "expense",
+        description: "Saldo Inicial / Fatura Importada",
+        credit_card_id: newRecord.id,
+        transaction_date: new Date().toISOString(),
+        currency_code: card.currency_code,
+        category_id: null,
+        account_id: null,
+        destination_account_id: null,
+        notes: null,
+        status: "completed",
+      } as any);
+    }
 
     mySync().catch(console.error);
     return newRecord!._raw;
@@ -538,12 +554,13 @@ export const FinancialService = {
       }
 
       // Atualizar saldo do cartão de crédito
-      if (transaction.credit_card_id && transaction.type === "expense") {
+      if (transaction.credit_card_id && (transaction.type === "expense" || transaction.type === "income")) {
         try {
           const cardRecord = await database.get<any>("credit_cards").find(transaction.credit_card_id);
           await cardRecord.update((c: any) => {
             const amount = Number(transaction.amount) || 0;
-            c.currentBalance += amount;
+            if (transaction.type === "expense") c.currentBalance += amount;
+            if (transaction.type === "income") c.currentBalance -= amount;
           });
         } catch (e) {
           console.error("Credit card balance update error:", e);
@@ -681,12 +698,13 @@ export const FinancialService = {
         }
       }
 
-      if (baseData.credit_card_id && baseData.type === "expense" && completedTotal > 0) {
+      if (baseData.credit_card_id && completedTotal > 0 && (baseData.type === "expense" || baseData.type === "income")) {
         try {
           const card = await database.get<any>("credit_cards").find(baseData.credit_card_id);
           batchOps.push(
             card.prepareUpdate((c: any) => {
-              c.currentBalance += completedTotal;
+              if (baseData.type === "expense") c.currentBalance += completedTotal;
+              if (baseData.type === "income") c.currentBalance -= completedTotal;
             }),
           );
         } catch (e) {
@@ -942,11 +960,12 @@ export const FinancialService = {
           });
         }
       }
-      if (transaction.status !== "pending" && transaction.creditCard.id && transaction.type === "expense") {
+      if (transaction.status !== "pending" && transaction.creditCard.id && (transaction.type === "expense" || transaction.type === "income")) {
         const card = await transaction.creditCard.fetch();
         if (card) {
           await card.update((c: any) => {
-            c.currentBalance -= transaction.amount;
+            if (transaction.type === "expense") c.currentBalance -= transaction.amount;
+            if (transaction.type === "income") c.currentBalance += transaction.amount;
           });
         }
       }
@@ -962,6 +981,10 @@ export const FinancialService = {
     let updated: Transaction;
     await database.write(async () => {
       updated = await database.get<Transaction>("transactions").find(id);
+      const prevAmount = updated.amount;
+      const prevType = updated.type;
+      const prevCreditCardId = updated.creditCard.id;
+      const prevStatus = updated.status || "completed";
 
       await updated.update((t) => {
         if (updates.amount !== undefined) t.amount = Number(updates.amount);
@@ -974,6 +997,33 @@ export const FinancialService = {
         if (updates.credit_card_id !== undefined) t.creditCard.id = updates.credit_card_id;
         if (updates.status !== undefined) t.status = updates.status as any;
       });
+
+      const nextAmount = updates.amount !== undefined ? Number(updates.amount) : prevAmount;
+      const nextType = updates.type !== undefined ? (updates.type as any) : prevType;
+      const nextCreditCardId = updates.credit_card_id !== undefined ? updates.credit_card_id : prevCreditCardId;
+      const nextStatus = updates.status !== undefined ? (updates.status as any) : prevStatus;
+
+      const shouldAffectCard = (type: any, status: any, cardId: string | null | undefined) => {
+        if (!cardId) return false;
+        if (status === "pending") return false;
+        return type === "expense" || type === "income";
+      };
+
+      if (shouldAffectCard(prevType, prevStatus, prevCreditCardId)) {
+        const card = await database.get<any>("credit_cards").find(prevCreditCardId);
+        await card.update((c: any) => {
+          if (prevType === "expense") c.currentBalance -= prevAmount;
+          if (prevType === "income") c.currentBalance += prevAmount;
+        });
+      }
+
+      if (shouldAffectCard(nextType, nextStatus, nextCreditCardId)) {
+        const card = await database.get<any>("credit_cards").find(nextCreditCardId);
+        await card.update((c: any) => {
+          if (nextType === "expense") c.currentBalance += nextAmount;
+          if (nextType === "income") c.currentBalance -= nextAmount;
+        });
+      }
     });
 
     await this.recalculateAccountBalances();
@@ -1158,21 +1208,15 @@ export const FinancialService = {
     const card = await database.get<any>("credit_cards").find(cardId);
     const closingDay = card.closingDay || 1;
 
-    // A fatura fecha no dia closingDay do mês/ano solicitado.
-    // Ela começa no dia closingDay+1 do mês anterior.
-    const invoiceCloseDate = new Date(year, month, closingDay, 23, 59, 59, 999);
-    const invoiceStartDate = new Date(year, month - 1, closingDay + 1, 0, 0, 0, 0);
-
-    const start = invoiceStartDate.getTime();
-    const end = invoiceCloseDate.getTime();
+    const { start, end } = getInvoiceCycle(year, month, closingDay);
 
     const records = await database
       .get<Transaction>("transactions")
       .query(
         Q.where("deleted_at", Q.eq(null)),
         Q.where("credit_card_id", cardId),
-        Q.where("transaction_date", Q.gte(start)),
-        Q.where("transaction_date", Q.lte(end)),
+        Q.where("transaction_date", Q.gte(start.getTime())),
+        Q.where("transaction_date", Q.lte(end.getTime())),
         Q.sortBy("transaction_date", Q.desc),
       )
       .fetch();
@@ -1193,9 +1237,10 @@ export const FinancialService = {
       }),
     );
 
-    const total = transactions.reduce((acc, t) => acc + t.amount, 0);
+    const visibleTransactions = transactions.filter((t) => t.status !== "pending" && t.status !== "cancelled");
+    const total = calcInvoiceTotal(visibleTransactions);
 
-    return { transactions, total };
+    return { transactions: visibleTransactions, total };
   },
 
   async payInvoice(cardId: string, amount: number, accountId: string, date: Date) {
@@ -1218,6 +1263,18 @@ export const FinancialService = {
         t.currencyCode = card.currencyCode;
         t.status = "completed";
         t.account.id = accountId;
+      });
+
+      // 1b. Create card-side record for visibility (does not affect totals)
+      await database.get<Transaction>("transactions").create((t) => {
+        t.userId = user.id;
+        t.amount = amount;
+        t.type = "transfer";
+        t.description = `Pagamento Fatura: ${card.name}`;
+        t.transactionDate = date;
+        t.currencyCode = card.currencyCode;
+        t.status = "completed";
+        t.creditCard.id = cardId;
       });
 
       // 2. Update account balance
