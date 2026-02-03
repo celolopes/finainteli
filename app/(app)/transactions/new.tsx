@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Button, Dialog, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { DatePickerField } from "../../../src/components/DatePickerField";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
 import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
@@ -135,10 +136,10 @@ export default function NewTransaction() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
+      <GlassAppbar elevated style={{ backgroundColor: theme.colors.surface }}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("transactions.newTitle")} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>

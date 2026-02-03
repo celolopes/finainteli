@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Button, Card, Icon, IconButton, ProgressBar, Text, TextInput, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GeminiService } from "../../../src/services/gemini";
 import { useStore } from "../../../src/store/useStore";
@@ -91,9 +92,9 @@ export default function GoalsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient colors={[theme.colors.surfaceVariant, theme.colors.background]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.4 }} style={StyleSheet.absoluteFillObject} />
 
-      <Appbar.Header style={{ backgroundColor: "transparent" }}>
+      <GlassAppbar style={{ backgroundColor: "transparent" }}>
         <Appbar.Content title={t("goals.title", "Metas Financeiras")} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
         {!currentGoal ? (

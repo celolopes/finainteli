@@ -6,11 +6,13 @@ import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Avatar, IconButton, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppTheme } from "../../context/ThemeContext";
 import { useAuthStore } from "../../store/authStore";
 import { SyncIndicator } from "../ui/SyncIndicator";
 
 export const UserHeader = () => {
   const theme = useTheme();
+  const { isLiquidGlass } = useAppTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile } = useAuthStore();
@@ -49,7 +51,7 @@ export const UserHeader = () => {
   if (Platform.OS === "ios") {
     return (
       <View style={styles.containerIOS}>
-        <BlurView intensity={80} tint={theme.dark ? "dark" : "light"} style={[styles.blur, { paddingTop: insets.top + 10 }]}>
+        <BlurView intensity={80} tint={isLiquidGlass ? "systemThinMaterial" : theme.dark ? "dark" : "light"} style={[styles.blur, { paddingTop: insets.top + 10 }]}>
           <Animated.View entering={FadeInDown.delay(100).springify()}>{Content}</Animated.View>
         </BlurView>
       </View>

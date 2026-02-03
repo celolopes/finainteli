@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Button, HelperText, Modal, Portal, Switch, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, HelperText, Modal, Portal, Text, TextInput, useTheme } from "react-native-paper";
+import { PlatformSwitch } from "../ui/PlatformSwitch";
 import { Budget } from "../../services/budget";
 import { Database } from "../../types/schema";
 
@@ -122,15 +123,15 @@ export const BudgetModal = ({ visible, onDismiss, onSave, categories, existingBu
 
           <View style={styles.switchRow}>
             <Text>Atingir 50%</Text>
-            <Switch value={alert50} onValueChange={setAlert50} />
+            <PlatformSwitch value={alert50} onValueChange={setAlert50} />
           </View>
           <View style={styles.switchRow}>
             <Text>Atingir 80%</Text>
-            <Switch value={alert80} onValueChange={setAlert80} />
+            <PlatformSwitch value={alert80} onValueChange={setAlert80} />
           </View>
           <View style={styles.switchRow}>
             <Text>Atingir 100%</Text>
-            <Switch value={alert100} onValueChange={setAlert100} />
+            <PlatformSwitch value={alert100} onValueChange={setAlert100} />
           </View>
 
           {error ? (

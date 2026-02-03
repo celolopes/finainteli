@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Appbar, Card, Divider, Text, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../../src/components/ui/GlassAppbar";
 import { VictoryPie } from "victory-native";
 import { USD_TO_BRL_RATE } from "../../../../src/constants/aiPricing";
 import { AIUsageRepository } from "../../../../src/database/repositories/aiUsageRepository";
@@ -70,10 +71,10 @@ export default function AIUsageDashboard() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header style={{ backgroundColor: theme.colors.surface }}>
+      <GlassAppbar style={{ backgroundColor: theme.colors.surface }}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("debug.aiUsage")} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Summary Info */}

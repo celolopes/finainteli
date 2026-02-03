@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { z } from "zod";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
 import { FinancialService } from "../../../src/services/financial";
@@ -225,11 +226,11 @@ export default function TransactionDetails() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("transactions.edit")} />
         <Appbar.Action icon="delete" onPress={() => setShowDeleteDialog(true)} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>

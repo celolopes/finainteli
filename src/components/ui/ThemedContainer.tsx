@@ -16,19 +16,19 @@ interface Props {
 }
 
 export function ThemedContainer({ style, children, intensity = 50, elevation = 0 }: Props) {
-  const { isGlass, colors, isDark } = useAppTheme();
+  const { isGlass, isLiquidGlass, colors, isDark } = useAppTheme();
 
   if (isGlass) {
     // iOS Liquid Glass
     return (
       <BlurView
         intensity={intensity}
-        tint={isDark ? "dark" : "light"}
+        tint={isLiquidGlass ? "systemThinMaterial" : isDark ? "dark" : "light"}
         experimentalBlurMethod="dimezisBlurView" // Better performance
         style={[
           styles.glass,
           {
-            backgroundColor: colors.glass,
+            backgroundColor: isLiquidGlass ? "transparent" : colors.glass,
             borderColor: colors.glassBorder,
           },
           style,

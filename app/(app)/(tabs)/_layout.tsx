@@ -4,21 +4,29 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
+import { useAppTheme } from "../../../src/context/ThemeContext";
 
 export default function TabLayout() {
   const theme = useTheme();
   const { t } = useTranslation();
   const isIos = Platform.OS === "ios";
+  const { isLiquidGlass, colors } = useAppTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: theme.colors.background },
+        headerStyle: { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.background },
         headerTintColor: theme.colors.onBackground,
+        headerTransparent: isLiquidGlass,
+        headerShadowVisible: !isLiquidGlass,
+        headerBackground: isLiquidGlass
+          ? () => <BlurView intensity={80} tint="systemThinMaterial" style={StyleSheet.absoluteFill} />
+          : undefined,
         tabBarStyle: {
           backgroundColor: isIos ? "transparent" : theme.colors.elevation.level2,
-          borderTopWidth: 0,
+          borderTopWidth: isIos ? StyleSheet.hairlineWidth : 0,
+          borderTopColor: isLiquidGlass ? colors.glassBorder : "transparent",
           elevation: 0,
           height: isIos ? 88 : 68,
           paddingBottom: isIos ? 28 : 12,

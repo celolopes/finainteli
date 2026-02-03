@@ -3,7 +3,9 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, Appbar, Avatar, Button, Chip, Divider, FAB, Icon, Menu, Searchbar, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Avatar, Button, Chip, Divider, Icon, Menu, Searchbar, Text, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import Animated, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
@@ -254,7 +256,7 @@ export default function TransactionsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]} aria-label="Lista de Transações">
       {/* Header */}
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("tabs.transactions", "Transações")} />
         <Menu visible={showFilterMenu} onDismiss={() => setShowFilterMenu(false)} anchor={<Appbar.Action icon="filter-variant" onPress={() => setShowFilterMenu(true)} />}>
@@ -285,7 +287,7 @@ export default function TransactionsScreen() {
           <Divider />
           <Menu.Item onPress={clearFilters} title={t("transactions.filter.clear", "Limpar Filtros")} leadingIcon="close" />
         </Menu>
-      </Appbar.Header>
+      </GlassAppbar>
 
       {/* Barra de Pesquisa */}
       <View style={styles.searchContainer}>
@@ -337,7 +339,7 @@ export default function TransactionsScreen() {
       )}
 
       {/* FAB */}
-      <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={() => router.push("/transactions/new")} color={theme.colors.onPrimary} />
+      <GlassFAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={() => router.push("/transactions/new")} color={theme.colors.onPrimary} />
     </View>
   );
 }

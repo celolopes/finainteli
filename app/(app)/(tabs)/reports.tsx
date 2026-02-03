@@ -4,6 +4,7 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Appbar, Button, Icon, SegmentedButtons, Text, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { AIInsightsCard } from "../../../src/components/reports/AIInsightsCard";
 import { CategoryPieChart } from "../../../src/components/reports/CategoryPieChart";
@@ -133,9 +134,9 @@ export default function ReportsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.Content title="Relatórios & IA" />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}>
         <SegmentedButtons

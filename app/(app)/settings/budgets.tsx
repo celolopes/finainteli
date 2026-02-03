@@ -2,7 +2,9 @@ import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, FAB, IconButton, ProgressBar, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, IconButton, ProgressBar, Text, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import { BudgetModal } from "../../../src/components/budgets/BudgetModal";
 import { useBudgets } from "../../../src/hooks/useBudgetMonitor";
 import { Budget, BudgetService, BudgetStatus } from "../../../src/services/budget";
@@ -109,10 +111,10 @@ export default function BudgetsScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Appbar.Header elevated>
+        <GlassAppbar elevated>
           <Appbar.BackAction onPress={() => router.back()} />
           <Appbar.Content title="Orçamentos" subtitle="Defina limites por categoria" />
-        </Appbar.Header>
+        </GlassAppbar>
 
         <ScrollView contentContainerStyle={styles.content}>
           {isLoading ? (
@@ -167,7 +169,7 @@ export default function BudgetsScreen() {
           )}
         </ScrollView>
 
-        <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={openNewBudget} />
+        <GlassFAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} onPress={openNewBudget} />
 
         <BudgetModal visible={modalVisible} onDismiss={() => setModalVisible(false)} onSave={handleSave} categories={modalCategories} existingBudget={editingBudget} loading={saving} />
       </View>

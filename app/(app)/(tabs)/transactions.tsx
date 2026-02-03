@@ -2,7 +2,8 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, SectionList, StyleSheet, View } from "react-native";
-import { Chip, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
+import { Chip, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { TransactionItem } from "../../../src/components/TransactionItem";
 import { FiltersModal, FilterState } from "../../../src/components/transactions/FiltersModal";
@@ -199,7 +200,7 @@ export default function TransactionsScreen() {
         stickySectionHeadersEnabled={false}
       />
 
-      <FAB
+      <GlassFAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: Platform.OS === "ios" ? 90 : 16 }]}
         color={theme.colors.onPrimary}

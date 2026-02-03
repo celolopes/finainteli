@@ -4,9 +4,11 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Button, Dialog, Divider, Icon, List, Paragraph, Portal, Surface, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { PlatformSwitch } from "../../../src/components/ui/PlatformSwitch";
 import { database } from "../../../src/database";
 import { authHelpers, supabase } from "../../../src/services/supabase";
 import { useAuthStore } from "../../../src/store/authStore";
@@ -168,10 +170,10 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient colors={[theme.colors.surfaceVariant, theme.colors.background]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.4 }} style={StyleSheet.absoluteFillObject} />
 
-      <Appbar.Header style={{ backgroundColor: "transparent" }}>
+      <GlassAppbar style={{ backgroundColor: "transparent" }}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={t("profile.settings")} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
         {/* Profile Header */}
@@ -216,7 +218,7 @@ export default function SettingsScreen() {
               title={t("profile.notifications")}
               description={t("profile.notificationsDesc") || "Receber alertas de orçamento"}
               left={(props) => <List.Icon {...props} icon="bell-outline" color={theme.colors.primary} />}
-              right={() => <Switch value={notifEnabled} onValueChange={toggleNotifications} aria-label="Ativar Notificações" />}
+              right={() => <PlatformSwitch value={notifEnabled} onValueChange={toggleNotifications} aria-label="Ativar Notificações" />}
               style={styles.listItem}
             />
           </List.Section>
@@ -247,7 +249,7 @@ export default function SettingsScreen() {
               title="Bloqueio de App"
               description="Exigir PIN ao abrir"
               left={(props) => <List.Icon {...props} icon="lock-outline" color={theme.colors.primary} />}
-              right={() => <Switch value={isSecurityEnabled} onValueChange={handleSecurityToggle} aria-label="Ativar Bloqueio" />}
+              right={() => <PlatformSwitch value={isSecurityEnabled} onValueChange={handleSecurityToggle} aria-label="Ativar Bloqueio" />}
               style={styles.listItem}
             />
 
@@ -259,7 +261,7 @@ export default function SettingsScreen() {
                     title="Biometria"
                     description="Usar Face ID / Touch ID"
                     left={(props) => <List.Icon {...props} icon="fingerprint" color={theme.colors.primary} />}
-                    right={() => <Switch value={isBiosEnabled} onValueChange={toggleBiometrics} aria-label="Usar Biometria" />}
+                    right={() => <PlatformSwitch value={isBiosEnabled} onValueChange={toggleBiometrics} aria-label="Usar Biometria" />}
                     style={styles.listItem}
                   />
                 )}

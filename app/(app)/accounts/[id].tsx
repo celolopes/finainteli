@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Button, Dialog, Portal, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { FinancialService } from "../../../src/services/financial";
 import { CurrencyUtils } from "../../../src/utils/currency";
@@ -119,11 +120,11 @@ export default function EditAccount() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Editar Conta" />
         <Appbar.Action icon="trash-can-outline" onPress={() => setDeleteDialogVisible(true)} color={theme.colors.error} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>

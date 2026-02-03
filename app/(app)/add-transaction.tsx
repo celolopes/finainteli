@@ -1,17 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Avatar, Button, Dialog, Divider, HelperText, IconButton, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { Appbar, Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../src/components/DescriptionAutocomplete";
+import { DatePickerField } from "../../src/components/DatePickerField";
+import { GlassAppbar } from "../../src/components/ui/GlassAppbar";
 import { FinancialService } from "../../src/services/financial";
 import { CurrencyUtils } from "../../src/utils/currency";
+
+const AndroidDateTimePicker = Platform.OS === "android" ? require("@react-native-community/datetimepicker").default : null;
 
 const createSchema = (t: any) =>
   z.object({
@@ -50,12 +53,14 @@ export default function AddTransactionScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const onChangeDate = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS until user closes (or handle differently)
+    if (!selectedDate) {
+      setShowDatePicker(false);
+      return;
+    }
+    setDate(selectedDate);
     if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
-    setDate(currentDate);
   };
 
   const schema = useMemo(() => createSchema(t), [t]);
@@ -210,14 +215,10 @@ export default function AddTransactionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Stack.Screen
-        options={{
-          title: t("transactions.newTitle"),
-          presentation: "modal",
-          headerShown: true,
-          headerLeft: () => <IconButton icon="close" onPress={() => router.back()} />,
-        }}
-      />
+      <GlassAppbar elevated>
+        <Appbar.BackAction icon="close" onPress={() => router.back()} />
+        <Appbar.Content title={t("transactions.newTitle")} />
+      </GlassAppbar>
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]}>
         {/* Banner Removed per user request */}
         <View style={styles.formGroup}>
@@ -349,17 +350,24 @@ export default function AddTransactionScreen() {
 
         {/* Date Selector */}
         <View style={styles.formGroup}>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
-            Data
-          </Text>
-          <TouchableOpacity style={[styles.selector, { marginBottom: 0 }]} onPress={() => setShowDatePicker(true)}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Avatar.Icon size={32} icon="calendar" style={{ backgroundColor: theme.colors.surfaceVariant }} />
-              <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
-            </View>
-          </TouchableOpacity>
-          {showDatePicker && <DateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChangeDate} display={Platform.OS === "ios" ? "spinner" : "default"} />}
-          {Platform.OS === "ios" && showDatePicker && <Button onPress={() => setShowDatePicker(false)}>Confirmar Data</Button>}
+          {Platform.OS === "ios" ? (
+            <DatePickerField value={date} onChange={setDate} label="Data" />
+          ) : (
+            <>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+                Data
+              </Text>
+              <TouchableOpacity style={[styles.selector, { marginBottom: 0 }]} onPress={() => setShowDatePicker(true)}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Avatar.Icon size={32} icon="calendar" style={{ backgroundColor: theme.colors.surfaceVariant }} />
+                  <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
+                </View>
+              </TouchableOpacity>
+              {showDatePicker && AndroidDateTimePicker && (
+                <AndroidDateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChangeDate} display="default" />
+              )}
+            </>
+          )}
         </View>
 
         {/* Installment Options (Only for Credit Card) */}

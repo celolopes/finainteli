@@ -2,7 +2,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, FAB, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
@@ -225,10 +227,10 @@ export default function CardDetails() {
   if (!card) {
     return (
       <View style={styles.container}>
-        <Appbar.Header elevated>
+        <GlassAppbar elevated>
           <Appbar.BackAction onPress={() => router.back()} />
           <Appbar.Content title="Detalhes do Cartão" />
-        </Appbar.Header>
+        </GlassAppbar>
         <View style={styles.emptyContainer}>
           <Text>Cartão não encontrado.</Text>
         </View>
@@ -241,10 +243,10 @@ export default function CardDetails() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={card.name} subtitle={card.brand} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Card Summary */}
@@ -413,7 +415,7 @@ export default function CardDetails() {
           </View>
         )}
       </ScrollView>
-      <FAB
+      <GlassFAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         color={theme.colors.onPrimary}

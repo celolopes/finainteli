@@ -2,7 +2,9 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Image, RefreshControl, StyleSheet, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, Appbar, Avatar, FAB, Surface, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Avatar, Surface, Text, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
@@ -162,10 +164,10 @@ export default function AccountsList() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Minhas Contas" />
-      </Appbar.Header>
+      </GlassAppbar>
 
       {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
@@ -186,7 +188,7 @@ export default function AccountsList() {
         />
       )}
 
-      <FAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} color="white" onPress={() => router.push("/(app)/accounts/new" as any)} />
+      <GlassFAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} color="white" onPress={() => router.push("/(app)/accounts/new" as any)} />
     </View>
   );
 }

@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { FinancialService } from "../../../src/services/financial";
@@ -99,10 +100,10 @@ export default function AccountForm() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
+      <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={isEdit ? "Editar Conta" : "Nova Conta"} />
-      </Appbar.Header>
+      </GlassAppbar>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>

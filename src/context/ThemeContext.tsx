@@ -3,12 +3,15 @@ import React, { createContext, useContext, useMemo } from "react";
 import { Platform, useColorScheme } from "react-native";
 import { MD3DarkTheme, MD3LightTheme, PaperProvider, adaptNavigationTheme } from "react-native-paper";
 import Colors from "../../constants/Colors";
+import { isIOS26OrNewer } from "../utils/platform";
 
 const isIOS = Platform.OS === "ios";
+const isLiquidGlass = isIOS && isIOS26OrNewer();
 
 export const ThemeContext = createContext({
   isDark: false,
   isGlass: isIOS,
+  isLiquidGlass,
   colors: Colors.light,
 });
 
@@ -54,9 +57,9 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       ...navBase.colors,
       primary: myColors.primary,
       background: myColors.background,
-      card: isIOS ? "transparent" : myColors.surface, // Transparent for Glass TabBar interactions
+      card: isLiquidGlass ? "transparent" : myColors.surface, // Transparent for Liquid Glass interactions
       text: myColors.text,
-      border: isIOS ? myColors.glassBorder : myColors.outline,
+      border: isLiquidGlass ? myColors.glassBorder : myColors.outline,
     },
   };
 
@@ -64,6 +67,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     () => ({
       isDark,
       isGlass: isIOS,
+      isLiquidGlass,
       colors: myColors,
     }),
     [isDark, myColors],
