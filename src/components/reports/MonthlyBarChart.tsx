@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
-// @ts-ignore
-import { VictoryAxis, VictoryBar, VictoryChart, VictoryLabel, VictoryTheme } from "victory-native";
+import { BarChart } from "react-native-gifted-charts";
+import { CountUp } from "use-count-up";
+import { buildLabelTexts, formatThousands, lightenColor, withAlpha } from "./chartUtils";
 
 interface MonthlyData {
   month: string;
@@ -17,43 +18,86 @@ interface MonthlyBarChartProps {
 export const MonthlyBarChart = ({ data }: MonthlyBarChartProps) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get("window").width;
+  const chartWidth = Math.max(screenWidth - 32, 240);
+  const safeData = data ?? [];
 
-  if (!data || data.length === 0) return null;
+  // Transform data for the chart (simple bar for expenses)
+  const labels = useMemo(() => buildLabelTexts(safeData.map((item) => item.month), 6), [safeData]);
+  const showTopLabels = safeData.length <= 8;
+  const barWidth = safeData.length > 10 ? 12 : 18;
+  const spacing = safeData.length > 10 ? 12 : 18;
+  const isDark = theme.dark;
+  const baseBarColor = isDark ? lightenColor(theme.colors.primary, 0.08) : theme.colors.primary;
+  const gradientColor = isDark ? lightenColor(theme.colors.primary, 0.28) : lightenColor(theme.colors.primary, 0.12);
+  const chartData = useMemo(
+    () =>
+      safeData.map((d, index) => ({
+        value: d.expense,
+        label: labels[index],
+        frontColor: baseBarColor,
+        gradientColor,
+        showGradient: true,
+        topLabelComponent: showTopLabels
+          ? () => (
+              <Text style={{ fontSize: 10, color: theme.colors.onSurface }}>
+                R${" "}
+                <CountUp isCounting end={Math.round(d.expense)} duration={0.6} key={`${d.month}-${d.expense}`} />
+              </Text>
+            )
+          : undefined,
+      })),
+    [safeData, labels, showTopLabels, theme.colors.onSurface, baseBarColor, gradientColor],
+  );
+  const axisLineColor = theme.colors.outlineVariant ?? theme.colors.onSurface;
+  const ruleColor = withAlpha(axisLineColor, isDark ? 0.35 : 0.5);
 
-  // Transform data for Victory (simple bar for Expenses)
-  const chartData = data.map((d) => ({ x: d.month, y: d.expense }));
+  if (safeData.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <Text variant="titleMedium" style={styles.title}>
         Despesas Mensais
       </Text>
-      <VictoryChart width={screenWidth - 32} height={220} theme={VictoryTheme.material} domainPadding={{ x: 20 }}>
-        <VictoryAxis
-          style={{
-            tickLabels: { fill: theme.colors.onSurface, fontSize: 10, angle: -15 },
-          }}
-        />
-        <VictoryAxis
-          dependentAxis
-          tickFormat={(t: number) => `k${Math.round(t / 1000)}`}
-          style={{
-            tickLabels: { fill: theme.colors.onSurface, fontSize: 10 },
-          }}
-        />
-        <VictoryBar
-          data={chartData}
-          style={{ data: { fill: theme.colors.primary } }}
-          labels={({ datum }: { datum: any }) => `R$${Math.round(datum.y)}`}
-          labelComponent={<VictoryLabel dy={-10} style={{ fill: theme.colors.onSurface, fontSize: 10 }} />}
-          animate={{
-            duration: 500,
-            onLoad: { duration: 500 },
-          }}
-          barRatio={0.5}
-          cornerRadius={4}
-        />
-      </VictoryChart>
+      <View
+        style={[
+          styles.chartSurface,
+          { backgroundColor: theme.colors.surface },
+          isDark && {
+            borderWidth: 1,
+            borderColor: withAlpha(baseBarColor, 0.18),
+            shadowColor: baseBarColor,
+            shadowOpacity: 0.25,
+          },
+        ]}
+      >
+        <View style={styles.chart}>
+          <BarChart
+            data={chartData}
+            width={chartWidth}
+            height={220}
+            barWidth={barWidth}
+            barBorderRadius={8}
+            spacing={spacing}
+            initialSpacing={14}
+            endSpacing={14}
+            isAnimated
+            animationDuration={700}
+            yAxisTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
+            xAxisLabelTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
+            xAxisColor={axisLineColor}
+            yAxisColor={axisLineColor}
+            rulesColor={ruleColor}
+            rulesThickness={0.6}
+            yAxisLabelWidth={48}
+            noOfSections={4}
+            rotateLabel
+            xAxisLabelsHeight={32}
+            xAxisLabelsVerticalShift={6}
+            adjustToWidth
+            formatYLabel={(label) => formatThousands(Number(label))}
+          />
+        </View>
+      </View>
     </View>
   );
 };
@@ -66,5 +110,18 @@ const styles = StyleSheet.create({
   title: {
     textAlign: "center",
     marginBottom: 0,
+  },
+  chart: {
+    height: 220,
+  },
+  chartSurface: {
+    borderRadius: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
 });

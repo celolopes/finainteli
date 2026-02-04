@@ -2,13 +2,13 @@ import { calculateAICost, USD_TO_BRL_RATE } from "../aiPricing";
 
 describe("AI Pricing Logic", () => {
   it("should calculate correct cost for Gemini 3 Flash", () => {
-    // 1M input tokens = $0.10
-    // 1M output tokens = $0.40
+    // 1M input tokens = $0.50
+    // 1M output tokens = $3.00
 
     const promptTokens = 1_000_000;
     const candidatesTokens = 1_000_000;
 
-    const expectedUsd = 0.1 + 0.4;
+    const expectedUsd = 0.5 + 3.0;
     const expectedBrl = expectedUsd * USD_TO_BRL_RATE;
 
     const result = calculateAICost("gemini-3-flash-preview", promptTokens, candidatesTokens);
@@ -28,12 +28,12 @@ describe("AI Pricing Logic", () => {
     expect(result).toBeCloseTo(expectedBrl, 5);
   });
 
-  it("should fallback to gemini-2.0-flash for unknown models", () => {
+  it("should fallback to gemini-2.5-flash for unknown models", () => {
     const promptTokens = 1_000_000;
     const candidatesTokens = 1_000_000;
 
     const result = calculateAICost("unknown-model", promptTokens, candidatesTokens);
-    const expected = calculateAICost("gemini-2.0-flash", promptTokens, candidatesTokens);
+    const expected = calculateAICost("gemini-2.5-flash", promptTokens, candidatesTokens);
 
     expect(result).toBe(expected);
   });

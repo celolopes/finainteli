@@ -14,8 +14,8 @@ export default function TabLayout() {
   const { isLiquidGlass, colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  const iosTabHeight = 64 + insets.bottom;
-  const iosTabPaddingBottom = Math.max(insets.bottom, 12);
+  const iosTabHeight = 88 + insets.bottom;
+  const iosTabPaddingBottom = Math.max(insets.bottom, 18);
   const tabBarStyle = {
     backgroundColor: isIos ? "transparent" : theme.colors.elevation.level2,
     borderTopWidth: isIos ? (isLiquidGlass ? 0 : StyleSheet.hairlineWidth) : 0,
@@ -24,12 +24,16 @@ export default function TabLayout() {
     elevation: 0,
     height: isIos ? iosTabHeight : 68,
     paddingBottom: isIos ? iosTabPaddingBottom : 12,
-    paddingTop: isIos ? 6 : 0,
+    paddingTop: isIos ? 12 : 0,
     position: isIos ? "absolute" : "relative",
-    marginHorizontal: isIos ? 16 : 0,
-    marginBottom: isIos ? 10 : 0,
-    borderRadius: isIos ? 28 : 0,
+    marginHorizontal: isIos ? 10 : 0,
+    marginBottom: isIos ? 6 : 0,
+    borderRadius: isIos ? 42 : 0,
     overflow: "hidden",
+    shadowColor: isIos ? "#000" : "transparent",
+    shadowOpacity: isIos ? 0.25 : 0,
+    shadowRadius: isIos ? 18 : 0,
+    shadowOffset: isIos ? { width: 0, height: 8 } : { width: 0, height: 0 },
   } as const;
 
   return (
@@ -44,9 +48,19 @@ export default function TabLayout() {
           ? () => <LiquidGlassSurface effect="clear" useBlurFallback={false} style={StyleSheet.absoluteFill} />
           : undefined,
         tabBarStyle,
-        tabBarBackground: () => (isIos ? <LiquidGlassSurface effect="clear" style={StyleSheet.absoluteFill} /> : undefined),
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarBackground: () =>
+          isIos ? (
+            <LiquidGlassSurface
+              effect="regular"
+              blurIntensity={96}
+              blurTint="systemThinMaterialDark"
+              style={StyleSheet.absoluteFill}
+            />
+          ) : undefined,
+        tabBarActiveTintColor: isIos && isLiquidGlass ? "#ffffff" : theme.colors.primary,
+        tabBarInactiveTintColor: isIos && isLiquidGlass ? "rgba(255,255,255,0.7)" : theme.colors.onSurfaceVariant,
+        tabBarItemStyle: isIos ? { paddingTop: 4 } : undefined,
+        tabBarLabelStyle: isIos ? { marginTop: 6, fontSize: 13, fontWeight: "600" } : undefined,
       }}
     >
       <Tabs.Screen

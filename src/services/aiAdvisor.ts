@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { FinancialService } from "./financial";
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const DEFAULT_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
 
 let genAI: GoogleGenerativeAI | null = null;
 const getGeminiClient = () => {
@@ -64,7 +65,7 @@ export const AIAdvisorService = {
 
       // 3. Call Gemini
       const client = getGeminiClient();
-      const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = client.getGenerativeModel({ model: DEFAULT_MODEL });
       const result = await model.generateContent(prompt);
       const response = result.response;
       const text = response.text();

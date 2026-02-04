@@ -3,7 +3,7 @@ import { useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Icon, SegmentedButtons, Text, useTheme } from "react-native-paper";
+import { Appbar, Button, Card, Icon, SegmentedButtons, Text, useTheme } from "react-native-paper";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { AIInsightsCard } from "../../../src/components/reports/AIInsightsCard";
@@ -24,6 +24,57 @@ const LockedFeature = ({ icon, text, theme }: { icon: string; text: string; them
     </Text>
   </View>
 );
+
+const MIN_MONTHS_FOR_CHARTS = 2;
+const MIN_CATEGORIES_FOR_CHARTS = 2;
+
+const getReportDataStatus = (analysis: any, evolution: any[]) => {
+  const safeEvolution = evolution ?? [];
+  const nonZeroMonths = safeEvolution.filter((item) => Math.abs(item.income) + Math.abs(item.expense) > 0).length;
+  const categoryBreakdown = analysis?.categoryBreakdown ?? [];
+  const nonZeroCategories = categoryBreakdown.filter((item: any) => Number(item.amount) > 0).length;
+
+  const hasEvolutionChart = nonZeroMonths >= MIN_MONTHS_FOR_CHARTS;
+  const hasMonthlyChart = nonZeroMonths >= MIN_MONTHS_FOR_CHARTS;
+  const hasCategoryChart = nonZeroCategories >= MIN_CATEGORIES_FOR_CHARTS;
+  const hasInsightsData = (analysis?.totalIncome ?? 0) + (analysis?.totalExpenses ?? 0) > 0;
+
+  return {
+    hasEvolutionChart,
+    hasMonthlyChart,
+    hasCategoryChart,
+    hasInsightsData,
+    nonZeroMonths,
+    nonZeroCategories,
+  };
+};
+
+const buildInsufficientInsights = (nonZeroMonths: number, nonZeroCategories: number): AIInsight[] => {
+  const missingMonths = Math.max(0, MIN_MONTHS_FOR_CHARTS - nonZeroMonths);
+  const missingCategories = Math.max(0, MIN_CATEGORIES_FOR_CHARTS - nonZeroCategories);
+  const parts = [];
+
+  if (missingMonths > 0) {
+    parts.push(`registre transações em pelo menos ${MIN_MONTHS_FOR_CHARTS} meses`);
+  }
+  if (missingCategories > 0) {
+    parts.push(`tenha gastos em pelo menos ${MIN_CATEGORIES_FOR_CHARTS} categorias`);
+  }
+
+  const message = parts.length
+    ? `Ainda não há dados suficientes para gerar gráficos e insights. Para liberar relatórios completos, ${parts.join(" e ")}.`
+    : "Ainda não há dados suficientes para gerar gráficos e insights. Registre mais transações para liberar os relatórios.";
+
+  return [
+    {
+      type: "tip",
+      icon: "🤖",
+      title: "Dados insuficientes",
+      message,
+      impact: "low",
+    },
+  ];
+};
 
 export default function ReportsScreen() {
   const theme = useTheme();
@@ -60,9 +111,15 @@ export default function ReportsScreen() {
         const evolutionData = await FinancialService.getMonthlyEvolution(user.id);
         setEvolution(evolutionData);
 
-        // 4. AI Insights
-        const aiInsights = await AIAdvisorService.getInsights(period, user.id);
-        setInsights(aiInsights);
+        const status = getReportDataStatus(analysisData, evolutionData);
+
+        // 4. AI Insights (only when there is meaningful data)
+        if (status.hasInsightsData) {
+          const aiInsights = await AIAdvisorService.getInsights(period, user.id);
+          setInsights(aiInsights);
+        } else {
+          setInsights(buildInsufficientInsights(status.nonZeroMonths, status.nonZeroCategories));
+        }
       }
     } catch (error) {
       console.error("Reports Fetch Error:", error);
@@ -132,6 +189,9 @@ export default function ReportsScreen() {
     );
   }
 
+  const status = getReportDataStatus(analysis, evolution);
+  const shouldShowCharts = status.hasEvolutionChart || status.hasMonthlyChart || status.hasCategoryChart;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <GlassAppbar elevated>
@@ -156,34 +216,71 @@ export default function ReportsScreen() {
             Consultor Financeiro
           </Text>
           <AIInsightsCard insights={insights} loading={loading} onRefresh={fetchData} />
+          {!loading && !status.hasInsightsData && (
+            <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Dados insuficientes para relatórios">
+              <Card.Content>
+                <View style={styles.emptyHeader}>
+                  <Icon source="robot" size={22} color={theme.colors.primary} />
+                  <Text variant="titleMedium" style={styles.emptyTitle}>
+                    IA aguardando mais dados
+                  </Text>
+                </View>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Registre mais transações para liberar gráficos e insights completos.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
         </View>
 
-        <View style={styles.section}>
-          <EvolutionChart data={evolution.map((e: any) => ({ period: e.month, balance: e.balance }))} />
-        </View>
+        {status.hasEvolutionChart && (
+          <View style={styles.section}>
+            <EvolutionChart data={evolution.map((e: any) => ({ period: e.month, balance: e.balance }))} />
+          </View>
+        )}
 
-        <View style={styles.section}>
-          <CategoryPieChart
-            data={
-              analysis?.categoryBreakdown.map((c: any) => ({
-                category: c.category,
-                amount: c.amount,
-                percentage: c.percentage,
-                color: getColorForCategory(c.category),
-              })) || []
-            }
-          />
-        </View>
+        {status.hasCategoryChart && (
+          <View style={styles.section}>
+            <CategoryPieChart
+              data={
+                analysis?.categoryBreakdown.map((c: any) => ({
+                  category: c.category,
+                  amount: c.amount,
+                  percentage: c.percentage,
+                  color: getColorForCategory(c.category),
+                })) || []
+              }
+            />
+          </View>
+        )}
 
-        <View style={styles.section}>
-          <MonthlyBarChart
-            data={evolution.map((e: any) => ({
-              month: e.month,
-              income: e.income,
-              expense: e.expense,
-            }))}
-          />
-        </View>
+        {status.hasMonthlyChart && (
+          <View style={styles.section}>
+            <MonthlyBarChart
+              data={evolution.map((e: any) => ({
+                month: e.month,
+                income: e.income,
+                expense: e.expense,
+              }))}
+            />
+          </View>
+        )}
+
+        {!loading && !shouldShowCharts && status.hasInsightsData && (
+          <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Sem dados suficientes para gráficos">
+            <Card.Content>
+              <View style={styles.emptyHeader}>
+                <Icon source="chart-line" size={22} color={theme.colors.primary} />
+                <Text variant="titleMedium" style={styles.emptyTitle}>
+                  Gráficos ocultos
+                </Text>
+              </View>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                Quando houver registros em {MIN_MONTHS_FOR_CHARTS} meses e {MIN_CATEGORIES_FOR_CHARTS} categorias, os gráficos serão exibidos.
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
       </ScrollView>
     </View>
   );
@@ -204,8 +301,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 100 },
   segmented: { marginBottom: 16 },
-  section: { marginBottom: 24 },
+  section: { marginBottom: 16 },
   sectionTitle: { marginBottom: 12, fontWeight: "bold" },
+  emptyCard: {
+    borderRadius: 16,
+  },
+  emptyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  emptyTitle: {
+    fontWeight: "600",
+  },
 
   // Locked Screen Styles
   lockedContent: {

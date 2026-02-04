@@ -1,14 +1,16 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Appbar, Card, Divider, Text, useTheme } from "react-native-paper";
 import { GlassAppbar } from "../../../../src/components/ui/GlassAppbar";
-import { VictoryPie } from "victory-native";
+import { PieChart } from "react-native-gifted-charts";
+import { CountUp } from "use-count-up";
+import { buildThemePalette, lightenColor, withAlpha } from "../../../../src/components/reports/chartUtils";
 import { USD_TO_BRL_RATE } from "../../../../src/constants/aiPricing";
 import { AIUsageRepository } from "../../../../src/database/repositories/aiUsageRepository";
 
-const { width } = Dimensions.get("window");
+type FeatureChartItem = { label: string; value: number; color: string };
 
 export default function AIUsageDashboard() {
   const theme = useTheme();
@@ -16,7 +18,9 @@ export default function AIUsageDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [featureData, setFeatureData] = useState<any[]>([]);
+  const [featureData, setFeatureData] = useState<FeatureChartItem[]>([]);
+  const totalFeatureCost = featureData.reduce((sum, item) => sum + item.value, 0);
+  const isDark = theme.dark;
 
   useEffect(() => {
     loadStats();
@@ -39,10 +43,12 @@ export default function AIUsageDashboard() {
         outputTokens += log.candidatesTokens;
       });
 
-      const featureChartData = Object.entries(breakdown).map(([name, data]) => ({
-        x: name,
-        y: data.totalCost,
+      const pieColors = buildThemePalette(theme.colors, theme.dark);
+
+      const featureChartData = Object.entries(breakdown).map(([name, data], index) => ({
         label: name,
+        value: data.totalCost,
+        color: pieColors[index % pieColors.length],
       }));
 
       setStats({
@@ -85,7 +91,19 @@ export default function AIUsageDashboard() {
                 {t("debug.totalCost")}
               </Text>
               <Text variant="headlineSmall" style={{ fontWeight: "bold" }}>
-                R$ {stats.totalCost.toFixed(2)}
+                R${" "}
+                <CountUp
+                  isCounting
+                  end={stats.totalCost}
+                  duration={1}
+                  formatter={(value) =>
+                    value.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  }
+                  key={`total-cost-${stats.totalCost}`}
+                />
               </Text>
             </Card.Content>
           </Card>
@@ -95,7 +113,19 @@ export default function AIUsageDashboard() {
                 {t("debug.totalTokens")}
               </Text>
               <Text variant="headlineSmall" style={{ fontWeight: "bold" }}>
-                {(stats.totalTokens / 1000).toFixed(1)}k
+                <CountUp
+                  isCounting
+                  end={stats.totalTokens / 1000}
+                  duration={1}
+                  formatter={(value) =>
+                    value.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })
+                  }
+                  key={`total-tokens-${stats.totalTokens}`}
+                />
+                k
               </Text>
             </Card.Content>
           </Card>
@@ -129,18 +159,96 @@ export default function AIUsageDashboard() {
               <Text variant="titleMedium" style={styles.cardTitle}>
                 {t("debug.featureUsage")}
               </Text>
-              <View style={{ alignItems: "center" }}>
-                <VictoryPie
-                  data={featureData}
-                  width={width - 64}
-                  height={220}
-                  colorScale="qualitative"
+              <View
+                style={[
+                  styles.pieChart,
+                  isDark && {
+                    borderWidth: 1,
+                    borderColor: withAlpha(theme.colors.primary, 0.2),
+                    borderRadius: 18,
+                    shadowColor: theme.colors.primary,
+                    shadowOpacity: 0.22,
+                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 6 },
+                    elevation: 3,
+                    backgroundColor: theme.colors.surface,
+                  },
+                ]}
+              >
+                <PieChart
+                  data={featureData.map((item) => ({
+                    value: item.value,
+                    color: item.color,
+                    gradientCenterColor: isDark ? lightenColor(item.color, 0.18) : undefined,
+                    text: item.label,
+                  }))}
+                  donut
+                  radius={110}
                   innerRadius={50}
-                  padAngle={2}
-                  style={{
-                    labels: { fill: theme.colors.onSurface, fontSize: 10 },
-                  }}
+                  showText={false}
+                  isAnimated
+                  animationDuration={700}
+                  showGradient={isDark}
+                  strokeWidth={1}
+                  strokeColor={withAlpha(theme.colors.background, isDark ? 0.4 : 0.2)}
+                  centerLabelComponent={() => (
+                    <View style={styles.centerLabel}>
+                      <Text variant="labelSmall" style={{ opacity: 0.7 }}>
+                        Total IA
+                      </Text>
+                      <Text variant="titleMedium" style={{ fontWeight: "700" }}>
+                        R${" "}
+                        <CountUp
+                          isCounting
+                          end={totalFeatureCost}
+                          duration={0.8}
+                          formatter={(value) =>
+                            value.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          }
+                          key={`feature-total-${totalFeatureCost}`}
+                        />
+                      </Text>
+                    </View>
+                  )}
                 />
+              </View>
+              <View style={styles.legend}>
+                {featureData.map((item) => (
+                  <View key={item.label} style={styles.legendRow}>
+                    <View
+                      style={[
+                        styles.legendSwatch,
+                        { backgroundColor: item.color },
+                        isDark && {
+                          shadowColor: item.color,
+                          shadowOpacity: 0.7,
+                          shadowRadius: 6,
+                          shadowOffset: { width: 0, height: 0 },
+                          elevation: 3,
+                        },
+                      ]}
+                    />
+                    <Text style={styles.legendLabel}>{item.label}</Text>
+                    <Text style={styles.legendValue}>
+                      R${" "}
+                      <CountUp
+                        isCounting
+                        end={item.value}
+                        duration={0.6}
+                        formatter={(value) =>
+                          value.toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        }
+                        key={`${item.label}-${item.value}`}
+                      />
+                    </Text>
+                  </View>
+                ))}
               </View>
             </Card.Content>
           </Card>
@@ -165,4 +273,11 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
   divider: { opacity: 0.3 },
   countText: { textAlign: "center", opacity: 0.5, marginTop: 16, marginBottom: 32 },
+  pieChart: { height: 220, alignItems: "center", justifyContent: "center" },
+  centerLabel: { alignItems: "center", justifyContent: "center", gap: 4 },
+  legend: { marginTop: 12, gap: 8 },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  legendSwatch: { width: 10, height: 10, borderRadius: 2 },
+  legendLabel: { flex: 1 },
+  legendValue: { opacity: 0.7 },
 });

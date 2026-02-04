@@ -6,7 +6,7 @@ import { supabase } from "./supabase";
 // Initialize Gemini
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const MODEL_NAME = "gemini-3-flash-preview";
+const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 export interface FinancialContext {

@@ -11,6 +11,55 @@ import { authHelpers, supabase, UserProfile } from "../services/supabase";
 // Enable web browser redirect for OAuth
 WebBrowser.maybeCompleteAuthSession();
 
+let webBrowserWarmed = false;
+let webBrowserServicePackage: string | undefined;
+let cachedCustomTabsSupport: boolean | null = null;
+
+const canUseCustomTabsAsync = async () => {
+  if (Platform.OS !== "android") return false;
+  if (cachedCustomTabsSupport !== null) return cachedCustomTabsSupport;
+
+  try {
+    const result = await WebBrowser.getCustomTabsSupportingBrowsersAsync();
+    const hasSupport = Boolean(result?.preferredBrowserPackage || result?.defaultBrowserPackage || (result?.servicePackages?.length ?? 0) > 0);
+    cachedCustomTabsSupport = hasSupport;
+    return hasSupport;
+  } catch (error) {
+    console.warn("[Auth] Failed to check Custom Tabs support:", error);
+    cachedCustomTabsSupport = false;
+    return false;
+  }
+};
+
+const warmUpAuthBrowser = async () => {
+  if (Platform.OS !== "android") return;
+  const hasSupport = await canUseCustomTabsAsync();
+  if (!hasSupport) return;
+
+  try {
+    const result = await WebBrowser.warmUpAsync();
+    webBrowserWarmed = true;
+    webBrowserServicePackage = result?.servicePackage;
+  } catch (error) {
+    console.warn("[Auth] WebBrowser warmUpAsync failed:", error);
+    webBrowserWarmed = false;
+    webBrowserServicePackage = undefined;
+  }
+};
+
+const coolDownAuthBrowser = async () => {
+  if (Platform.OS !== "android" || !webBrowserWarmed) return;
+
+  try {
+    await WebBrowser.coolDownAsync(webBrowserServicePackage);
+  } catch (error) {
+    console.warn("[Auth] WebBrowser coolDownAsync failed:", error);
+  } finally {
+    webBrowserWarmed = false;
+    webBrowserServicePackage = undefined;
+  }
+};
+
 interface AuthState {
   // State
   user: User | null;
@@ -189,9 +238,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       // Warm up the browser on Android to improve startup time and stability
-      if (Platform.OS === "android") {
-        await WebBrowser.warmUpAsync();
-      }
+      await warmUpAuthBrowser();
 
       // For Expo Go, we need to use the Expo scheme
       // For standalone builds, use the app's custom scheme
@@ -214,7 +261,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) {
         console.log("[Auth] OAuth error:", error.message);
-        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+        await coolDownAuthBrowser();
         set({ loading: false, error: translateAuthError(error) });
         return { success: false, error: translateAuthError(error) };
       }
@@ -232,15 +279,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           console.log("[Auth] OAuth result:", JSON.stringify(result, null, 2));
         } catch (browserError) {
           console.error("[Auth] Browser error:", browserError);
-          if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+          await coolDownAuthBrowser();
           set({ loading: false, error: "Falha ao abrir navegador. Verifique se o Chrome está instalado." });
           return { success: false, error: "Falha ao abrir navegador" };
         }
 
         // Cool down after session
-        if (Platform.OS === "android") {
-          await WebBrowser.coolDownAsync();
-        }
+        await coolDownAuthBrowser();
 
         if (result.type === "success" && result.url) {
           // Extract tokens from URL - try both hash fragment and query params
@@ -315,7 +360,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: false });
       return { success: false, error: "Falha ao iniciar login" };
     } catch (error) {
-      if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+      await coolDownAuthBrowser();
       const message = error instanceof Error ? error.message : "Erro desconhecido";
       set({ loading: false, error: message });
       return { success: false, error: message };
@@ -377,9 +422,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       // Android/Web: Use OAuth flow
-      if (Platform.OS === "android") {
-        await WebBrowser.warmUpAsync();
-      }
+      await warmUpAuthBrowser();
 
       const redirectUrl = "finainteli://auth/callback";
 
@@ -394,7 +437,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (error) {
-        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+        await coolDownAuthBrowser();
         set({ loading: false, error: translateAuthError(error) });
         return { success: false, error: translateAuthError(error) };
       }
@@ -445,7 +488,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         } catch (err) {
           console.error("[Auth] WebBrowser/Link error:", err);
-          if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+          await coolDownAuthBrowser();
           set({ loading: false, error: "Erro ao abrir navegador" });
           return { success: false, error: "Erro ao abrir navegador" };
         } finally {
@@ -453,7 +496,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           if (initialUrlListener) initialUrlListener.remove();
         }
 
-        if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+        await coolDownAuthBrowser();
 
         console.log("[Auth] Auth Result:", JSON.stringify(browserResult));
 
@@ -520,7 +563,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: false });
       return { success: false, error: "Falha ao iniciar login" };
     } catch (error) {
-      if (Platform.OS === "android") await WebBrowser.coolDownAsync();
+      await coolDownAuthBrowser();
 
       console.error("[Auth] Apple login exception:", error);
       const err = error as any;
