@@ -3,9 +3,31 @@ const { execSync, spawnSync } = require("child_process");
 
 const run = (command, args = [], options = {}) => {
   const result = spawnSync(command, args, { stdio: "inherit", ...options });
+  if (result.error) {
+    console.error(`Falha ao executar: ${command} ${args.join(" ")}`);
+    console.error(result.error.message);
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+};
+
+const resolveEasCommand = () => {
+  const check = spawnSync("eas", ["--version"], { stdio: "ignore" });
+  if (!check.error && check.status === 0) {
+    return { cmd: "eas", prefix: [] };
+  }
+  if (process.env.npm_execpath) {
+    console.log("EAS CLI não encontrada no PATH. Usando `npm exec --yes eas` via npm_execpath.");
+    return { cmd: process.execPath, prefix: [process.env.npm_execpath, "exec", "--yes", "eas", "--"] };
+  }
+  const npmCheck = spawnSync("npm", ["--version"], { stdio: "ignore" });
+  if (!npmCheck.error && npmCheck.status === 0) {
+    console.log("EAS CLI não encontrada no PATH. Usando `npm exec --yes eas`.");
+    return { cmd: "npm", prefix: ["exec", "--yes", "eas", "--"] };
+  }
+  throw new Error("EAS CLI não encontrada. Instale com `npm i -g eas-cli` ou rode o script via npm (npm_execpath).");
 };
 
 const getGitOutput = (command) => {
@@ -87,8 +109,15 @@ const main = async () => {
 
   rl.close();
 
-  console.log(`\nIniciando build iOS com profile "${profile}" (non-interactive, auto-submit)...`);
-  run("eas", ["build", "-p", "ios", "--profile", profile, "--non-interactive", "--auto-submit"]);
+  console.log(`\nIniciando build (iOS + Android) com profile "${profile}" (non-interactive, auto-submit)...`);
+  let eas;
+  try {
+    eas = resolveEasCommand();
+  } catch (error) {
+    console.error(error.message || String(error));
+    process.exit(1);
+  }
+  run(eas.cmd, [...eas.prefix, "build", "-p", "all", "--profile", profile, "--non-interactive", "--auto-submit"]);
 };
 
 main().catch((error) => {
