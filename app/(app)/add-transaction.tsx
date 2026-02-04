@@ -214,12 +214,17 @@ export default function AddTransactionScreen() {
   const color = type === "expense" ? theme.colors.error : theme.colors.primary;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <GlassAppbar elevated>
-        <Appbar.BackAction icon="close" onPress={() => router.back()} />
-        <Appbar.Content title={t("transactions.newTitle")} />
-      </GlassAppbar>
-      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]}>
+    <Portal.Host>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <GlassAppbar elevated>
+          <Appbar.BackAction icon="close" onPress={() => router.back()} />
+          <Appbar.Content title={t("transactions.newTitle")} />
+        </GlassAppbar>
+        <ScrollView
+          contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
         {/* Banner Removed per user request */}
         <View style={styles.formGroup}>
           <Controller
@@ -557,6 +562,7 @@ export default function AddTransactionScreen() {
         </Dialog>
       </Portal>
     </View>
+  </Portal.Host>
   );
 }
 

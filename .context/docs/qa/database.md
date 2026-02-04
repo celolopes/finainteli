@@ -1,9 +1,13 @@
 ---
 slug: database
 category: features
-generatedAt: 2026-01-30T18:02:25.441Z
+generatedAt: 2026-02-03T21:47:15.668Z
 relevantFiles:
-  - ..\..\..\AppData\Local\Programs\Antigravity\src\types\schema.ts
+  - src/types/schema.ts
+  - src/database/model/Account.ts
+  - src/database/model/AIUsageLog.ts
+  - src/database/model/Budget.ts
+  - src/database/model/Category.ts
 ---
 
 # How is data stored and accessed?
@@ -13,4 +17,7 @@ relevantFiles:
 ### Implementation Details
 
 - Database-related symbol: Database
-- Data layer detected in architecture
+- Database-related file path
+- Database-related file path
+- Database-related file path
+- Database-related file path

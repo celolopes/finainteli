@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-01-30T18:02:19.068Z",
+  "generated": "2026-02-03T21:42:36.114Z",
   "stack": {
     "primaryLanguage": "typescript",
     "languages": [
@@ -8,7 +8,8 @@
       "typescript",
       "kotlin",
       "c",
-      "cpp"
+      "cpp",
+      "java"
     ],
     "frameworks": [
       "react-native",
@@ -24,7 +25,7 @@
     "hasCI": false
   },
   "structure": {
-    "totalFiles": 1333,
+    "totalFiles": 1349,
     "topDirectories": [
       {
         "name": "AGENTS.md",
@@ -32,11 +33,11 @@
       },
       {
         "name": "android",
-        "fileCount": 1184
+        "fileCount": 1191
       },
       {
         "name": "app",
-        "fileCount": 33
+        "fileCount": 34
       },
       {
         "name": "app.json",
@@ -60,7 +61,7 @@
       },
       {
         "name": "docs",
-        "fileCount": 1
+        "fileCount": 2
       },
       {
         "name": "eas.json",
@@ -71,11 +72,19 @@
         "fileCount": 1
       },
       {
+        "name": "finainteli-70eca0f9074f.json",
+        "fileCount": 1
+      },
+      {
         "name": "jest.config.js",
         "fileCount": 1
       },
       {
         "name": "jest.setup.js",
+        "fileCount": 1
+      },
+      {
+        "name": "metro.config.js",
         "fileCount": 1
       },
       {
@@ -92,7 +101,7 @@
       },
       {
         "name": "scripts",
-        "fileCount": 0
+        "fileCount": 1
       },
       {
         "name": "services",
@@ -100,7 +109,7 @@
       },
       {
         "name": "src",
-        "fileCount": 77
+        "fileCount": 82
       },
       {
         "name": "stores",
@@ -109,16 +118,12 @@
       {
         "name": "tsconfig.json",
         "fileCount": 1
-      },
-      {
-        "name": "ux_audit_report.txt",
-        "fileCount": 1
       }
     ],
     "languageDistribution": [
       {
         "extension": ".json",
-        "count": 173
+        "count": 174
       },
       {
         "extension": ".so",
@@ -134,15 +139,15 @@
       },
       {
         "extension": ".tsx",
-        "count": 65
+        "count": 69
       },
       {
         "extension": ".ts",
-        "count": 57
+        "count": 59
       },
       {
         "extension": ".txt",
-        "count": 35
+        "count": 40
       },
       {
         "extension": ".len",
@@ -165,9 +170,9 @@
         "description": "Business logic and orchestration",
         "directories": [
           "services",
-          "src\\services",
-          "src\\services\\__tests__",
-          "src\\services\\sync"
+          "src/services",
+          "src/services/sync",
+          "src/services/__tests__"
         ],
         "symbolCount": 10,
         "dependsOn": [
@@ -181,11 +186,11 @@
         "description": "Configuration and constants",
         "directories": [
           "constants",
-          "src\\constants",
-          "src\\constants\\__tests__",
-          "app\\(app)\\settings",
-          "app\\(app)\\settings\\security",
-          "app\\(app)\\settings\\debug",
+          "src/constants",
+          "src/constants/__tests__",
+          "app/(app)/settings",
+          "app/(app)/settings/security",
+          "app/(app)/settings/debug",
           "."
         ],
         "symbolCount": 2,
@@ -200,40 +205,30 @@
         "description": "UI components and views",
         "directories": [
           "components",
-          "src\\components",
-          "src\\components\\ui",
-          "src\\components\\security",
-          "src\\components\\tutorial",
-          "src\\components\\transactions",
-          "src\\components\\reports",
-          "src\\components\\paywall",
-          "src\\components\\dashboard",
-          "src\\components\\budgets",
-          "components\\__tests__"
+          "src/components",
+          "src/components/ui",
+          "src/components/tutorial",
+          "src/components/transactions",
+          "src/components/security",
+          "src/components/reports",
+          "src/components/paywall",
+          "src/components/dashboard",
+          "src/components/budgets",
+          "components/__tests__"
         ],
-        "symbolCount": 38,
+        "symbolCount": 44,
         "dependsOn": [
-          "Services",
-          "Models"
+          "Models",
+          "Services"
         ]
-      },
-      {
-        "name": "Utils",
-        "description": "Shared utilities and helpers",
-        "directories": [
-          "src\\utils",
-          "src\\utils\\__tests__"
-        ],
-        "symbolCount": 1,
-        "dependsOn": []
       },
       {
         "name": "Models",
         "description": "Data structures and domain objects",
         "directories": [
-          "src\\types",
-          "src\\database",
-          "src\\database\\model"
+          "src/types",
+          "src/database",
+          "src/database/model"
         ],
         "symbolCount": 8,
         "dependsOn": [
@@ -241,11 +236,23 @@
         ]
       },
       {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src/utils",
+          "src/utils/__tests__"
+        ],
+        "symbolCount": 5,
+        "dependsOn": [
+          "Models"
+        ]
+      },
+      {
         "name": "Repositories",
         "description": "Data access and persistence",
         "directories": [
-          "src\\database",
-          "src\\database\\repositories"
+          "src/database",
+          "src/database/repositories"
         ],
         "symbolCount": 1,
         "dependsOn": []
@@ -260,19 +267,19 @@
       }
     ],
     "entryPoints": [
-      "src\\types\\index.ts",
-      "src\\theme\\index.ts",
-      "src\\i18n\\index.ts",
-      "src\\database\\index.ts",
-      "src\\services\\sync\\index.ts",
-      "app\\index.tsx",
-      "app\\(app)\\transactions\\index.tsx",
-      "app\\(app)\\settings\\index.tsx",
-      "app\\(app)\\cards\\index.tsx",
-      "app\\(app)\\onboarding\\index.tsx",
-      "app\\(app)\\accounts\\index.tsx",
-      "app\\(app)\\(tabs)\\index.tsx",
-      "app\\(app)\\settings\\debug\\index.tsx"
+      "src/types/index.ts",
+      "src/theme/index.ts",
+      "src/i18n/index.ts",
+      "src/database/index.ts",
+      "src/services/sync/index.ts",
+      "app/index.tsx",
+      "app/(app)/transactions/index.tsx",
+      "app/(app)/settings/index.tsx",
+      "app/(app)/onboarding/index.tsx",
+      "app/(app)/cards/index.tsx",
+      "app/(app)/accounts/index.tsx",
+      "app/(app)/(tabs)/index.tsx",
+      "app/(app)/settings/debug/index.tsx"
     ]
   },
   "symbols": {
@@ -280,56 +287,56 @@
       {
         "name": "Account",
         "kind": "class",
-        "file": "src\\database\\model\\Account.ts",
+        "file": "src/database/model/Account.ts",
         "line": 4,
         "exported": true
       },
       {
         "name": "AIUsageLog",
         "kind": "class",
-        "file": "src\\database\\model\\AIUsageLog.ts",
+        "file": "src/database/model/AIUsageLog.ts",
         "line": 4,
         "exported": true
       },
       {
         "name": "Budget",
         "kind": "class",
-        "file": "src\\database\\model\\Budget.ts",
+        "file": "src/database/model/Budget.ts",
         "line": 5,
         "exported": true
       },
       {
         "name": "Category",
         "kind": "class",
-        "file": "src\\database\\model\\Category.ts",
+        "file": "src/database/model/Category.ts",
         "line": 4,
         "exported": true
       },
       {
         "name": "CreditCard",
         "kind": "class",
-        "file": "src\\database\\model\\CreditCard.ts",
+        "file": "src/database/model/CreditCard.ts",
         "line": 4,
         "exported": true
       },
       {
         "name": "Markdown",
         "kind": "class",
-        "file": "src\\markdown.d.ts",
+        "file": "src/markdown.d.ts",
         "line": 5,
         "exported": true
       },
       {
         "name": "Transaction",
         "kind": "class",
-        "file": "src\\database\\model\\Transaction.ts",
+        "file": "src/database/model/Transaction.ts",
         "line": 7,
         "exported": true
       },
       {
         "name": "RevenueCatService",
         "kind": "class",
-        "file": "src\\services\\revenuecat.ts",
+        "file": "src/services/revenuecat.ts",
         "line": 16,
         "exported": false
       }
@@ -338,308 +345,329 @@
       {
         "name": "AIInsight",
         "kind": "interface",
-        "file": "src\\services\\aiAdvisor.ts",
+        "file": "src/services/aiAdvisor.ts",
         "line": 17,
         "exported": true
       },
       {
         "name": "AILimitState",
         "kind": "interface",
-        "file": "src\\hooks\\useAILimit.ts",
+        "file": "src/hooks/useAILimit.ts",
         "line": 9,
         "exported": true
       },
       {
         "name": "AutocompleteSuggestion",
         "kind": "interface",
-        "file": "src\\components\\DescriptionAutocomplete.tsx",
+        "file": "src/components/DescriptionAutocomplete.tsx",
         "line": 7,
         "exported": true
       },
       {
         "name": "BudgetAlert",
         "kind": "interface",
-        "file": "src\\services\\notifications.ts",
+        "file": "src/services/notifications.ts",
         "line": 17,
         "exported": true
       },
       {
         "name": "BudgetStatus",
         "kind": "interface",
-        "file": "src\\services\\budget.ts",
+        "file": "src/services/budget.ts",
         "line": 22,
         "exported": true
       },
       {
         "name": "Database",
         "kind": "interface",
-        "file": "src\\types\\schema.ts",
+        "file": "src/types/schema.ts",
         "line": 3,
         "exported": true
       },
       {
         "name": "DetailedTransaction",
         "kind": "interface",
-        "file": "src\\types\\index.ts",
+        "file": "src/types/index.ts",
         "line": 18,
         "exported": true
       },
       {
         "name": "FilterState",
         "kind": "interface",
-        "file": "src\\components\\transactions\\FiltersModal.tsx",
+        "file": "src/components/transactions/FiltersModal.tsx",
         "line": 8,
         "exported": true
       },
       {
         "name": "FinancialContext",
         "kind": "interface",
-        "file": "src\\services\\gemini.ts",
+        "file": "src/services/gemini.ts",
         "line": 12,
         "exported": true
       },
       {
         "name": "Goal",
         "kind": "interface",
-        "file": "src\\types\\index.ts",
+        "file": "src/types/index.ts",
         "line": 36,
+        "exported": true
+      },
+      {
+        "name": "InvoiceCycle",
+        "kind": "interface",
+        "file": "src/utils/creditCardInvoice.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "InvoiceTransactionLike",
+        "kind": "interface",
+        "file": "src/utils/creditCardInvoice.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "OpenInvoiceRange",
+        "kind": "interface",
+        "file": "src/utils/creditCardInvoice.ts",
+        "line": 16,
         "exported": true
       },
       {
         "name": "Transaction",
         "kind": "interface",
-        "file": "src\\types\\index.ts",
+        "file": "src/types/index.ts",
         "line": 1,
         "exported": true
       },
       {
         "name": "TransactionSection",
         "kind": "interface",
-        "file": "src\\utils\\transactions.ts",
+        "file": "src/utils/transactions.ts",
         "line": 6,
         "exported": true
       },
       {
         "name": "TutorialStep",
         "kind": "interface",
-        "file": "src\\context\\TutorialContext.tsx",
+        "file": "src/context/TutorialContext.tsx",
         "line": 4,
         "exported": true
       },
       {
         "name": "UserProfile",
         "kind": "interface",
-        "file": "src\\services\\supabase.ts",
+        "file": "src/services/supabase.ts",
         "line": 53,
         "exported": true
       },
       {
         "name": "UserState",
         "kind": "interface",
-        "file": "src\\types\\index.ts",
+        "file": "src/types/index.ts",
         "line": 43,
         "exported": true
       },
       {
         "name": "AIInsightsCardProps",
         "kind": "interface",
-        "file": "src\\components\\reports\\AIInsightsCard.tsx",
+        "file": "src/components/reports/AIInsightsCard.tsx",
         "line": 6,
         "exported": false
       },
       {
         "name": "AppState",
         "kind": "interface",
-        "file": "src\\store\\useStore.ts",
+        "file": "src/store/useStore.ts",
         "line": 6,
         "exported": false
       },
       {
         "name": "AuthState",
         "kind": "interface",
-        "file": "src\\store\\authStore.ts",
+        "file": "src/store/authStore.ts",
         "line": 14,
         "exported": false
       },
       {
         "name": "BudgetModalProps",
         "kind": "interface",
-        "file": "src\\components\\budgets\\BudgetModal.tsx",
-        "line": 9,
+        "file": "src/components/budgets/BudgetModal.tsx",
+        "line": 10,
         "exported": false
       },
       {
         "name": "CategoryData",
         "kind": "interface",
-        "file": "src\\components\\reports\\CategoryPieChart.tsx",
+        "file": "src/components/reports/CategoryPieChart.tsx",
         "line": 6,
         "exported": false
       },
       {
         "name": "CategoryPieChartProps",
         "kind": "interface",
-        "file": "src\\components\\reports\\CategoryPieChart.tsx",
+        "file": "src/components/reports/CategoryPieChart.tsx",
         "line": 13,
         "exported": false
       },
       {
         "name": "EvolutionChartProps",
         "kind": "interface",
-        "file": "src\\components\\reports\\EvolutionChart.tsx",
+        "file": "src/components/reports/EvolutionChart.tsx",
         "line": 12,
         "exported": false
       },
       {
         "name": "EvolutionData",
         "kind": "interface",
-        "file": "src\\components\\reports\\EvolutionChart.tsx",
+        "file": "src/components/reports/EvolutionChart.tsx",
         "line": 7,
         "exported": false
       },
       {
         "name": "FinancialState",
         "kind": "interface",
-        "file": "src\\store\\financialStore.ts",
-        "line": 12,
+        "file": "src/store/financialStore.ts",
+        "line": 16,
         "exported": false
       },
       {
         "name": "GlassProps",
         "kind": "interface",
-        "file": "src\\components\\ui\\ThemedContainer.tsx",
+        "file": "src/components/ui/ThemedContainer.tsx",
         "line": 7,
         "exported": false
       },
       {
         "name": "Message",
         "kind": "interface",
-        "file": "app\\(app)\\(tabs)\\chat.tsx",
-        "line": 14,
+        "file": "app/(app)/(tabs)/chat.tsx",
+        "line": 15,
         "exported": false
       },
       {
         "name": "MonthlyBarChartProps",
         "kind": "interface",
-        "file": "src\\components\\reports\\MonthlyBarChart.tsx",
+        "file": "src/components/reports/MonthlyBarChart.tsx",
         "line": 13,
         "exported": false
       },
       {
         "name": "MonthlyData",
         "kind": "interface",
-        "file": "src\\components\\reports\\MonthlyBarChart.tsx",
+        "file": "src/components/reports/MonthlyBarChart.tsx",
         "line": 7,
         "exported": false
       },
       {
         "name": "PaywallGateProps",
         "kind": "interface",
-        "file": "src\\components\\paywall\\PaywallGate.tsx",
+        "file": "src/components/paywall/PaywallGate.tsx",
         "line": 5,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\TransactionItem.tsx",
+        "file": "src/components/TransactionItem.tsx",
         "line": 7,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\SummaryCards.tsx",
+        "file": "src/components/SummaryCards.tsx",
         "line": 5,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\SmartTipCard.tsx",
+        "file": "src/components/SmartTipCard.tsx",
         "line": 12,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\DescriptionAutocomplete.tsx",
+        "file": "src/components/DescriptionAutocomplete.tsx",
         "line": 19,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\DatePickerField.tsx",
+        "file": "src/components/DatePickerField.tsx",
         "line": 6,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\ui\\ThemedText.tsx",
+        "file": "src/components/ui/ThemedText.tsx",
         "line": 4,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\ui\\ThemedContainer.tsx",
+        "file": "src/components/ui/ThemedContainer.tsx",
         "line": 11,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\ui\\AILimitModal.tsx",
+        "file": "src/components/ui/AILimitModal.tsx",
         "line": 7,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\tutorial\\CoachMarkTarget.tsx",
+        "file": "src/components/tutorial/CoachMarkTarget.tsx",
         "line": 5,
         "exported": false
       },
       {
         "name": "Props",
         "kind": "interface",
-        "file": "src\\components\\transactions\\FiltersModal.tsx",
+        "file": "src/components/transactions/FiltersModal.tsx",
         "line": 15,
         "exported": false
       },
       {
         "name": "SecurityState",
         "kind": "interface",
-        "file": "stores\\securityStore.ts",
+        "file": "stores/securityStore.ts",
         "line": 4,
         "exported": false
       },
       {
         "name": "SecurityState",
         "kind": "interface",
-        "file": "src\\store\\securityStore.ts",
+        "file": "src/store/securityStore.ts",
         "line": 4,
         "exported": false
       },
       {
         "name": "SyncLoadingProps",
         "kind": "interface",
-        "file": "src\\components\\ui\\SyncLoadingScreen.tsx",
+        "file": "src/components/ui/SyncLoadingScreen.tsx",
         "line": 9,
         "exported": false
       },
       {
         "name": "ThemeColors",
         "kind": "interface",
-        "file": "src\\theme.d.ts",
+        "file": "src/theme.d.ts",
         "line": 5,
         "exported": false
       },
       {
         "name": "TutorialContextType",
         "kind": "interface",
-        "file": "src\\context\\TutorialContext.tsx",
+        "file": "src/context/TutorialContext.tsx",
         "line": 10,
         "exported": false
       }
@@ -648,169 +676,183 @@
       {
         "name": "AppThemeProvider",
         "kind": "function",
-        "file": "src\\context\\ThemeContext.tsx",
-        "line": 17,
+        "file": "src/context/ThemeContext.tsx",
+        "line": 22,
         "exported": true
       },
       {
         "name": "AuthCallbackScreen",
         "kind": "function",
-        "file": "app\\auth\\callback.tsx",
+        "file": "app/auth/callback.tsx",
         "line": 16,
         "exported": true
       },
       {
         "name": "AuthLayout",
         "kind": "function",
-        "file": "app\\(auth)\\_layout.tsx",
+        "file": "app/(auth)/_layout.tsx",
         "line": 3,
         "exported": true
       },
       {
         "name": "calculateAICost",
         "kind": "function",
-        "file": "src\\constants\\aiPricing.ts",
+        "file": "src/constants/aiPricing.ts",
         "line": 25,
         "exported": true
       },
       {
         "name": "EditScreenInfo",
         "kind": "function",
-        "file": "components\\EditScreenInfo.tsx",
+        "file": "components/EditScreenInfo.tsx",
         "line": 10,
         "exported": true
       },
       {
         "name": "ExternalLink",
         "kind": "function",
-        "file": "components\\ExternalLink.tsx",
+        "file": "components/ExternalLink.tsx",
         "line": 6,
+        "exported": true
+      },
+      {
+        "name": "GlassAppbar",
+        "kind": "function",
+        "file": "src/components/ui/GlassAppbar.tsx",
+        "line": 9,
         "exported": true
       },
       {
         "name": "ModalScreen",
         "kind": "function",
-        "file": "app\\modal.tsx",
+        "file": "app/modal.tsx",
         "line": 7,
         "exported": true
       },
       {
         "name": "MonoText",
         "kind": "function",
-        "file": "components\\StyledText.tsx",
+        "file": "components/StyledText.tsx",
         "line": 3,
         "exported": true
       },
       {
         "name": "mySync",
         "kind": "function",
-        "file": "src\\services\\sync\\index.ts",
+        "file": "src/services/sync/index.ts",
         "line": 7,
         "exported": true
       },
       {
         "name": "NotFoundScreen",
         "kind": "function",
-        "file": "app\\+not-found.tsx",
+        "file": "app/+not-found.tsx",
         "line": 6,
+        "exported": true
+      },
+      {
+        "name": "PlatformSwitch",
+        "kind": "function",
+        "file": "src/components/ui/PlatformSwitch.tsx",
+        "line": 11,
         "exported": true
       },
       {
         "name": "Root",
         "kind": "function",
-        "file": "app\\+html.tsx",
+        "file": "app/+html.tsx",
         "line": 7,
         "exported": true
       },
       {
         "name": "Text",
         "kind": "function",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 33,
         "exported": true
       },
       {
         "name": "ThemedContainer",
         "kind": "function",
-        "file": "src\\components\\ui\\ThemedContainer.tsx",
+        "file": "src/components/ui/ThemedContainer.tsx",
         "line": 18,
         "exported": true
       },
       {
         "name": "ThemedText",
         "kind": "function",
-        "file": "src\\components\\ui\\ThemedText.tsx",
+        "file": "src/components/ui/ThemedText.tsx",
         "line": 8,
         "exported": true
       },
       {
         "name": "useAILimit",
         "kind": "function",
-        "file": "src\\hooks\\useAILimit.ts",
+        "file": "src/hooks/useAILimit.ts",
         "line": 32,
         "exported": true
       },
       {
         "name": "useClientOnlyValue",
         "kind": "function",
-        "file": "components\\useClientOnlyValue.web.ts",
+        "file": "components/useClientOnlyValue.web.ts",
         "line": 5,
         "exported": true
       },
       {
         "name": "useClientOnlyValue",
         "kind": "function",
-        "file": "components\\useClientOnlyValue.ts",
+        "file": "components/useClientOnlyValue.ts",
         "line": 2,
         "exported": true
       },
       {
         "name": "useColorScheme",
         "kind": "function",
-        "file": "components\\useColorScheme.web.ts",
+        "file": "components/useColorScheme.web.ts",
         "line": 6,
         "exported": true
       },
       {
         "name": "usePremium",
         "kind": "function",
-        "file": "src\\hooks\\usePremium.ts",
+        "file": "src/hooks/usePremium.ts",
         "line": 4,
         "exported": true
       },
       {
         "name": "useSync",
         "kind": "function",
-        "file": "src\\hooks\\useSync.ts",
+        "file": "src/hooks/useSync.ts",
         "line": 5,
         "exported": true
       },
       {
         "name": "useThemeColor",
         "kind": "function",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 19,
         "exported": true
       },
       {
         "name": "View",
         "kind": "function",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 40,
         "exported": true
       },
       {
         "name": "translateAuthError",
         "kind": "function",
-        "file": "src\\store\\authStore.ts",
-        "line": 508,
+        "file": "src/store/authStore.ts",
+        "line": 580,
         "exported": false,
         "description": "Translate Supabase auth errors to Portuguese"
       },
       {
         "name": "uuidv4",
         "kind": "function",
-        "file": "src\\database\\index.ts",
+        "file": "src/database/index.ts",
         "line": 4,
         "exported": false
       }
@@ -819,211 +861,246 @@
       {
         "name": "Budget",
         "kind": "type",
-        "file": "src\\services\\budget.ts",
+        "file": "src/services/budget.ts",
         "line": 12,
         "exported": true
       },
       {
         "name": "BudgetWithCategory",
         "kind": "type",
-        "file": "src\\services\\budget.ts",
+        "file": "src/services/budget.ts",
         "line": 20,
+        "exported": true
+      },
+      {
+        "name": "InvoiceStatus",
+        "kind": "type",
+        "file": "src/utils/creditCardInvoice.ts",
+        "line": 1,
         "exported": true
       },
       {
         "name": "Json",
         "kind": "type",
-        "file": "src\\types\\schema.ts",
+        "file": "src/types/schema.ts",
         "line": 1,
         "exported": true
       },
       {
         "name": "TextProps",
         "kind": "type",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 16,
         "exported": true
       },
       {
         "name": "ViewProps",
         "kind": "type",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 17,
         "exported": true
       },
       {
         "name": "Account",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\[id].tsx",
-        "line": 18,
+        "file": "app/(app)/transactions/new.tsx",
+        "line": 14,
         "exported": false
       },
       {
         "name": "Account",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\new.tsx",
-        "line": 13,
+        "file": "app/(app)/transactions/[id].tsx",
+        "line": 19,
         "exported": false
       },
       {
         "name": "BankAccount",
         "kind": "type",
-        "file": "src\\store\\financialStore.ts",
+        "file": "src/store/financialStore.ts",
         "line": 6,
         "exported": false
       },
       {
         "name": "BankAccount",
         "kind": "type",
-        "file": "app\\(app)\\cards\\[id].tsx",
-        "line": 12,
+        "file": "app/(app)/cards/[id].tsx",
+        "line": 14,
         "exported": false
       },
       {
         "name": "BankAccount",
         "kind": "type",
-        "file": "app\\(app)\\accounts\\index.tsx",
-        "line": 9,
+        "file": "app/(app)/accounts/index.tsx",
+        "line": 13,
         "exported": false
       },
       {
         "name": "BudgetRow",
         "kind": "type",
-        "file": "src\\services\\budget.ts",
+        "file": "src/services/budget.ts",
         "line": 10,
         "exported": false
       },
       {
         "name": "Card",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\[id].tsx",
-        "line": 19,
+        "file": "app/(app)/transactions/new.tsx",
+        "line": 15,
         "exported": false
       },
       {
         "name": "Card",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\new.tsx",
-        "line": 14,
+        "file": "app/(app)/transactions/[id].tsx",
+        "line": 20,
         "exported": false
       },
       {
         "name": "Category",
         "kind": "type",
-        "file": "src\\components\\budgets\\BudgetModal.tsx",
+        "file": "src/components/budgets/BudgetModal.tsx",
+        "line": 8,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "type",
+        "file": "app/(app)/transactions/new.tsx",
+        "line": 13,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "type",
+        "file": "app/(app)/transactions/index.tsx",
+        "line": 15,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "type",
+        "file": "app/(app)/transactions/[id].tsx",
+        "line": 18,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "type",
+        "file": "app/(app)/settings/budgets.tsx",
+        "line": 15,
+        "exported": false
+      },
+      {
+        "name": "CreditCard",
+        "kind": "type",
+        "file": "src/store/financialStore.ts",
         "line": 7,
         "exported": false
       },
       {
-        "name": "Category",
+        "name": "CreditCard",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\[id].tsx",
-        "line": 17,
-        "exported": false
-      },
-      {
-        "name": "Category",
-        "kind": "type",
-        "file": "app\\(app)\\transactions\\new.tsx",
+        "file": "app/(app)/cards/index.tsx",
         "line": 12,
         "exported": false
       },
       {
-        "name": "Category",
+        "name": "CreditCard",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\index.tsx",
+        "file": "app/(app)/cards/[id].tsx",
         "line": 13,
-        "exported": false
-      },
-      {
-        "name": "Category",
-        "kind": "type",
-        "file": "app\\(app)\\settings\\budgets.tsx",
-        "line": 13,
-        "exported": false
-      },
-      {
-        "name": "CreditCard",
-        "kind": "type",
-        "file": "src\\store\\financialStore.ts",
-        "line": 7,
-        "exported": false
-      },
-      {
-        "name": "CreditCard",
-        "kind": "type",
-        "file": "app\\(app)\\cards\\[id].tsx",
-        "line": 11,
-        "exported": false
-      },
-      {
-        "name": "CreditCard",
-        "kind": "type",
-        "file": "app\\(app)\\cards\\index.tsx",
-        "line": 10,
         "exported": false
       },
       {
         "name": "Currency",
         "kind": "type",
-        "file": "app\\(app)\\onboarding\\index.tsx",
+        "file": "app/(app)/onboarding/index.tsx",
         "line": 9,
         "exported": false
       },
       {
-        "name": "FormData",
+        "name": "ExtendedCreditCard",
         "kind": "type",
-        "file": "app\\(app)\\add-transaction.tsx",
-        "line": 62,
+        "file": "src/components/dashboard/BalanceCard.tsx",
+        "line": 10,
         "exported": false
       },
       {
         "name": "FormData",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\[id].tsx",
-        "line": 65,
+        "file": "app/(app)/add-transaction.tsx",
+        "line": 67,
+        "exported": false
+      },
+      {
+        "name": "FormData",
+        "kind": "type",
+        "file": "app/(app)/transactions/[id].tsx",
+        "line": 66,
         "exported": false
       },
       {
         "name": "LoginFormData",
         "kind": "type",
-        "file": "app\\(auth)\\login.tsx",
+        "file": "app/(auth)/login.tsx",
         "line": 61,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "type",
+        "file": "src/components/ui/PlatformSwitch.tsx",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "type",
+        "file": "src/components/ui/GlassFAB.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Props",
+        "kind": "type",
+        "file": "src/components/ui/GlassAppbar.tsx",
+        "line": 7,
         "exported": false
       },
       {
         "name": "SignUpFormData",
         "kind": "type",
-        "file": "app\\(auth)\\login.tsx",
+        "file": "app/(auth)/login.tsx",
         "line": 62,
         "exported": false
       },
       {
         "name": "ThemeProps",
         "kind": "type",
-        "file": "components\\Themed.tsx",
+        "file": "components/Themed.tsx",
         "line": 11,
         "exported": false
       },
       {
         "name": "Transaction",
         "kind": "type",
-        "file": "src\\store\\financialStore.ts",
-        "line": 8,
+        "file": "src/store/financialStore.ts",
+        "line": 12,
         "exported": false
       },
       {
         "name": "Transaction",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\[id].tsx",
-        "line": 20,
+        "file": "app/(app)/transactions/index.tsx",
+        "line": 13,
         "exported": false
       },
       {
         "name": "Transaction",
         "kind": "type",
-        "file": "app\\(app)\\transactions\\index.tsx",
-        "line": 11,
+        "file": "app/(app)/transactions/[id].tsx",
+        "line": 21,
         "exported": false
       }
     ],
@@ -1033,434 +1110,441 @@
     {
       "name": "Account",
       "kind": "class",
-      "file": "src\\database\\model\\Account.ts",
+      "file": "src/database/model/Account.ts",
       "line": 4,
       "exported": true
     },
     {
       "name": "AIInsight",
       "kind": "interface",
-      "file": "src\\services\\aiAdvisor.ts",
+      "file": "src/services/aiAdvisor.ts",
       "line": 17,
       "exported": true
     },
     {
       "name": "AILimitState",
       "kind": "interface",
-      "file": "src\\hooks\\useAILimit.ts",
+      "file": "src/hooks/useAILimit.ts",
       "line": 9,
       "exported": true
     },
     {
       "name": "AIUsageLog",
       "kind": "class",
-      "file": "src\\database\\model\\AIUsageLog.ts",
+      "file": "src/database/model/AIUsageLog.ts",
       "line": 4,
       "exported": true
     },
     {
       "name": "AppThemeProvider",
       "kind": "function",
-      "file": "src\\context\\ThemeContext.tsx",
-      "line": 17,
+      "file": "src/context/ThemeContext.tsx",
+      "line": 22,
       "exported": true
     },
     {
       "name": "AuthCallbackScreen",
       "kind": "function",
-      "file": "app\\auth\\callback.tsx",
+      "file": "app/auth/callback.tsx",
       "line": 16,
       "exported": true
     },
     {
       "name": "AuthLayout",
       "kind": "function",
-      "file": "app\\(auth)\\_layout.tsx",
+      "file": "app/(auth)/_layout.tsx",
       "line": 3,
       "exported": true
     },
     {
       "name": "AutocompleteSuggestion",
       "kind": "interface",
-      "file": "src\\components\\DescriptionAutocomplete.tsx",
+      "file": "src/components/DescriptionAutocomplete.tsx",
       "line": 7,
       "exported": true
     },
     {
       "name": "Budget",
       "kind": "type",
-      "file": "src\\services\\budget.ts",
+      "file": "src/services/budget.ts",
       "line": 12,
       "exported": true
     },
     {
       "name": "Budget",
       "kind": "class",
-      "file": "src\\database\\model\\Budget.ts",
+      "file": "src/database/model/Budget.ts",
       "line": 5,
       "exported": true
     },
     {
       "name": "BudgetAlert",
       "kind": "interface",
-      "file": "src\\services\\notifications.ts",
+      "file": "src/services/notifications.ts",
       "line": 17,
       "exported": true
     },
     {
       "name": "BudgetStatus",
       "kind": "interface",
-      "file": "src\\services\\budget.ts",
+      "file": "src/services/budget.ts",
       "line": 22,
       "exported": true
     },
     {
       "name": "BudgetWithCategory",
       "kind": "type",
-      "file": "src\\services\\budget.ts",
+      "file": "src/services/budget.ts",
       "line": 20,
       "exported": true
     },
     {
       "name": "calculateAICost",
       "kind": "function",
-      "file": "src\\constants\\aiPricing.ts",
+      "file": "src/constants/aiPricing.ts",
       "line": 25,
       "exported": true
     },
     {
       "name": "Category",
       "kind": "class",
-      "file": "src\\database\\model\\Category.ts",
+      "file": "src/database/model/Category.ts",
       "line": 4,
       "exported": true
     },
     {
       "name": "CreditCard",
       "kind": "class",
-      "file": "src\\database\\model\\CreditCard.ts",
+      "file": "src/database/model/CreditCard.ts",
       "line": 4,
       "exported": true
     },
     {
       "name": "Database",
       "kind": "interface",
-      "file": "src\\types\\schema.ts",
+      "file": "src/types/schema.ts",
       "line": 3,
       "exported": true
     },
     {
       "name": "DetailedTransaction",
       "kind": "interface",
-      "file": "src\\types\\index.ts",
+      "file": "src/types/index.ts",
       "line": 18,
       "exported": true
     },
     {
       "name": "EditScreenInfo",
       "kind": "function",
-      "file": "components\\EditScreenInfo.tsx",
+      "file": "components/EditScreenInfo.tsx",
       "line": 10,
       "exported": true
     },
     {
       "name": "ExternalLink",
       "kind": "function",
-      "file": "components\\ExternalLink.tsx",
+      "file": "components/ExternalLink.tsx",
       "line": 6,
       "exported": true
     },
     {
       "name": "FilterState",
       "kind": "interface",
-      "file": "src\\components\\transactions\\FiltersModal.tsx",
+      "file": "src/components/transactions/FiltersModal.tsx",
       "line": 8,
       "exported": true
     },
     {
       "name": "FinancialContext",
       "kind": "interface",
-      "file": "src\\services\\gemini.ts",
+      "file": "src/services/gemini.ts",
       "line": 12,
+      "exported": true
+    },
+    {
+      "name": "GlassAppbar",
+      "kind": "function",
+      "file": "src/components/ui/GlassAppbar.tsx",
+      "line": 9,
       "exported": true
     },
     {
       "name": "Goal",
       "kind": "interface",
-      "file": "src\\types\\index.ts",
+      "file": "src/types/index.ts",
       "line": 36,
+      "exported": true
+    },
+    {
+      "name": "InvoiceCycle",
+      "kind": "interface",
+      "file": "src/utils/creditCardInvoice.ts",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "InvoiceStatus",
+      "kind": "type",
+      "file": "src/utils/creditCardInvoice.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "InvoiceTransactionLike",
+      "kind": "interface",
+      "file": "src/utils/creditCardInvoice.ts",
+      "line": 3,
       "exported": true
     },
     {
       "name": "Json",
       "kind": "type",
-      "file": "src\\types\\schema.ts",
+      "file": "src/types/schema.ts",
       "line": 1,
       "exported": true
     },
     {
       "name": "Markdown",
       "kind": "class",
-      "file": "src\\markdown.d.ts",
+      "file": "src/markdown.d.ts",
       "line": 5,
       "exported": true
     },
     {
       "name": "ModalScreen",
       "kind": "function",
-      "file": "app\\modal.tsx",
+      "file": "app/modal.tsx",
       "line": 7,
       "exported": true
     },
     {
       "name": "MonoText",
       "kind": "function",
-      "file": "components\\StyledText.tsx",
+      "file": "components/StyledText.tsx",
       "line": 3,
       "exported": true
     },
     {
       "name": "mySync",
       "kind": "function",
-      "file": "src\\services\\sync\\index.ts",
+      "file": "src/services/sync/index.ts",
       "line": 7,
       "exported": true
     },
     {
       "name": "NotFoundScreen",
       "kind": "function",
-      "file": "app\\+not-found.tsx",
+      "file": "app/+not-found.tsx",
       "line": 6,
+      "exported": true
+    },
+    {
+      "name": "OpenInvoiceRange",
+      "kind": "interface",
+      "file": "src/utils/creditCardInvoice.ts",
+      "line": 16,
+      "exported": true
+    },
+    {
+      "name": "PlatformSwitch",
+      "kind": "function",
+      "file": "src/components/ui/PlatformSwitch.tsx",
+      "line": 11,
       "exported": true
     },
     {
       "name": "Root",
       "kind": "function",
-      "file": "app\\+html.tsx",
+      "file": "app/+html.tsx",
       "line": 7,
       "exported": true
     },
     {
       "name": "Text",
       "kind": "function",
-      "file": "components\\Themed.tsx",
+      "file": "components/Themed.tsx",
       "line": 33,
       "exported": true
     },
     {
       "name": "TextProps",
       "kind": "type",
-      "file": "components\\Themed.tsx",
+      "file": "components/Themed.tsx",
       "line": 16,
       "exported": true
     },
     {
       "name": "ThemedContainer",
       "kind": "function",
-      "file": "src\\components\\ui\\ThemedContainer.tsx",
+      "file": "src/components/ui/ThemedContainer.tsx",
       "line": 18,
       "exported": true
     },
     {
       "name": "ThemedText",
       "kind": "function",
-      "file": "src\\components\\ui\\ThemedText.tsx",
+      "file": "src/components/ui/ThemedText.tsx",
       "line": 8,
       "exported": true
     },
     {
       "name": "Transaction",
       "kind": "interface",
-      "file": "src\\types\\index.ts",
+      "file": "src/types/index.ts",
       "line": 1,
       "exported": true
     },
     {
       "name": "Transaction",
       "kind": "class",
-      "file": "src\\database\\model\\Transaction.ts",
+      "file": "src/database/model/Transaction.ts",
       "line": 7,
       "exported": true
     },
     {
       "name": "TransactionSection",
       "kind": "interface",
-      "file": "src\\utils\\transactions.ts",
+      "file": "src/utils/transactions.ts",
       "line": 6,
       "exported": true
     },
     {
       "name": "TutorialStep",
       "kind": "interface",
-      "file": "src\\context\\TutorialContext.tsx",
+      "file": "src/context/TutorialContext.tsx",
       "line": 4,
       "exported": true
     },
     {
       "name": "useAILimit",
       "kind": "function",
-      "file": "src\\hooks\\useAILimit.ts",
+      "file": "src/hooks/useAILimit.ts",
       "line": 32,
       "exported": true
     },
     {
       "name": "useClientOnlyValue",
       "kind": "function",
-      "file": "components\\useClientOnlyValue.web.ts",
+      "file": "components/useClientOnlyValue.web.ts",
       "line": 5,
       "exported": true
     },
     {
       "name": "useClientOnlyValue",
       "kind": "function",
-      "file": "components\\useClientOnlyValue.ts",
+      "file": "components/useClientOnlyValue.ts",
       "line": 2,
       "exported": true
     },
     {
       "name": "useColorScheme",
       "kind": "function",
-      "file": "components\\useColorScheme.web.ts",
+      "file": "components/useColorScheme.web.ts",
       "line": 6,
       "exported": true
     },
     {
       "name": "usePremium",
       "kind": "function",
-      "file": "src\\hooks\\usePremium.ts",
+      "file": "src/hooks/usePremium.ts",
       "line": 4,
       "exported": true
     },
     {
       "name": "UserProfile",
       "kind": "interface",
-      "file": "src\\services\\supabase.ts",
+      "file": "src/services/supabase.ts",
       "line": 53,
-      "exported": true
-    },
-    {
-      "name": "UserState",
-      "kind": "interface",
-      "file": "src\\types\\index.ts",
-      "line": 43,
-      "exported": true
-    },
-    {
-      "name": "useSync",
-      "kind": "function",
-      "file": "src\\hooks\\useSync.ts",
-      "line": 5,
-      "exported": true
-    },
-    {
-      "name": "useThemeColor",
-      "kind": "function",
-      "file": "components\\Themed.tsx",
-      "line": 19,
-      "exported": true
-    },
-    {
-      "name": "View",
-      "kind": "function",
-      "file": "components\\Themed.tsx",
-      "line": 40,
-      "exported": true
-    },
-    {
-      "name": "ViewProps",
-      "kind": "type",
-      "file": "components\\Themed.tsx",
-      "line": 17,
       "exported": true
     }
   ],
   "dependencies": {
     "mostImported": [
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\financial.ts",
-        "importedBy": 22
+        "file": "/mnt/d/dev/projects/finainteli/src/services/financial.ts",
+        "importedBy": 23
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\types\\schema.ts",
-        "importedBy": 11
+        "file": "/mnt/d/dev/projects/finainteli/src/components/ui/GlassAppbar.tsx",
+        "importedBy": 16
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\store\\authStore.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/types/schema.ts",
+        "importedBy": 12
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/database/index.ts",
         "importedBy": 9
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\supabase.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/store/authStore.ts",
+        "importedBy": 9
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/hooks/usePremium.ts",
+        "importedBy": 9
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/context/ThemeContext.tsx",
+        "importedBy": 9
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/utils/currency.ts",
+        "importedBy": 9
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/services/supabase.ts",
         "importedBy": 8
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\database/index.ts",
-        "importedBy": 8
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\hooks\\usePremium.ts",
-        "importedBy": 8
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\types/index.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/types/index.ts",
         "importedBy": 7
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\utils\\currency.ts",
-        "importedBy": 7
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\components\\paywall\\PaywallModal.tsx",
+        "file": "/mnt/d/dev/projects/finainteli/src/components/paywall/PaywallModal.tsx",
         "importedBy": 6
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\notifications.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/components/ui/GlassFAB.tsx",
+        "importedBy": 6
+      },
+      {
+        "file": "/mnt/d/dev/projects/finainteli/src/services/notifications.ts",
         "importedBy": 5
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\sync/index.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/services/sync/index.ts",
         "importedBy": 5
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\budget.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/services/budget.ts",
         "importedBy": 4
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\context\\ThemeContext.tsx",
+        "file": "/mnt/d/dev/projects/finainteli/src/services/gemini.ts",
         "importedBy": 4
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\context\\TutorialContext.tsx",
+        "file": "/mnt/d/dev/projects/finainteli/src/store/useStore.ts",
         "importedBy": 4
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\store\\securityStore.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/context/TutorialContext.tsx",
         "importedBy": 4
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\store\\useStore.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/store/securityStore.ts",
         "importedBy": 4
       },
       {
-        "file": "D:\\dev\\projects\\finainteli\\src\\services\\gemini.ts",
+        "file": "/mnt/d/dev/projects/finainteli/src/hooks/useBudgetMonitor.ts",
         "importedBy": 4
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\hooks\\useBudgetMonitor.ts",
-        "importedBy": 4
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\store\\financialStore.ts",
-        "importedBy": 4
-      },
-      {
-        "file": "D:\\dev\\projects\\finainteli\\src\\constants\\aiPricing.ts",
-        "importedBy": 3
       }
     ]
   },
   "stats": {
-    "totalSymbols": 106,
-    "exportedSymbols": 49,
-    "analysisTimeMs": 724
+    "totalSymbols": 116,
+    "exportedSymbols": 55,
+    "analysisTimeMs": 2216
   }
 }

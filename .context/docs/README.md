@@ -1,47 +1,25 @@
 # Documentation Index
 
-Welcome to the repository knowledge base. Start with the project overview, then dive into specific guides as needed.
+This folder contains the living context for FinAInteli. It is generated and updated to keep architecture, workflow, and domain knowledge centralized for humans and agents.
 
 ## Core Guides
 - [Project Overview](./project-overview.md)
 - [Architecture Notes](./architecture.md)
 - [Development Workflow](./development-workflow.md)
 - [Testing Strategy](./testing-strategy.md)
-- [Glossary & Domain Concepts](./glossary.md)
-- [Security & Compliance Notes](./security.md)
-- [Tooling & Productivity Guide](./tooling.md)
+- [Glossary and Domain Concepts](./glossary.md)
+- [Security and Compliance Notes](./security.md)
+- [Tooling and Productivity Guide](./tooling.md)
 
-## Repository Snapshot
-- `AGENTS.md/`
-- `android/`
-- `app/`
-- `app.json/`
-- `assets/`
-- `babel.config.js/`
-- `components/`
-- `constants/`
-- `docs/` — Living documentation produced by this tool.
-- `eas.json/`
-- `expo-env.d.ts/`
-- `jest.config.js/`
-- `jest.setup.js/`
-- `package-lock.json/`
-- `package.json/`
-- `README.md/`
-- `scripts/`
-- `services/`
-- `src/` — TypeScript source files and CLI entrypoints.
-- `stores/`
-- `tsconfig.json/`
-- `ux_audit_report.txt/`
+## Supporting References
+- [Codebase Map](./codebase-map.json) (symbols, entry points, dependency stats)
 
-## Document Map
-| Guide | File | Primary Inputs |
-| --- | --- | --- |
-| Project Overview | `project-overview.md` | Roadmap, README, stakeholder notes |
-| Architecture Notes | `architecture.md` | ADRs, service boundaries, dependency graphs |
-| Development Workflow | `development-workflow.md` | Branching rules, CI config, contributing guide |
-| Testing Strategy | `testing-strategy.md` | Test configs, CI gates, known flaky suites |
-| Glossary & Domain Concepts | `glossary.md` | Business terminology, user personas, domain rules |
-| Security & Compliance Notes | `security.md` | Auth model, secrets management, compliance requirements |
-| Tooling & Productivity Guide | `tooling.md` | CLI scripts, IDE configs, automation workflows |
+## Source Docs
+- [README](../../README.md)
+- [AI Advisor Notes](../../docs/AI_ADVISOR.md)
+- [Credit Card Invoice Notes](../../docs/credit-card-invoice.md)
+- [AGENTS Instructions](../../AGENTS.md)
+
+## Maintenance Notes
+- Keep generated artifacts in `.context/` to preserve determinism.
+- Refresh this index when adding or reorganizing context docs.

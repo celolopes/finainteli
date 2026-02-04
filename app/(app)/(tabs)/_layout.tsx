@@ -1,16 +1,36 @@
-import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../../../src/context/ThemeContext";
+import { LiquidGlassSurface } from "../../../src/components/ui/LiquidGlassSurface";
 
 export default function TabLayout() {
   const theme = useTheme();
   const { t } = useTranslation();
   const isIos = Platform.OS === "ios";
   const { isLiquidGlass, colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
+  const iosTabHeight = 64 + insets.bottom;
+  const iosTabPaddingBottom = Math.max(insets.bottom, 12);
+  const tabBarStyle = {
+    backgroundColor: isIos ? "transparent" : theme.colors.elevation.level2,
+    borderTopWidth: isIos ? (isLiquidGlass ? 0 : StyleSheet.hairlineWidth) : 0,
+    borderWidth: isIos && isLiquidGlass ? StyleSheet.hairlineWidth : 0,
+    borderColor: isLiquidGlass ? colors.glassBorder : "transparent",
+    elevation: 0,
+    height: isIos ? iosTabHeight : 68,
+    paddingBottom: isIos ? iosTabPaddingBottom : 12,
+    paddingTop: isIos ? 6 : 0,
+    position: isIos ? "absolute" : "relative",
+    marginHorizontal: isIos ? 16 : 0,
+    marginBottom: isIos ? 10 : 0,
+    borderRadius: isIos ? 28 : 0,
+    overflow: "hidden",
+  } as const;
 
   return (
     <Tabs
@@ -21,18 +41,10 @@ export default function TabLayout() {
         headerTransparent: isLiquidGlass,
         headerShadowVisible: !isLiquidGlass,
         headerBackground: isLiquidGlass
-          ? () => <BlurView intensity={80} tint="systemThinMaterial" style={StyleSheet.absoluteFill} />
+          ? () => <LiquidGlassSurface effect="clear" useBlurFallback={false} style={StyleSheet.absoluteFill} />
           : undefined,
-        tabBarStyle: {
-          backgroundColor: isIos ? "transparent" : theme.colors.elevation.level2,
-          borderTopWidth: isIos ? StyleSheet.hairlineWidth : 0,
-          borderTopColor: isLiquidGlass ? colors.glassBorder : "transparent",
-          elevation: 0,
-          height: isIos ? 88 : 68,
-          paddingBottom: isIos ? 28 : 12,
-          position: isIos ? "absolute" : "relative",
-        },
-        tabBarBackground: () => (isIos ? <BlurView intensity={80} tint="systemThinMaterial" style={StyleSheet.absoluteFill} /> : undefined),
+        tabBarStyle,
+        tabBarBackground: () => (isIos ? <LiquidGlassSurface effect="clear" style={StyleSheet.absoluteFill} /> : undefined),
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
       }}

@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import Purchases, { PurchasesOffering, PurchasesPackage } from "react-native-purchases";
+import Purchases, { CustomerInfo, CustomerInfoUpdateListener, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 
 const API_KEY = Platform.select({
   ios: process.env.EXPO_PUBLIC_RC_KEY_IOS,
@@ -15,6 +15,14 @@ export const ENTITLEMENT_ID = "finainteli Pro";
 
 class RevenueCatService {
   private initialized = false;
+
+  private hasActiveEntitlement(info?: CustomerInfo | null) {
+    return typeof info?.entitlements.active[ENTITLEMENT_ID] !== "undefined";
+  }
+
+  isProCustomerInfo(info?: CustomerInfo | null) {
+    return this.hasActiveEntitlement(info);
+  }
 
   async init() {
     if (this.initialized) return;
@@ -36,7 +44,9 @@ class RevenueCatService {
   }
 
   async getOfferings(): Promise<PurchasesOffering | null> {
+    if (!API_KEY) return null;
     try {
+      await this.init();
       const offerings = await Purchases.getOfferings();
       if (offerings.current !== null && offerings.current.availablePackages.length !== 0) {
         return offerings.current;
@@ -49,12 +59,11 @@ class RevenueCatService {
   }
 
   async purchase(pack: PurchasesPackage): Promise<boolean> {
+    if (!API_KEY) return false;
     try {
+      await this.init();
       const { customerInfo } = await Purchases.purchasePackage(pack);
-      if (typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== "undefined") {
-        return true;
-      }
-      return false;
+      return this.hasActiveEntitlement(customerInfo);
     } catch (e: any) {
       if (!e.userCancelled) {
         console.error(e);
@@ -67,10 +76,19 @@ class RevenueCatService {
     if (Platform.OS === "web") return false;
     try {
       const info = await Purchases.getCustomerInfo();
-      return typeof info.entitlements.active[ENTITLEMENT_ID] !== "undefined";
+      return this.hasActiveEntitlement(info);
     } catch (e) {
       return false;
     }
+  }
+
+  addCustomerInfoListener(listener: CustomerInfoUpdateListener) {
+    if (Platform.OS === "web") return () => false;
+    if (!API_KEY) return () => false;
+
+    Purchases.addCustomerInfoUpdateListener(listener);
+
+    return () => Purchases.removeCustomerInfoUpdateListener(listener);
   }
 }
 

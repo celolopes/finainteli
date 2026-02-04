@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Icon, Surface, Text, useTheme } from "react-native-paper";
 import Animated, { FadeInUp, Layout, ZoomIn } from "react-native-reanimated";
+import { useAppTheme } from "../../context/ThemeContext";
 import { useFinancialStore } from "../../store/financialStore";
 import { Database } from "../../types/schema";
+import { LiquidGlassSurface } from "../ui/LiquidGlassSurface";
 
 type ExtendedCreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & {
   next_invoice_estimate?: number;
@@ -17,6 +19,7 @@ const STORAGE_KEY = "@finainteli_balance_expanded";
 
 export const BalanceCard = () => {
   const theme = useTheme();
+  const { isLiquidGlass, colors } = useAppTheme();
   const { t, i18n } = useTranslation();
   const { monthlySummary, isLoading, accounts, creditCards } = useFinancialStore();
   const [expanded, setExpanded] = useState(false);
@@ -78,11 +81,43 @@ export const BalanceCard = () => {
     return theme.colors.onSurfaceVariant;
   };
 
+  const LiquidCard = ({
+    children,
+    style,
+    overlayColor,
+  }: {
+    children: React.ReactNode;
+    style?: any;
+    overlayColor?: string;
+  }) => {
+    if (!isLiquidGlass) {
+      return (
+        <Surface style={style} elevation={2}>
+          {children}
+        </Surface>
+      );
+    }
+
+    return (
+      <LiquidGlassSurface
+        effect="regular"
+        useBlurFallback={false}
+        style={[style, styles.glassCard, { borderColor: colors.glassBorder }]}
+      >
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayColor || "rgba(20,20,20,0.35)" }]} />
+        {children}
+      </LiquidGlassSurface>
+    );
+  };
+
   return (
     <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.container}>
       {/* Card 1: Patrimônio Total (Expandable) */}
       <Pressable onPress={toggleExpanded} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1 })}>
-        <Surface style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]} elevation={2} aria-label="Patrimônio Total">
+        <LiquidCard
+          style={[styles.card, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.primaryContainer }]}
+          overlayColor={isLiquidGlass ? "rgba(88, 76, 129, 0.35)" : undefined}
+        >
           <View style={styles.header}>
             <Text variant="labelLarge" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}>
               {t("dashboard.patrimony", "Patrimônio Total")}
@@ -209,11 +244,14 @@ export const BalanceCard = () => {
               )}
             </Animated.View>
           )}
-        </Surface>
+        </LiquidCard>
       </Pressable>
 
       {/* Card 2: Balanço Mensal */}
-      <Surface style={[styles.card, styles.monthlyCard, { backgroundColor: theme.colors.surface }]} elevation={1} aria-label="Balanço Mensal">
+      <LiquidCard
+        style={[styles.card, styles.monthlyCard, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.surface }]}
+        overlayColor={isLiquidGlass ? "rgba(18,18,18,0.35)" : undefined}
+      >
         <View style={styles.header}>
           <Text variant="labelLarge" style={{ color: theme.colors.onSurface, opacity: 0.8 }}>
             {t("dashboard.monthlyBalance", "Balanço do Mês")}
@@ -257,7 +295,7 @@ export const BalanceCard = () => {
             </View>
           </View>
         </View>
-      </Surface>
+      </LiquidCard>
     </Animated.View>
   );
 };
@@ -271,6 +309,10 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 20,
+  },
+  glassCard: {
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
   },
   monthlyCard: {
     borderWidth: 1,

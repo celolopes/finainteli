@@ -1,8 +1,8 @@
-import { BlurView } from "expo-blur";
 import React from "react";
-import { Pressable, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import { Pressable, StyleSheet, StyleProp, View, ViewStyle } from "react-native";
 import { FAB, Icon } from "react-native-paper";
 import { useAppTheme } from "../../context/ThemeContext";
+import { LiquidGlassSurface } from "./LiquidGlassSurface";
 
 type Props = {
   icon: React.ComponentProps<typeof FAB>["icon"];
@@ -44,6 +44,7 @@ export function GlassFAB(props: Props) {
   const radius = Math.min(size, finalHeight) / 2;
   const iconSize = Math.round(Math.min(size, finalHeight) * 0.45);
   const iconColor = color ?? colors.text;
+  const tintOverlayColor = typeof backgroundColor === "string" ? backgroundColor : undefined;
 
   return (
     <Pressable
@@ -67,7 +68,13 @@ export function GlassFAB(props: Props) {
         sanitizedStyle,
       ]}
     >
-      <BlurView intensity={80} tint="systemThinMaterial" style={StyleSheet.absoluteFill} />
+      <LiquidGlassSurface
+        effect="clear"
+        interactive={true}
+        useBlurFallback={false}
+        style={StyleSheet.absoluteFill}
+      />
+      {tintOverlayColor ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tintOverlayColor, opacity: 0.18 }]} /> : null}
       <Icon source={icon as any} size={iconSize} color={iconColor} />
     </Pressable>
   );

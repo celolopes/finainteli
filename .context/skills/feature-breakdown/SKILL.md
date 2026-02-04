@@ -4,7 +4,7 @@ name: Feature Breakdown
 description: Break down features into implementable tasks
 skillSlug: feature-breakdown
 phases: [P]
-generated: 2026-01-20
+generated: 2026-02-03
 status: unfilled
 scaffoldVersion: "2.0.0"
 ---

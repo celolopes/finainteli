@@ -1,39 +1,38 @@
 project:
-  name: "UX Audit Fixes2"
-  scale: MEDIUM
-  started: "2026-01-30T18:02:52.688Z"
+  name: "premium-sandbox-bypass"
+  scale: LARGE
+  started: "2026-02-04T13:39:20.921Z"
   current_phase: E
 
 phases:
   P:
     status: filled
-    started_at: "2026-01-30T18:02:52.688Z"
-    completed_at: "2026-01-30T18:03:17.932Z"
+    started_at: "2026-02-04T13:39:20.921Z"
+    completed_at: "2026-02-04T14:18:02.246Z"
   R:
     status: completed
-    started_at: "2026-01-30T18:03:17.936Z"
-    completed_at: "2026-01-30T18:03:28.664Z"
+    started_at: "2026-02-04T14:18:02.264Z"
+    completed_at: "2026-02-04T14:57:53.182Z"
   E:
     status: in_progress
-    started_at: "2026-01-30T18:03:28.668Z"
+    started_at: "2026-02-04T14:57:53.196Z"
   V:
     status: pending
   C:
-    status: skipped
-    reason: "Not required for scale MEDIUM"
+    status: pending
 
 execution:
   history:
-    - timestamp: "2026-01-30T18:03:28.668Z"
+    - timestamp: "2026-02-04T14:57:53.196Z"
       phase: E
       action: started
-  last_activity: "2026-01-30T18:03:28.668Z"
+  last_activity: "2026-02-04T14:57:53.196Z"
   resume_context: "Fase E (Execução) em progresso"
 
 approval:
   plan_created: true
   plan_approved: true
-  approved_by: "architect"
-  approved_at: "2026-01-30T18:03:25.563Z"
-  approval_notes: "Plan is comprehensive and addresses all UX Audit critical issues. Proceeding to Execution."
+  approved_by: "reviewer"
+  approved_at: "2026-02-04T14:57:48.719Z"
+  approval_notes: "Plan reviewed; environment bypass signals and RevenueCat listener approach are acceptable."
 

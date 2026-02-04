@@ -1,8 +1,8 @@
-import { BlurView } from "expo-blur";
 import React from "react";
 import { StyleSheet } from "react-native";
 import { Appbar } from "react-native-paper";
 import { useAppTheme } from "../../context/ThemeContext";
+import { LiquidGlassSurface } from "./LiquidGlassSurface";
 
 type Props = React.ComponentProps<typeof Appbar.Header>;
 
@@ -17,9 +17,14 @@ export function GlassAppbar({ style, ...rest }: Props) {
   const { backgroundColor, elevation, shadowColor, shadowOffset, shadowOpacity, shadowRadius, ...sanitizedStyle } = flattened;
 
   return (
-    <BlurView intensity={80} tint="systemThinMaterial" style={[styles.container, { borderBottomColor: colors.glassBorder }]}>
+    <LiquidGlassSurface
+      effect="clear"
+      interactive={false}
+      useBlurFallback={false}
+      style={[styles.container, { borderBottomColor: colors.glassBorder }]}
+    >
       <Appbar.Header {...rest} elevated={false} style={[styles.header, sanitizedStyle]} />
-    </BlurView>
+    </LiquidGlassSurface>
   );
 }
 

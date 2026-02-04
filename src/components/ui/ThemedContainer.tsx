@@ -1,8 +1,8 @@
-import { BlurView } from "expo-blur";
 import React from "react";
 import { StyleProp, StyleSheet, ViewStyle } from "react-native";
 import { Surface } from "react-native-paper";
 import { useAppTheme } from "../../context/ThemeContext";
+import { LiquidGlassSurface } from "./LiquidGlassSurface";
 
 interface GlassProps extends ViewStyle {
   intensity?: number;
@@ -21,10 +21,10 @@ export function ThemedContainer({ style, children, intensity = 50, elevation = 0
   if (isGlass) {
     // iOS Liquid Glass
     return (
-      <BlurView
-        intensity={intensity}
-        tint={isLiquidGlass ? "systemThinMaterial" : isDark ? "dark" : "light"}
-        experimentalBlurMethod="dimezisBlurView" // Better performance
+      <LiquidGlassSurface
+        effect="regular"
+        blurIntensity={intensity}
+        blurTint={isLiquidGlass ? "systemUltraThinMaterial" : isDark ? "dark" : "light"}
         style={[
           styles.glass,
           {
@@ -35,7 +35,7 @@ export function ThemedContainer({ style, children, intensity = 50, elevation = 0
         ]}
       >
         {children}
-      </BlurView>
+      </LiquidGlassSurface>
     );
   }
 

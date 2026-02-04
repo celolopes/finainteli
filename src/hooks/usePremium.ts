@@ -1,15 +1,24 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getPremiumBypassContext } from "../constants/premiumAccess";
 import { RCService } from "../services/revenuecat";
 
+let didLogBypass = false;
+
 export function usePremium() {
-  const [isPro, setIsPro] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const bypassContext = useMemo(() => getPremiumBypassContext(), []);
+  const bypassEnabled = bypassContext.enabled;
 
-  useEffect(() => {
-    checkStatus();
-  }, []);
+  const [isPro, setIsPro] = useState(bypassEnabled);
+  const [loading, setLoading] = useState(!bypassEnabled);
 
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
+    if (bypassEnabled) {
+      setIsPro(true);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
       await RCService.init();
       const status = await RCService.isPro();
@@ -19,7 +28,34 @@ export function usePremium() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bypassEnabled]);
+
+  useEffect(() => {
+    if (bypassEnabled) {
+      if (!didLogBypass) {
+        console.log("[Premium] Bypass enabled", bypassContext);
+        didLogBypass = true;
+      }
+      setIsPro(true);
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const unsubscribe = RCService.addCustomerInfoListener((info) => {
+      if (!isMounted) return;
+      setIsPro(RCService.isProCustomerInfo(info));
+    });
+
+    checkStatus();
+
+    return () => {
+      isMounted = false;
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [bypassEnabled, bypassContext, checkStatus]);
 
   return { isPro, loading, checkStatus };
 }

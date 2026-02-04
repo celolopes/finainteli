@@ -1,7 +1,7 @@
 ---
 slug: getting-started
 category: getting-started
-generatedAt: 2026-01-30T18:02:19.964Z
+generatedAt: 2026-02-03T21:45:38.450Z
 ---
 
 # How do I set up and run this project?

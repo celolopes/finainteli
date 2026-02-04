@@ -1,12 +1,12 @@
+import { isLiquidGlassSupported } from "@callstack/liquid-glass";
 import { DarkTheme as NavDarkTheme, DefaultTheme as NavDefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
 import React, { createContext, useContext, useMemo } from "react";
 import { Platform, useColorScheme } from "react-native";
 import { MD3DarkTheme, MD3LightTheme, PaperProvider, adaptNavigationTheme } from "react-native-paper";
 import Colors from "../../constants/Colors";
-import { isIOS26OrNewer } from "../utils/platform";
 
 const isIOS = Platform.OS === "ios";
-const isLiquidGlass = isIOS && isIOS26OrNewer();
+const isLiquidGlass = isIOS && isLiquidGlassSupported;
 
 export const ThemeContext = createContext({
   isDark: false,

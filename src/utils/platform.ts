@@ -18,4 +18,5 @@ export const getIOSMajorVersion = () => {
   return 0;
 };
 
-export const isIOS26OrNewer = () => getIOSMajorVersion() >= 26;
+// Liquid Glass-style materials are enabled only on iOS 26+.
+export const isIOSLiquidGlassSupported = () => getIOSMajorVersion() >= 26;

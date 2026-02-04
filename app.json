@@ -86,7 +86,8 @@
           "project": "finainteli",
           "organization": "marcelo-lopes-gw"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true

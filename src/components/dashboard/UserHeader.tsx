@@ -1,4 +1,3 @@
-import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +7,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useAuthStore } from "../../store/authStore";
+import { LiquidGlassSurface } from "../ui/LiquidGlassSurface";
 import { SyncIndicator } from "../ui/SyncIndicator";
 
 export const UserHeader = () => {
@@ -51,9 +51,14 @@ export const UserHeader = () => {
   if (Platform.OS === "ios") {
     return (
       <View style={styles.containerIOS}>
-        <BlurView intensity={80} tint={isLiquidGlass ? "systemThinMaterial" : theme.dark ? "dark" : "light"} style={[styles.blur, { paddingTop: insets.top + 10 }]}>
+        <LiquidGlassSurface
+          effect="clear"
+          blurIntensity={80}
+          blurTint={isLiquidGlass ? "systemUltraThinMaterial" : theme.dark ? "dark" : "light"}
+          style={[styles.blur, { paddingTop: insets.top + 10 }]}
+        >
           <Animated.View entering={FadeInDown.delay(100).springify()}>{Content}</Animated.View>
-        </BlurView>
+        </LiquidGlassSurface>
       </View>
     );
   }

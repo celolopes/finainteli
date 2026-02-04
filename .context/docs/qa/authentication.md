@@ -1,12 +1,12 @@
 ---
 slug: authentication
 category: features
-generatedAt: 2026-01-30T18:02:25.441Z
+generatedAt: 2026-02-03T21:47:15.668Z
 relevantFiles:
-  - ..\..\..\AppData\Local\Programs\Antigravity\src\store\authStore.ts
-  - ..\..\..\AppData\Local\Programs\Antigravity\app\auth\callback.tsx
-  - ..\..\..\AppData\Local\Programs\Antigravity\app\(auth)\_layout.tsx
-  - ..\..\..\AppData\Local\Programs\Antigravity\app\(auth)\login.tsx
+  - src/store/authStore.ts
+  - app/auth/callback.tsx
+  - app/(auth)/_layout.tsx
+  - app/(auth)/login.tsx
 ---
 
 # How does authentication work?
@@ -19,3 +19,4 @@ relevantFiles:
 - Auth-related symbol: AuthCallbackScreen
 - Auth-related symbol: AuthLayout
 - Auth-related symbol: LoginFormData
+- Auth-related file path

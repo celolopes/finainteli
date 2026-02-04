@@ -1,13 +1,14 @@
 {
   "active": [
     {
-      "slug": "ux-audit-fixes",
-      "path": "plans/ux-audit-fixes.md",
-      "title": "Plan: UX Audit Fixes",
-      "linkedAt": "2026-01-30T18:03:14.834Z",
+      "slug": "premium-sandbox-bypass",
+      "path": "plans/premium-sandbox-bypass.md",
+      "title": "Premium Sandbox/TestFlight Bypass & Purchase Activation Fix",
+      "summary": "Investigar por que a compra Premium em Sandbox/TestFlight não liberou os recursos nas telas de `reports.tsx`, `chat.tsx` e `index.tsx`, e implementar um bypass de bloqueio Premium para ambientes de TestFlight/DEV/Beta, mantendo o bloqueio ativo apenas em produção.",
+      "linkedAt": "2026-02-04T13:39:25.784Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "ux-audit-fixes"
+  "primary": "premium-sandbox-bypass"
 }
