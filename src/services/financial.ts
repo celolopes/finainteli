@@ -1048,12 +1048,17 @@ export const FinancialService = {
       if (desc && !uniqueDescriptions.has(desc)) {
         const category = await t.category.fetch();
         const account = await t.account.fetch();
+        const card = await t.creditCard.fetch();
         uniqueDescriptions.set(desc, {
           id: t.id,
           description: t.description,
           type: t.type,
+          category_id: (t._raw as any).category_id,
+          account_id: (t._raw as any).account_id,
+          credit_card_id: (t._raw as any).credit_card_id,
           category: category ? { id: category.id, name: category.name, icon: category.icon, color: category.color } : null,
           account: account ? { id: account.id, name: account.name, color: account.color } : null,
+          card: card ? { id: card.id, name: card.name, color: card.color } : null,
         });
       }
     }
@@ -1202,6 +1207,30 @@ export const FinancialService = {
     return Object.entries(result)
       .map(([month, data]) => ({ month, ...data, balance: data.income - data.expense }))
       .sort((a, b) => a.month.localeCompare(b.month));
+  },
+
+  /**
+   * Conta quantos dias únicos possuem transações registradas
+   * Usado para liberar relatórios progressivamente
+   */
+  async getTransactionDaysCount(limit = 30): Promise<number> {
+    const transactions = await database
+      .get<Transaction>("transactions")
+      .query(
+        Q.where("deleted_at", Q.eq(null)),
+        Q.where("status", Q.notEq("pending")),
+        Q.take(500), // Fetches enough to find unique days usually
+      )
+      .fetch();
+
+    const uniqueDays = new Set(
+      transactions.map((t) => {
+        const d = new Date(t.transactionDate);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      }),
+    );
+
+    return uniqueDays.size;
   },
 
   async getCardTransactions(cardId: string, month: number, year: number) {

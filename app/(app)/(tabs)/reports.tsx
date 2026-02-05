@@ -4,12 +4,12 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Appbar, Button, Card, Icon, SegmentedButtons, Text, useTheme } from "react-native-paper";
-import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { AIInsightsCard } from "../../../src/components/reports/AIInsightsCard";
 import { CategoryPieChart } from "../../../src/components/reports/CategoryPieChart";
 import { EvolutionChart } from "../../../src/components/reports/EvolutionChart";
 import { MonthlyBarChart } from "../../../src/components/reports/MonthlyBarChart";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { AIAdvisorService, AIInsight } from "../../../src/services/aiAdvisor";
 import { FinancialService } from "../../../src/services/financial";
@@ -25,17 +25,15 @@ const LockedFeature = ({ icon, text, theme }: { icon: string; text: string; them
   </View>
 );
 
-const MIN_MONTHS_FOR_CHARTS = 2;
+const MIN_DAYS_FOR_CHARTS = 3;
 const MIN_CATEGORIES_FOR_CHARTS = 2;
 
-const getReportDataStatus = (analysis: any, evolution: any[]) => {
-  const safeEvolution = evolution ?? [];
-  const nonZeroMonths = safeEvolution.filter((item) => Math.abs(item.income) + Math.abs(item.expense) > 0).length;
+const getReportDataStatus = (analysis: any, evolution: any[], transactionDays: number) => {
   const categoryBreakdown = analysis?.categoryBreakdown ?? [];
   const nonZeroCategories = categoryBreakdown.filter((item: any) => Number(item.amount) > 0).length;
 
-  const hasEvolutionChart = nonZeroMonths >= MIN_MONTHS_FOR_CHARTS;
-  const hasMonthlyChart = nonZeroMonths >= MIN_MONTHS_FOR_CHARTS;
+  const hasEvolutionChart = transactionDays >= MIN_DAYS_FOR_CHARTS;
+  const hasMonthlyChart = transactionDays >= MIN_DAYS_FOR_CHARTS;
   const hasCategoryChart = nonZeroCategories >= MIN_CATEGORIES_FOR_CHARTS;
   const hasInsightsData = (analysis?.totalIncome ?? 0) + (analysis?.totalExpenses ?? 0) > 0;
 
@@ -44,18 +42,18 @@ const getReportDataStatus = (analysis: any, evolution: any[]) => {
     hasMonthlyChart,
     hasCategoryChart,
     hasInsightsData,
-    nonZeroMonths,
+    transactionDays,
     nonZeroCategories,
   };
 };
 
-const buildInsufficientInsights = (nonZeroMonths: number, nonZeroCategories: number): AIInsight[] => {
-  const missingMonths = Math.max(0, MIN_MONTHS_FOR_CHARTS - nonZeroMonths);
+const buildInsufficientInsights = (transactionDays: number, nonZeroCategories: number): AIInsight[] => {
+  const missingDays = Math.max(0, MIN_DAYS_FOR_CHARTS - transactionDays);
   const missingCategories = Math.max(0, MIN_CATEGORIES_FOR_CHARTS - nonZeroCategories);
   const parts = [];
 
-  if (missingMonths > 0) {
-    parts.push(`registre transações em pelo menos ${MIN_MONTHS_FOR_CHARTS} meses`);
+  if (missingDays > 0) {
+    parts.push(`registre transações em pelo menos mais ${missingDays} dia(s)`);
   }
   if (missingCategories > 0) {
     parts.push(`tenha gastos em pelo menos ${MIN_CATEGORIES_FOR_CHARTS} categorias`);
@@ -88,6 +86,7 @@ export default function ReportsScreen() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [evolution, setEvolution] = useState<any[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [transactionDays, setTransactionDays] = useState(0);
 
   const fetchData = useCallback(async () => {
     // Wait for premium check
@@ -107,18 +106,23 @@ export default function ReportsScreen() {
 
       // Only fetch advanced data if Pro
       if (isPro) {
-        // 3. Evolution Data
-        const evolutionData = await FinancialService.getMonthlyEvolution(user.id);
-        setEvolution(evolutionData);
+        // 3. Evolution Data & Days Count
+        const [evolutionData, daysCount] = await Promise.all([
+          FinancialService.getMonthlyEvolution(user.id),
+          FinancialService.getTransactionDaysCount(60), // Check up to 60 days
+        ]);
 
-        const status = getReportDataStatus(analysisData, evolutionData);
+        setEvolution(evolutionData);
+        setTransactionDays(daysCount);
+
+        const status = getReportDataStatus(analysisData, evolutionData, daysCount);
 
         // 4. AI Insights (only when there is meaningful data)
         if (status.hasInsightsData) {
           const aiInsights = await AIAdvisorService.getInsights(period, user.id);
           setInsights(aiInsights);
         } else {
-          setInsights(buildInsufficientInsights(status.nonZeroMonths, status.nonZeroCategories));
+          setInsights(buildInsufficientInsights(status.transactionDays, status.nonZeroCategories));
         }
       }
     } catch (error) {
@@ -189,7 +193,7 @@ export default function ReportsScreen() {
     );
   }
 
-  const status = getReportDataStatus(analysis, evolution);
+  const status = getReportDataStatus(analysis, evolution, transactionDays);
   const shouldShowCharts = status.hasEvolutionChart || status.hasMonthlyChart || status.hasCategoryChart;
 
   return (
@@ -276,7 +280,7 @@ export default function ReportsScreen() {
                 </Text>
               </View>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Quando houver registros em {MIN_MONTHS_FOR_CHARTS} meses e {MIN_CATEGORIES_FOR_CHARTS} categorias, os gráficos serão exibidos.
+                Continue usando o app! Em {Math.max(0, MIN_DAYS_FOR_CHARTS - transactionDays)} dia(s) com registros, os gráficos serão liberados.
               </Text>
             </Card.Content>
           </Card>

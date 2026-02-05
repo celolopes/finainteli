@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import Markdown from "react-native-markdown-display"; // Import Markdown
 import { Icon, Surface, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
@@ -19,6 +20,7 @@ interface Message {
 }
 
 const FREE_DAILY_LIMIT = 5;
+const CHAT_HISTORY_KEY = "@chat_history";
 
 export default function ChatScreen() {
   const theme = useTheme();
@@ -30,7 +32,7 @@ export default function ChatScreen() {
   const { goals } = useStore();
 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([{ id: "1", role: "model", text: t("advisor.greeting") }]);
+  const [messages, setMessages] = useState<Message[]>([]); // Start empty, will load
   const [loading, setLoading] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
@@ -40,7 +42,37 @@ export default function ChatScreen() {
 
   useEffect(() => {
     loadUsage();
+    loadHistory();
   }, []);
+
+  // Save history whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveHistory(messages);
+    }
+  }, [messages]);
+
+  const loadHistory = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      if (saved) {
+        setMessages(JSON.parse(saved));
+      } else {
+        // Default greeting if no history
+        setMessages([{ id: "1", role: "model", text: t("advisor.greeting") }]);
+      }
+    } catch (e) {
+      console.error("Failed to load chat history", e);
+    }
+  };
+
+  const saveHistory = async (msgs: Message[]) => {
+    try {
+      await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(msgs));
+    } catch (e) {
+      console.error("Failed to save chat history", e);
+    }
+  };
 
   const loadUsage = async () => {
     try {
@@ -52,6 +84,8 @@ export default function ChatScreen() {
       console.error("Failed to load usage", e);
     }
   };
+
+  // ... (usage increment logic remains same)
 
   const incrementUsage = async () => {
     if (isPro) return;
@@ -103,24 +137,7 @@ export default function ChatScreen() {
         trend: periodAnalysis.previousPeriodComparison, // Includes difference % vs last month
       };
 
-      // Construct a System Prompt Injection for this turn
-      // Note: We are passing this as "context" to the existing service.
-      // Ideally, GeminiService.chat should accept a richer object, but we can conform to its interface or modify it.
-      // The current interface takes a simpler "FinancialContext". We'll map cleanly.
-
       const history = messages.map((m) => ({ role: m.role, parts: m.text }));
-
-      // We pass the enhanced context. The service might need adjustment if strict typing,
-      // but 'context' arg in chat is typed as FinancialContext. We will cast or ensure match.
-      // The 'trend' and 'totalBalance' are extra fields not in the interface,
-      // but we can append them to the User Message silently or update the interface later.
-      // For now, let's append important extra info to the system prompt part by modifying how we call it.
-
-      // Hack: We will inject the extra context into the prompt sent to Gemini logic
-      // But GeminiService.chat handles the prompt construction.
-      // Let's rely on the fields that match existing interface for now + maybe update service later if needed.
-      // The existing interface has: income, expenses, savings, topCategories, goal.
-      // We will map strictly to avoid TS errors.
 
       const cleanContext = {
         monthlyIncome: contextData.monthlyIncome,
@@ -141,6 +158,18 @@ export default function ChatScreen() {
       setLoading(false);
     }
   };
+
+  const markdownStyles = StyleSheet.create({
+    body: {
+      color: theme.colors.onSurface,
+      fontSize: 16,
+      lineHeight: 22,
+    },
+    paragraph: {
+      marginBottom: 10,
+    },
+    // Customize other markdown elements if needed
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -167,7 +196,8 @@ export default function ChatScreen() {
             styles.list,
             {
               paddingTop: !isPro ? insets.top + 50 : insets.top + 20,
-              paddingBottom: inputHeight + bottomInset,
+              paddingBottom: 20, // Clean fixed padding
+              flexGrow: 1, // Ensures content can grow and push bottom
             },
           ]}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -186,14 +216,25 @@ export default function ChatScreen() {
                     : { backgroundColor: theme.colors.surface, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" },
                 ]}
               >
-                <Text
-                  style={{
-                    color: item.role === "user" ? theme.colors.onPrimary : theme.colors.onSurface,
-                    lineHeight: 22,
-                  }}
-                >
-                  {item.text}
-                </Text>
+                {item.role === "model" ? (
+                  <Markdown
+                    style={{
+                      body: { color: theme.colors.onSurface, fontSize: 16, lineHeight: 22 },
+                      // Adjust paragraph spacing if needed
+                    }}
+                  >
+                    {item.text}
+                  </Markdown>
+                ) : (
+                  <Text
+                    style={{
+                      color: theme.colors.onPrimary,
+                      lineHeight: 22,
+                    }}
+                  >
+                    {item.text}
+                  </Text>
+                )}
               </View>
             </View>
           )}
