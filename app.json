@@ -15,9 +15,7 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "finainteli"
-            ]
+            "CFBundleURLSchemes": ["finainteli"]
           }
         ],
         "ITSAppUsesNonExemptEncryption": false,
@@ -46,10 +44,7 @@
               "pathPrefix": "/auth/v1/callback"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
