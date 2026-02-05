@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,8 +26,9 @@ export default function ChatScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
-  const bottomInset = Platform.OS === "ios" ? tabBarHeight : insets.bottom;
+  // const tabBarHeight = useBottomTabBarHeight(); // Removed due to migration to native tabs
+  const tabBarHeight = Platform.OS === "ios" ? 85 : 50 + insets.bottom; // Approximate height for native tabs
+  const bottomInset = Platform.OS === "ios" ? insets.bottom + 10 : insets.bottom;
   const { isPro } = usePremium();
   const { goals } = useStore();
 

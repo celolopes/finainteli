@@ -5,10 +5,10 @@ import { useTranslation } from "react-i18next";
 import { Alert, Platform, SectionList, StyleSheet, View } from "react-native";
 import { Chip, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
 import { TransactionItem } from "../../../src/components/TransactionItem";
 import { FiltersModal, FilterState } from "../../../src/components/transactions/FiltersModal";
+import { GlassFAB } from "../../../src/components/ui/GlassFAB";
 import { useAppTheme } from "../../../src/context/ThemeContext";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { ExportService } from "../../../src/services/export";
@@ -167,7 +167,7 @@ export default function TransactionsScreen() {
     }
   }, [loading, sections]);
 
-  const headerPaddingTop = isLiquidGlass && Platform.OS === "ios" ? headerHeight + 8 : 16;
+  const headerPaddingTop = insets.top > 0 ? insets.top + 8 : 16;
   const listPaddingBottom = Platform.OS === "ios" ? insets.bottom + 140 : 120;
   const fabBottom = Platform.OS === "ios" ? insets.bottom + 72 : 16;
 
@@ -210,12 +210,7 @@ export default function TransactionsScreen() {
         stickySectionHeadersEnabled={false}
       />
 
-      <GlassFAB
-        icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: fabBottom }]}
-        color={theme.colors.onPrimary}
-        onPress={() => router.push("/add-transaction")}
-      />
+      <GlassFAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: fabBottom }]} color={theme.colors.onPrimary} onPress={() => router.push("/add-transaction")} />
 
       <FiltersModal visible={filtersVisible} onDismiss={() => setFiltersVisible(false)} onApply={setFilters} currentFilters={filters} />
 
