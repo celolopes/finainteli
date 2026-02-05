@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { z } from "zod";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { FinancialService } from "../../../src/services/financial";
 import { DetailedTransaction } from "../../../src/types";
 import { Database } from "../../../src/types/schema";
@@ -40,6 +40,7 @@ export default function TransactionDetails() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [originalTransaction, setOriginalTransaction] = useState<Transaction | null>(null);
 
   // Data Sources
   const [categories, setCategories] = useState<Category[]>([]);
@@ -121,6 +122,7 @@ export default function TransactionDetails() {
             account_id: txn.account_id || "",
           });
           setDate(new Date(txn.transaction_date));
+          setOriginalTransaction(txn);
         }
       }
     } catch (e) {
@@ -202,11 +204,11 @@ export default function TransactionDetails() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (deleteAllFuture: boolean = false) => {
     if (!id) return;
     setShowDeleteDialog(false);
     try {
-      await FinancialService.deleteTransaction(id);
+      await FinancialService.deleteTransaction(id, { deleteAllFuture });
       router.back();
     } catch (error) {
       console.error(error);
@@ -544,15 +546,29 @@ export default function TransactionDetails() {
       {/* Delete Confirmation Dialog */}
       <Portal>
         <Dialog visible={showDeleteDialog} onDismiss={() => setShowDeleteDialog(false)}>
-          <Dialog.Title>{t("transactions.deleteConfirm.title")}</Dialog.Title>
+          <Dialog.Title>{t("transactions.deleteConfirm.title") || "Excluir Transação"}</Dialog.Title>
           <Dialog.Content>
-            <Text>{t("transactions.deleteConfirm.message")}</Text>
+            <Text>{t("transactions.deleteConfirm.message") || "Tem certeza que deseja excluir esta transação?"}</Text>
+            {(originalTransaction?.is_installment || originalTransaction?.description?.includes("(Rec.)") || originalTransaction?.description?.includes("(Fixo)")) && (
+              <Text style={{ marginTop: 12, fontWeight: "bold", color: theme.colors.primary }}>Esta é uma transação recorrente ou parcelada.</Text>
+            )}
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setShowDeleteDialog(false)}>{t("common.cancel")}</Button>
-            <Button onPress={handleDelete} textColor={theme.colors.error}>
-              {t("common.delete")}
-            </Button>
+          <Dialog.Actions style={{ flexDirection: "column", alignItems: "stretch", paddingHorizontal: 16, paddingBottom: 16 }}>
+            {originalTransaction?.is_installment || originalTransaction?.description?.includes("(Rec.)") || originalTransaction?.description?.includes("(Fixo)") ? (
+              <>
+                <Button mode="contained" onPress={() => handleDelete(true)} style={{ marginBottom: 8 }} buttonColor={theme.colors.error}>
+                  Excluir esta e todas as futuras
+                </Button>
+                <Button mode="outlined" onPress={() => handleDelete(false)} style={{ marginBottom: 8 }} textColor={theme.colors.error}>
+                  Excluir apenas esta
+                </Button>
+              </>
+            ) : (
+              <Button mode="contained" onPress={() => handleDelete(false)} style={{ marginBottom: 8 }} buttonColor={theme.colors.error}>
+                {t("common.delete") || "Excluir"}
+              </Button>
+            )}
+            <Button onPress={() => setShowDeleteDialog(false)}>{t("common.cancel") || "Cancelar"}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

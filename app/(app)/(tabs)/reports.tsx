@@ -10,6 +10,7 @@ import { CategoryPieChart } from "../../../src/components/reports/CategoryPieCha
 import { EvolutionChart } from "../../../src/components/reports/EvolutionChart";
 import { MonthlyBarChart } from "../../../src/components/reports/MonthlyBarChart";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { ReportsSkeleton } from "../../../src/components/ui/ReportsSkeleton";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { AIAdvisorService, AIInsight } from "../../../src/services/aiAdvisor";
 import { FinancialService } from "../../../src/services/financial";
@@ -202,7 +203,7 @@ export default function ReportsScreen() {
         <Appbar.Content title="Relatórios & IA" />
       </GlassAppbar>
 
-      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}>
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading && !!analysis} onRefresh={fetchData} />}>
         <SegmentedButtons
           value={period}
           onValueChange={(val) => setPeriod(val as any)}
@@ -215,75 +216,81 @@ export default function ReportsScreen() {
           aria-label="Seletor de Período do Relatório"
         />
 
-        <View style={styles.section}>
-          <Text variant="headlineSmall" style={styles.sectionTitle}>
-            Consultor Financeiro
-          </Text>
-          <AIInsightsCard insights={insights} loading={loading} onRefresh={fetchData} />
-          {!loading && !status.hasInsightsData && (
-            <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Dados insuficientes para relatórios">
-              <Card.Content>
-                <View style={styles.emptyHeader}>
-                  <Icon source="robot" size={22} color={theme.colors.primary} />
-                  <Text variant="titleMedium" style={styles.emptyTitle}>
-                    IA aguardando mais dados
-                  </Text>
-                </View>
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Registre mais transações para liberar gráficos e insights completos.
-                </Text>
-              </Card.Content>
-            </Card>
-          )}
-        </View>
-
-        {status.hasEvolutionChart && (
-          <View style={styles.section}>
-            <EvolutionChart data={evolution.map((e: any) => ({ period: e.month, balance: e.balance }))} />
-          </View>
-        )}
-
-        {status.hasCategoryChart && (
-          <View style={styles.section}>
-            <CategoryPieChart
-              data={
-                analysis?.categoryBreakdown.map((c: any) => ({
-                  category: c.category,
-                  amount: c.amount,
-                  percentage: c.percentage,
-                  color: getColorForCategory(c.category),
-                })) || []
-              }
-            />
-          </View>
-        )}
-
-        {status.hasMonthlyChart && (
-          <View style={styles.section}>
-            <MonthlyBarChart
-              data={evolution.map((e: any) => ({
-                month: e.month,
-                income: e.income,
-                expense: e.expense,
-              }))}
-            />
-          </View>
-        )}
-
-        {!loading && !shouldShowCharts && status.hasInsightsData && (
-          <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Sem dados suficientes para gráficos">
-            <Card.Content>
-              <View style={styles.emptyHeader}>
-                <Icon source="chart-line" size={22} color={theme.colors.primary} />
-                <Text variant="titleMedium" style={styles.emptyTitle}>
-                  Gráficos ocultos
-                </Text>
-              </View>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Continue usando o app! Em {Math.max(0, MIN_DAYS_FOR_CHARTS - transactionDays)} dia(s) com registros, os gráficos serão liberados.
+        {loading && !analysis ? (
+          <ReportsSkeleton />
+        ) : (
+          <>
+            <View style={styles.section}>
+              <Text variant="headlineSmall" style={styles.sectionTitle}>
+                Consultor Financeiro
               </Text>
-            </Card.Content>
-          </Card>
+              <AIInsightsCard insights={insights} loading={loading} onRefresh={fetchData} />
+              {!loading && !status.hasInsightsData && (
+                <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Dados insuficientes para relatórios">
+                  <Card.Content>
+                    <View style={styles.emptyHeader}>
+                      <Icon source="robot" size={22} color={theme.colors.primary} />
+                      <Text variant="titleMedium" style={styles.emptyTitle}>
+                        IA aguardando mais dados
+                      </Text>
+                    </View>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Registre mais transações para liberar gráficos e insights completos.
+                    </Text>
+                  </Card.Content>
+                </Card>
+              )}
+            </View>
+
+            {status.hasEvolutionChart && (
+              <View style={styles.section}>
+                <EvolutionChart data={evolution.map((e: any) => ({ period: e.month, balance: e.balance }))} />
+              </View>
+            )}
+
+            {status.hasCategoryChart && (
+              <View style={styles.section}>
+                <CategoryPieChart
+                  data={
+                    analysis?.categoryBreakdown.map((c: any) => ({
+                      category: c.category,
+                      amount: c.amount,
+                      percentage: c.percentage,
+                      color: getColorForCategory(c.category),
+                    })) || []
+                  }
+                />
+              </View>
+            )}
+
+            {status.hasMonthlyChart && (
+              <View style={styles.section}>
+                <MonthlyBarChart
+                  data={evolution.map((e: any) => ({
+                    month: e.month,
+                    income: e.income,
+                    expense: e.expense,
+                  }))}
+                />
+              </View>
+            )}
+
+            {!loading && !shouldShowCharts && status.hasInsightsData && (
+              <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.surface }]} aria-label="Sem dados suficientes para gráficos">
+                <Card.Content>
+                  <View style={styles.emptyHeader}>
+                    <Icon source="chart-line" size={22} color={theme.colors.primary} />
+                    <Text variant="titleMedium" style={styles.emptyTitle}>
+                      Gráficos ocultos
+                    </Text>
+                  </View>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Continue usando o app! Em {Math.max(0, MIN_DAYS_FOR_CHARTS - transactionDays)} dia(s) com registros, os gráficos serão liberados.
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
+          </>
         )}
       </ScrollView>
     </View>

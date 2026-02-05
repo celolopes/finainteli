@@ -74,10 +74,10 @@ export default function CardsList() {
 
   const renderItem = ({ item, index }: { item: CreditCard; index: number }) => {
     const openEstimate = item.open_invoice_estimate ?? item.next_invoice_estimate ?? 0;
-    const totalOutstanding = Math.max(item.current_balance || 0, openEstimate);
+    const totalDebt = item.current_balance || 0;
 
-    const usage = item.credit_limit > 0 ? totalOutstanding / item.credit_limit : 0;
-    const available = item.credit_limit - totalOutstanding;
+    const usage = item.credit_limit > 0 ? totalDebt / item.credit_limit : 0;
+    const available = item.credit_limit - totalDebt;
     const logoUrl = getBrandLogo(item.brand);
 
     return (
@@ -112,9 +112,9 @@ export default function CardsList() {
 
               <View style={styles.cardBody}>
                 <View style={styles.row}>
-                  <Text variant="bodyMedium">Fatura Atual</Text>
+                  <Text variant="bodyMedium">Fatura Aberta</Text>
                   <Text variant="titleMedium" style={{ color: theme.colors.error, fontWeight: "bold" }}>
-                    {CurrencyUtils.format(totalOutstanding, item.currency_code)}
+                    {CurrencyUtils.format(openEstimate, item.currency_code)}
                   </Text>
                 </View>
 

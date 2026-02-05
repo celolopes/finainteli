@@ -81,15 +81,7 @@ export const BalanceCard = () => {
     return theme.colors.onSurfaceVariant;
   };
 
-  const LiquidCard = ({
-    children,
-    style,
-    overlayColor,
-  }: {
-    children: React.ReactNode;
-    style?: any;
-    overlayColor?: string;
-  }) => {
+  const LiquidCard = ({ children, style, overlayColor }: { children: React.ReactNode; style?: any; overlayColor?: string }) => {
     if (!isLiquidGlass) {
       return (
         <Surface style={style} elevation={2}>
@@ -99,11 +91,7 @@ export const BalanceCard = () => {
     }
 
     return (
-      <LiquidGlassSurface
-        effect="regular"
-        useBlurFallback={false}
-        style={[style, styles.glassCard, { borderColor: colors.glassBorder }]}
-      >
+      <LiquidGlassSurface effect="regular" useBlurFallback={false} style={[style, styles.glassCard, { borderColor: colors.glassBorder }]}>
         <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayColor || "rgba(20,20,20,0.35)" }]} />
         {children}
       </LiquidGlassSurface>
@@ -114,10 +102,7 @@ export const BalanceCard = () => {
     <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.container}>
       {/* Card 1: Patrimônio Total (Expandable) */}
       <Pressable onPress={toggleExpanded} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1 })}>
-        <LiquidCard
-          style={[styles.card, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.primaryContainer }]}
-          overlayColor={isLiquidGlass ? "rgba(88, 76, 129, 0.35)" : undefined}
-        >
+        <LiquidCard style={[styles.card, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.primaryContainer }]} overlayColor={isLiquidGlass ? "rgba(88, 76, 129, 0.35)" : undefined}>
           <View style={styles.header}>
             <Text variant="labelLarge" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}>
               {t("dashboard.patrimony", "Patrimônio Total")}
@@ -185,13 +170,12 @@ export const BalanceCard = () => {
                       <View style={{ alignItems: "flex-end" }}>
                         {(() => {
                           const openEstimate = (card as ExtendedCreditCard).open_invoice_estimate ?? (card as ExtendedCreditCard).next_invoice_estimate ?? 0;
-                          const closedOutstanding =
-                            (card as ExtendedCreditCard).closed_invoice_outstanding ?? Math.max((card.current_balance || 0) - openEstimate, 0);
-                          const totalOutstanding = closedOutstanding + openEstimate;
+                          const closedOutstanding = (card as ExtendedCreditCard).closed_invoice_outstanding ?? 0;
+                          const totalInvoice = card.current_balance || 0;
 
-                          if (closedOutstanding > 0) {
-                            return (
-                              <>
+                          return (
+                            <>
+                              {closedOutstanding > 0.01 && (
                                 <View style={{ alignItems: "flex-end", marginBottom: 4 }}>
                                   <Text variant="labelSmall" style={{ color: theme.colors.error, fontWeight: "bold" }}>
                                     Fatura Fechada
@@ -200,40 +184,25 @@ export const BalanceCard = () => {
                                     {formatMoney(closedOutstanding)}
                                   </Text>
                                 </View>
+                              )}
 
-                                {openEstimate > 0 && (
-                                  <View style={{ alignItems: "flex-end", marginBottom: 4, opacity: 0.7 }}>
-                                    <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer }}>
-                                      Fatura Aberta
-                                    </Text>
-                                    <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-                                      {formatMoney(openEstimate)}
-                                    </Text>
-                                  </View>
-                                )}
+                              <View style={{ alignItems: "flex-end", marginBottom: 4, opacity: closedOutstanding > 0.01 ? 0.7 : 1 }}>
+                                <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer }}>
+                                  Fatura Aberta
+                                </Text>
+                                <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
+                                  {formatMoney(openEstimate)}
+                                </Text>
+                              </View>
 
+                              <View style={{ alignItems: "flex-end" }}>
                                 <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
-                                  Total
+                                  Fatura Total
                                 </Text>
                                 <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "bold" }}>
-                                  {formatMoney(totalOutstanding)}
+                                  {formatMoney(totalInvoice)}
                                 </Text>
-                              </>
-                            );
-                          }
-
-                          const fallbackTotal = card.current_balance || 0;
-                          const openLabel = openEstimate > 0 ? "Fatura Aberta" : "Total";
-                          const openAmount = openEstimate > 0 ? openEstimate : fallbackTotal;
-
-                          return (
-                            <>
-                              <Text variant="labelSmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7 }}>
-                                {openLabel}
-                              </Text>
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-                                {formatMoney(openAmount)}
-                              </Text>
+                              </View>
                             </>
                           );
                         })()}
@@ -248,10 +217,7 @@ export const BalanceCard = () => {
       </Pressable>
 
       {/* Card 2: Balanço Mensal */}
-      <LiquidCard
-        style={[styles.card, styles.monthlyCard, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.surface }]}
-        overlayColor={isLiquidGlass ? "rgba(18,18,18,0.35)" : undefined}
-      >
+      <LiquidCard style={[styles.card, styles.monthlyCard, { backgroundColor: isLiquidGlass ? "transparent" : theme.colors.surface }]} overlayColor={isLiquidGlass ? "rgba(18,18,18,0.35)" : undefined}>
         <View style={styles.header}>
           <Text variant="labelLarge" style={{ color: theme.colors.onSurface, opacity: 0.8 }}>
             {t("dashboard.monthlyBalance", "Balanço do Mês")}

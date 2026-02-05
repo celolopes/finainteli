@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Appbar, Avatar, Button, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
+import { Appbar, Avatar, Button, Checkbox, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { DatePickerField } from "../../src/components/DatePickerField";
@@ -47,7 +47,8 @@ export default function AddTransactionScreen() {
 
   // Recurrence State
   const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrenceFreq, setRecurrenceFreq] = useState<"weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual">("monthly");
+  const [isFixed, setIsFixed] = useState(false);
+  const [recurrenceFreq, setRecurrenceFreq] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual">("monthly");
   const [recurrenceCount, setRecurrenceCount] = useState("12");
 
   const [showCatDialog, setShowCatDialog] = useState(false);
@@ -107,6 +108,7 @@ export default function AddTransactionScreen() {
         setDate(new Date());
         setIsInstallment(false);
         setIsRecurring(false);
+        setIsFixed(false);
         setInstallments("2");
         setRecurrenceCount("12");
 
@@ -206,6 +208,7 @@ export default function AddTransactionScreen() {
         installments: parseInt(installments) || 1,
         installmentMode,
         isRecurring,
+        isFixed,
         recurrenceFreq,
         recurrenceCount: parseInt(recurrenceCount) || 1,
       });
@@ -393,8 +396,8 @@ export default function AddTransactionScreen() {
               {isInstallment && (
                 <View style={styles.optionBody}>
                   <View style={styles.row}>
-                    <Text>Número de Parcelas</Text>
-                    <TextInput value={installments} onChangeText={setInstallments} keyboardType="numeric" style={styles.smallInput} dense />
+                    <Text variant="bodyMedium">Número de Parcelas</Text>
+                    <TextInput value={installments} onChangeText={setInstallments} keyboardType="numeric" mode="outlined" style={styles.smallInput} dense contentStyle={{ textAlign: "center" }} />
                   </View>
                   <Divider style={{ marginVertical: 12 }} />
                   <SegmentedButtons
@@ -428,34 +431,73 @@ export default function AddTransactionScreen() {
 
               {isRecurring && (
                 <View style={styles.optionBody}>
+                  <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }} onPress={() => setIsFixed(!isFixed)}>
+                    <Checkbox status={isFixed ? "checked" : "unchecked"} />
+                    <Text variant="bodyLarge">Lançamento Fixo (Sem fim definido)</Text>
+                  </TouchableOpacity>
+
                   <Text style={{ marginBottom: 8 }}>Frequência</Text>
                   <SegmentedButtons
                     value={recurrenceFreq}
                     onValueChange={(v) => setRecurrenceFreq(v as any)}
                     buttons={[
-                      { value: "weekly", label: "Seman" },
+                      { value: "daily", label: "Diário" },
+                      { value: "weekly", label: "Semanal" },
+                      { value: "biweekly", label: "Quinz." },
                       { value: "monthly", label: "Mensal" },
-                      { value: "bimonthly", label: "Bimest" },
                     ]}
                     style={{ marginBottom: 8 }}
                   />
-                  <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 12 }}>
-                    {["daily", "biweekly", "semiannual", "annual"].map((opt) => (
-                      <TouchableOpacity key={opt} onPress={() => setRecurrenceFreq(opt as any)}>
-                        <Text style={{ color: recurrenceFreq === opt ? theme.colors.primary : theme.colors.onSurfaceVariant, fontWeight: recurrenceFreq === opt ? "bold" : "normal" }}>
-                          {opt === "daily" ? "Diário" : opt === "biweekly" ? "Quinz" : opt === "semiannual" ? "Semest" : "Anual"}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  <SegmentedButtons
+                    value={recurrenceFreq}
+                    onValueChange={(v) => setRecurrenceFreq(v as any)}
+                    buttons={[
+                      { value: "bimonthly", label: "Bimestral" },
+                      { value: "semiannual", label: "Semestral" },
+                      { value: "annual", label: "Anual" },
+                    ]}
+                    style={{ marginBottom: 8 }}
+                  />
 
-                  <View style={styles.row}>
-                    <Text>Validar por (vezes)</Text>
-                    <TextInput value={recurrenceCount} onChangeText={setRecurrenceCount} keyboardType="numeric" style={styles.smallInput} dense aria-label="Contagem de recorrência" />
-                  </View>
-                  <HelperText type="info" visible>
-                    Serão gerados {recurrenceCount} lançamentos futuros.
-                  </HelperText>
+                  {!isFixed && (
+                    <>
+                      <View style={styles.row}>
+                        <Text variant="bodyMedium">Validar por (vezes)</Text>
+                        <TextInput
+                          value={recurrenceCount}
+                          onChangeText={setRecurrenceCount}
+                          keyboardType="numeric"
+                          mode="outlined"
+                          style={styles.smallInput}
+                          dense
+                          contentStyle={{ textAlign: "center" }}
+                          aria-label="Contagem de recorrência"
+                        />
+                      </View>
+                      <HelperText type="info" visible>
+                        Serão gerados {recurrenceCount} lançamentos futuros.
+                      </HelperText>
+                    </>
+                  )}
+                  {isFixed && (
+                    <HelperText type="info" visible>
+                      Serão gerados lançamentos{" "}
+                      {recurrenceFreq === "daily"
+                        ? "diários"
+                        : recurrenceFreq === "weekly"
+                          ? "semanais"
+                          : recurrenceFreq === "biweekly"
+                            ? "quinzenais"
+                            : recurrenceFreq === "monthly"
+                              ? "mensais"
+                              : recurrenceFreq === "bimonthly"
+                                ? "bimestrais"
+                                : recurrenceFreq === "semiannual"
+                                  ? "semestrais"
+                                  : "anuais"}{" "}
+                      automáticos por tempo indeterminado.
+                    </HelperText>
+                  )}
                 </View>
               )}
             </View>
@@ -736,25 +778,24 @@ const styles = StyleSheet.create({
   },
   optionGroup: {
     borderWidth: 1,
-    borderColor: "#444", // Force visible border in dark mode
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 12,
     overflow: "hidden",
   },
   optionHeader: {
-    padding: 12,
+    padding: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   optionBody: {
     padding: 16,
-    backgroundColor: "rgba(18, 18, 18, 0.02)",
+    paddingTop: 0,
   },
   smallInput: {
-    width: 60,
-    backgroundColor: "white",
-    textAlign: "center",
+    width: 64,
+    height: 40,
+    backgroundColor: "transparent",
   },
   row: {
     flexDirection: "row",

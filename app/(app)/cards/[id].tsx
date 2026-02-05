@@ -267,7 +267,8 @@ export default function CardDetails() {
   }
 
   const usage = card.credit_limit > 0 ? (card.current_balance || 0) / card.credit_limit : 0;
-  const available = card.available_limit ?? card.credit_limit - (card.current_balance || 0);
+  const totalDebt = card.current_balance || 0;
+  const available = card.credit_limit - totalDebt;
 
   let animationIndex = 0;
 
@@ -303,13 +304,13 @@ export default function CardDetails() {
 
           <View>
             <View style={styles.row}>
-              <Text variant="bodySmall">Utilizado</Text>
+              <Text variant="bodySmall">Utilizado (Total)</Text>
               <Text variant="bodySmall">{(usage * 100).toFixed(1)}%</Text>
             </View>
             <ProgressBar progress={usage > 1 ? 1 : usage} color={usage > 0.9 ? theme.colors.error : theme.colors.primary} style={styles.progressBar} />
             <View style={styles.row}>
-              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                Fatura Atual: {CurrencyUtils.format(card.current_balance || 0, card.currency_code)}
+              <Text variant="bodySmall" style={{ color: theme.colors.error, fontWeight: "bold" }}>
+                Total Devedor: {CurrencyUtils.format(totalDebt, card.currency_code)}
               </Text>
               <Text variant="bodySmall">Fecha dia {card.closing_day}</Text>
             </View>

@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export default appSchema({
-  version: 5,
+  version: 6,
   tables: [
     tableSchema({
       name: "transactions",
@@ -17,6 +17,10 @@ export default appSchema({
         { name: "transaction_date", type: "number" }, // Use timestamp for simpler sync
         { name: "currency_code", type: "string" },
         { name: "status", type: "string", isOptional: true },
+        { name: "is_installment", type: "boolean" },
+        { name: "installment_number", type: "number", isOptional: true },
+        { name: "total_installments", type: "number", isOptional: true },
+        { name: "parent_transaction_id", type: "string", isOptional: true, isIndexed: true },
         { name: "created_at", type: "number" },
         { name: "updated_at", type: "number" },
         { name: "deleted_at", type: "number", isOptional: true },

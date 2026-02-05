@@ -28,6 +28,10 @@ export interface DetailedTransaction {
   account_id: string | null;
   credit_card_id: string | null;
   status: string;
+  is_installment: boolean;
+  installment_number?: number;
+  total_installments?: number;
+  parent_transaction_id?: string | null;
   sync_status?: string;
   category: { id: string; name: string; icon: string; color?: string } | null;
   account: { id: string; name: string; color?: string } | null;

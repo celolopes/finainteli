@@ -6,6 +6,8 @@ import { useTheme } from "react-native-paper";
 import { SyncLoadingScreen } from "../../src/components/ui/SyncLoadingScreen";
 import { useBudgetMonitor } from "../../src/hooks/useBudgetMonitor";
 import { useSync } from "../../src/hooks/useSync";
+import { FinancialService } from "../../src/services/financial";
+import { NotificationService } from "../../src/services/notifications";
 import { useFinancialStore } from "../../src/store/financialStore";
 
 export default function AppLayout() {
@@ -17,6 +19,8 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isSyncing) {
       fetchDashboardData();
+      FinancialService.autoProcessPendingCardTransactions();
+      NotificationService.checkAndNotifyOverdueTransactions();
     }
   }, [isSyncing]);
 

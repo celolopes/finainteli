@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Card, Text, useTheme } from "react-native-paper";
 import { AIInsight } from "../../services/aiAdvisor";
+import { Skeleton } from "../ui/Skeleton";
 
 interface AIInsightsCardProps {
   insights: AIInsight[];
@@ -12,13 +13,23 @@ interface AIInsightsCardProps {
 export const AIInsightsCard = ({ insights, loading, onRefresh }: AIInsightsCardProps) => {
   const theme = useTheme();
 
-  if (loading) {
+  if (loading && (!insights || insights.length === 0)) {
     return (
-      <Card style={styles.card} aria-label="Carregando Análise da IA">
-        <Card.Content>
-          <Text>Carregando análise da IA...</Text>
-        </Card.Content>
-      </Card>
+      <View style={styles.container}>
+        {[1, 2].map((i) => (
+          <Card key={i} style={styles.card}>
+            <Card.Content style={styles.content}>
+              <View style={styles.header}>
+                <Skeleton width={32} height={32} borderRadius={16} />
+                <View style={[styles.textContainer, { marginLeft: 12 }]}>
+                  <Skeleton width="60%" height={16} style={{ marginBottom: 8 }} />
+                  <Skeleton width="90%" height={12} />
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+      </View>
     );
   }
 

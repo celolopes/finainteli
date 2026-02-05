@@ -51,5 +51,19 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 6,
+      steps: [
+        addColumns({
+          table: "transactions",
+          columns: [
+            { name: "is_installment", type: "boolean" },
+            { name: "installment_number", type: "number", isOptional: true },
+            { name: "total_installments", type: "number", isOptional: true },
+            { name: "parent_transaction_id", type: "string", isOptional: true, isIndexed: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

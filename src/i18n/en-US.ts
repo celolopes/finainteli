@@ -157,6 +157,10 @@ export default {
     empty: "No transactions yet",
     addFirst: "Add Transaction",
     searchPlaceholder: "Search transactions...",
+    status: {
+      pending: "Pending",
+      overdue: "Overdue",
+    },
     edit: "Edit Transaction",
     description: "Description",
     descriptionPlaceholder: "Ex: Lunch, Uber...",

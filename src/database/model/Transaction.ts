@@ -26,6 +26,11 @@ export default class Transaction extends Model {
   @readonly @date("updated_at") updatedAt!: Date;
   @date("deleted_at") deletedAt?: Date;
 
+  @field("is_installment") isInstallment!: boolean;
+  @field("installment_number") installmentNumber?: number;
+  @field("total_installments") totalInstallments?: number;
+  @field("parent_transaction_id") parentTransactionId?: string;
+
   @relation("categories", "category_id") category!: Relation<Category>;
   @relation("bank_accounts", "account_id") account!: Relation<Account>;
   @relation("credit_cards", "credit_card_id") creditCard!: Relation<CreditCard>;

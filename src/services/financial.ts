@@ -1,4 +1,6 @@
 import { Q } from "@nozbe/watermelondb";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
 import { database } from "../database";
 import Account from "../database/model/Account";
 import Category from "../database/model/Category";
@@ -25,6 +27,29 @@ const safeAddMonths = (date: Date, months: number) => {
 };
 
 export const FinancialService = {
+  /**
+   * Internal helper to get userId safely, even offline
+   */
+  async _getUserId() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) return user.id;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session?.user?.id || null;
+    } catch (e) {
+      console.warn("[FinancialService] Auth check failed, trying session:", e);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session?.user?.id || null;
+    }
+  },
+
   /**
    * Busca todas as contas bancárias do usuário
    */
@@ -180,23 +205,30 @@ export const FinancialService = {
         const closingDay = r.closingDay || 1;
         const openRange = getOpenInvoiceRange(now, closingDay);
 
-        const openTransactions = await database
+        // Fetch relevant transactions for current and future cycles
+        // This allows distinguishing between current invoice, future installments, and previous debt
+        const transactions = await database
           .get<Transaction>("transactions")
           .query(
             Q.where("credit_card_id", r.id),
             Q.where("deleted_at", Q.eq(null)),
+            Q.where("status", Q.notEq("pending")),
+            Q.where("status", Q.notEq("cancelled")),
             Q.where("transaction_date", Q.gt(openRange.lastClosingDate.getTime())),
-            Q.where("transaction_date", Q.lte(now.getTime())),
           )
           .fetch();
 
-        const openEstimate = calcInvoiceTotal(
-          openTransactions.map((t) => ({ amount: t.amount, type: t.type, status: t.status })),
-          { includePending: false },
-        );
+        const openEstimate = transactions
+          .filter((t) => t.transactionDate.getTime() <= openRange.end.getTime())
+          .reduce((acc, t) => (t.type === "expense" ? acc + t.amount : t.type === "income" ? acc - t.amount : acc), 0);
+
+        const futureEstimate = transactions
+          .filter((t) => t.transactionDate.getTime() > openRange.end.getTime())
+          .reduce((acc, t) => (t.type === "expense" ? acc + t.amount : t.type === "income" ? acc - t.amount : acc), 0);
 
         const currentBalance = Number(r.currentBalance || 0);
-        const closedOutstanding = Math.max(currentBalance - openEstimate, 0);
+        // Closed Outstanding = Total Debt - Current Open Invoice - Future Installments
+        const closedOutstanding = Math.max(currentBalance - openEstimate - futureEstimate, 0);
 
         return {
           id: r.id,
@@ -411,15 +443,13 @@ export const FinancialService = {
   },
 
   async createAccount(account: Database["public"]["Tables"]["bank_accounts"]["Insert"]) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
 
     let newRecord: Account;
     await database.write(async () => {
       newRecord = await database.get<Account>("bank_accounts").create((a) => {
-        a.userId = user.id;
+        a.userId = userId;
         a.name = account.name;
         a.accountType = account.account_type;
         a.currencyCode = account.currency_code;
@@ -435,12 +465,10 @@ export const FinancialService = {
   },
 
   async updateUserProfile(updates: any) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("No user");
 
-    const { error } = await supabase.from("user_profiles").update(updates).eq("id", user.id);
+    const { error } = await supabase.from("user_profiles").update(updates).eq("id", userId);
 
     if (error) throw error;
   },
@@ -452,17 +480,15 @@ export const FinancialService = {
   },
 
   async createCreditCard(card: Database["public"]["Tables"]["credit_cards"]["Insert"]) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
 
     const initialInvoice = Number(card.current_balance || 0);
 
     let newRecord: any;
     await database.write(async () => {
       newRecord = await database.get("credit_cards").create((c: any) => {
-        c.userId = user.id;
+        c.userId = userId;
         c.name = card.name;
         c.brand = card.brand;
         c.closingDay = card.closing_day;
@@ -514,30 +540,34 @@ export const FinancialService = {
   },
 
   async createTransaction(transaction: Omit<Database["public"]["Tables"]["transactions"]["Insert"], "user_id">) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
 
     let newTransactionRecord: Transaction;
+
+    // Ensure status is handled correctly for simple transactions
+    const txDate = new Date(transaction.transaction_date);
+    const isFuture = txDate.getTime() > Date.now();
+    const status = transaction.status || (isFuture ? "pending" : "completed");
+
     await database.write(async () => {
       newTransactionRecord = await database.get<Transaction>("transactions").create((t) => {
-        t.userId = user.id;
+        t.userId = userId;
         t.amount = Number(transaction.amount);
         t.type = transaction.type as any;
         t.description = transaction.description || "";
         t.notes = transaction.notes || undefined;
         t.currencyCode = transaction.currency_code;
-        t.transactionDate = new Date(transaction.transaction_date);
-        t.status = "completed";
+        t.transactionDate = txDate;
+        t.status = status;
 
         if (transaction.category_id) t.category.id = transaction.category_id;
         if (transaction.account_id) t.account.id = transaction.account_id;
         if (transaction.credit_card_id) t.creditCard.id = transaction.credit_card_id;
       });
 
-      // Atualizar saldo da conta vinculada (Apenas se completada)
-      if (transaction.account_id && transaction.type !== "transfer") {
+      // Update account balance (Only if completed)
+      if (status === "completed" && transaction.account_id && transaction.type !== "transfer") {
         try {
           const accountRecord = await database.get<Account>("bank_accounts").find(transaction.account_id);
           await accountRecord.update((a: Account) => {
@@ -553,8 +583,8 @@ export const FinancialService = {
         }
       }
 
-      // Atualizar saldo do cartão de crédito
-      if (transaction.credit_card_id && (transaction.type === "expense" || transaction.type === "income")) {
+      // Update credit card balance (Only if completed)
+      if (status === "completed" && transaction.credit_card_id && (transaction.type === "expense" || transaction.type === "income")) {
         try {
           const cardRecord = await database.get<any>("credit_cards").find(transaction.credit_card_id);
           await cardRecord.update((c: any) => {
@@ -568,7 +598,7 @@ export const FinancialService = {
       }
     });
 
-    BudgetService.checkAndNotifyBudgets(user.id).catch(console.error);
+    BudgetService.checkAndNotifyBudgets(userId).catch(console.error);
     mySync().catch(console.error);
     return newTransactionRecord!._raw;
   },
@@ -585,16 +615,15 @@ export const FinancialService = {
       isRecurring?: boolean;
       recurrenceFreq?: "daily" | "weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual";
       recurrenceCount?: number;
+      isFixed?: boolean;
     },
   ) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
 
-    const userId = user.id;
     const recordsToCreate: any[] = [];
     const createdDate = new Date();
+    const parentId = uuidv4();
 
     let count = 1;
     let isInstallment = false;
@@ -602,6 +631,8 @@ export const FinancialService = {
     if (options.isInstallment && options.installments && options.installments > 1) {
       count = options.installments;
       isInstallment = true;
+    } else if (options.isFixed) {
+      count = 120; // 10 years
     } else if (options.isRecurring && options.recurrenceCount && options.recurrenceCount > 1) {
       count = options.recurrenceCount;
     }
@@ -620,8 +651,8 @@ export const FinancialService = {
       if (isInstallment) {
         const nextDate = safeAddMonths(baseDate, i);
         txDate.setTime(nextDate.getTime());
-      } else if (options.isRecurring && options.recurrenceFreq) {
-        const f = options.recurrenceFreq;
+      } else if ((options.isRecurring || options.isFixed) && (options.recurrenceFreq || options.isFixed)) {
+        const f = options.recurrenceFreq || "monthly";
         if (f === "daily") txDate.setDate(txDate.getDate() + i);
         if (f === "weekly") txDate.setDate(txDate.getDate() + i * 7);
         if (f === "biweekly") txDate.setDate(txDate.getDate() + i * 14);
@@ -645,10 +676,13 @@ export const FinancialService = {
 
       if (isInstallment) {
         desc = `${desc} (${i + 1}/${count})`;
-        status = "completed"; // Parcelas consomem limite imediatamente
+        status = "completed";
+      } else if (options.isFixed) {
+        desc = `${desc} (Fixo)`;
+        status = i === 0 ? "completed" : "pending";
       } else if (options.isRecurring && count > 1) {
         desc = `${desc} (Rec.)`;
-        status = i === 0 ? "completed" : "pending"; // Futuras são pendentes
+        status = i === 0 ? "completed" : "pending";
       }
 
       recordsToCreate.push({
@@ -658,6 +692,10 @@ export const FinancialService = {
         description: desc,
         user_id: userId,
         status,
+        is_installment: isInstallment || options.isFixed || options.isRecurring,
+        installment_number: i + 1,
+        total_installments: count,
+        parent_transaction_id: parentId,
       });
     }
 
@@ -675,6 +713,11 @@ export const FinancialService = {
             t.transactionDate = new Date(record.transaction_date);
             t.currencyCode = record.currency_code || "BRL";
             t.status = record.status;
+            t.isInstallment = record.is_installment;
+            t.installmentNumber = record.installment_number;
+            t.totalInstallments = record.total_installments;
+            t.parentTransactionId = record.parent_transaction_id;
+
             if (record.category_id) t.category.id = record.category_id;
             if (record.account_id) t.account.id = record.account_id;
             if (record.credit_card_id) t.creditCard.id = record.credit_card_id;
@@ -729,6 +772,7 @@ export const FinancialService = {
       isRecurring?: boolean;
       recurrenceFreq?: "daily" | "weekly" | "biweekly" | "monthly" | "bimonthly" | "semiannual" | "annual";
       recurrenceCount?: number;
+      isFixed?: boolean;
     },
   ) {
     // 1. Update the original transaction first
@@ -741,18 +785,29 @@ export const FinancialService = {
     if (options.isInstallment && options.installments! > 1) {
       count = options.installments!;
       isInstallment = true;
+    } else if (options.isFixed) {
+      count = 120;
     } else if (options.isRecurring && options.recurrenceCount! > 1) {
       count = options.recurrenceCount!;
     }
 
     if (count > 1) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const userId = user?.id;
+      const userId = await this._getUserId();
       if (!userId) return;
 
       const t = await database.get<Transaction>("transactions").find(id);
+      const parentId = t.parentTransactionId || uuidv4();
+
+      // Ensure the updated transaction also has the tracking info
+      await database.write(async () => {
+        await t.update((txn) => {
+          txn.isInstallment = true; // For complex ones, we mark this
+          txn.totalInstallments = count;
+          txn.installmentNumber = 1;
+          txn.parentTransactionId = parentId;
+        });
+      });
+
       const baseDate = t.transactionDate;
       const baseAmount = t.amount;
       const recordsToCreate: any[] = [];
@@ -763,8 +818,8 @@ export const FinancialService = {
         if (isInstallment) {
           const nextDate = safeAddMonths(baseDate, i);
           txDate.setTime(nextDate.getTime());
-        } else if (options.isRecurring && options.recurrenceFreq) {
-          const f = options.recurrenceFreq;
+        } else if ((options.isRecurring || options.isFixed) && (options.recurrenceFreq || options.isFixed)) {
+          const f = options.recurrenceFreq || "monthly";
           if (f === "daily") txDate.setDate(txDate.getDate() + i);
           if (f === "weekly") txDate.setDate(txDate.getDate() + i * 7);
           if (f === "biweekly") txDate.setDate(txDate.getDate() + i * 14);
@@ -789,6 +844,9 @@ export const FinancialService = {
         if (isInstallment) {
           desc = `${t.description} (${i + 1}/${count})`;
           status = "completed";
+        } else if (options.isFixed) {
+          desc = `${t.description} (Fixo)`;
+          status = "pending";
         } else {
           desc = `${t.description} (Rec.)`;
           status = "pending";
@@ -805,6 +863,10 @@ export const FinancialService = {
           category_id: t.category.id,
           account_id: t.account.id,
           credit_card_id: t.creditCard.id,
+          is_installment: true,
+          installment_number: i + 1,
+          total_installments: count,
+          parent_transaction_id: parentId,
         });
       }
 
@@ -823,6 +885,11 @@ export const FinancialService = {
                 nt.transactionDate = r.transactionDate;
                 nt.currencyCode = r.currencyCode;
                 nt.status = r.status as any;
+                nt.isInstallment = r.is_installment;
+                nt.installmentNumber = r.installment_number;
+                nt.totalInstallments = r.total_installments;
+                nt.parentTransactionId = r.parent_transaction_id;
+
                 if (r.category_id) nt.category.id = r.category_id;
                 if (r.account_id) nt.account.id = r.account_id;
                 if (r.credit_card_id) nt.creditCard.id = r.credit_card_id;
@@ -868,11 +935,19 @@ export const FinancialService = {
   /**
    * Busca todas as transações do usuário com joins
    */
-  async getTransactions(options?: { limit?: number; offset?: number; type?: "income" | "expense" }) {
+  async getTransactions(options?: { limit?: number; offset?: number; type?: "income" | "expense"; startDate?: Date; endDate?: Date }) {
     let query = database.get<Transaction>("transactions").query(Q.where("deleted_at", Q.eq(null)), Q.sortBy("transaction_date", Q.desc), Q.sortBy("created_at", Q.desc));
 
     if (options?.type) {
       query = query.extend(Q.where("type", options.type));
+    }
+
+    if (options?.startDate) {
+      query = query.extend(Q.where("transaction_date", Q.gte(options.startDate.getTime())));
+    }
+
+    if (options?.endDate) {
+      query = query.extend(Q.where("transaction_date", Q.lte(options.endDate.getTime())));
     }
 
     if (options?.limit) {
@@ -930,6 +1005,10 @@ export const FinancialService = {
         account_id: t.account.id,
         credit_card_id: t.creditCard.id,
         status: t.status || "completed",
+        is_installment: t.isInstallment,
+        installment_number: t.installmentNumber,
+        total_installments: t.totalInstallments,
+        parent_transaction_id: t.parentTransactionId,
         sync_status: t.syncStatus,
         category: category ? { id: category.id, name: category.name, icon: category.icon, color: category.color } : null,
         account: account ? { id: account.id, name: account.name, color: account.color } : null,
@@ -943,33 +1022,61 @@ export const FinancialService = {
   /**
    * Deleta uma transação
    */
-  async deleteTransaction(id: string) {
+  async deleteTransaction(id: string, options: { deleteAllFuture?: boolean } = {}) {
     await database.write(async () => {
       const transaction = await database.get<Transaction>("transactions").find(id);
-      await transaction.update((t) => {
-        t.deletedAt = new Date();
-      });
+      const isPart = transaction.isInstallment && transaction.parentTransactionId;
+      const isParent = transaction.isInstallment && !transaction.parentTransactionId;
+      const isRecurring = transaction.description?.includes("(Rec.)") || transaction.description?.includes("(Fixo)");
 
-      // Update account balance (reverse) - Only if it was completed
-      if (transaction.status !== "pending" && transaction.account.id) {
-        const account = await transaction.account.fetch();
-        if (account) {
-          await account.update((a: Account) => {
-            if (transaction.type === "income") a.currentBalance -= transaction.amount;
-            else if (transaction.type === "expense") a.currentBalance += transaction.amount;
-          });
-        }
+      const toDeleteIds = [id];
+
+      if (options.deleteAllFuture && (isPart || isParent || isRecurring)) {
+        const parentId = transaction.parentTransactionId || transaction.id;
+        const futureTxs = await database
+          .get<Transaction>("transactions")
+          .query(
+            Q.and(
+              Q.where("deleted_at", Q.eq(null)),
+              Q.or(Q.where("parent_transaction_id", parentId), Q.where("id", parentId)),
+              Q.where("transaction_date", Q.gte(transaction.transactionDate.getTime())),
+            ),
+          )
+          .fetch();
+
+        futureTxs.forEach((t) => {
+          if (t.id !== id) toDeleteIds.push(t.id);
+        });
       }
-      if (transaction.status !== "pending" && transaction.creditCard.id && (transaction.type === "expense" || transaction.type === "income")) {
-        const card = await transaction.creditCard.fetch();
-        if (card) {
-          await card.update((c: any) => {
-            if (transaction.type === "expense") c.currentBalance -= transaction.amount;
-            if (transaction.type === "income") c.currentBalance += transaction.amount;
-          });
+
+      for (const tid of toDeleteIds) {
+        const t = tid === id ? transaction : await database.get<Transaction>("transactions").find(tid);
+        await t.update((tx) => {
+          tx.deletedAt = new Date();
+        });
+
+        // Update account balance (reverse) - Only if it was completed
+        if (t.status !== "pending" && t.account.id) {
+          const account = await t.account.fetch();
+          if (account) {
+            await account.update((a: Account) => {
+              if (t.type === "income") a.currentBalance -= t.amount;
+              else if (t.type === "expense") a.currentBalance += t.amount;
+            });
+          }
+        }
+        if (t.status !== "pending" && t.creditCard.id && (t.type === "expense" || t.type === "income")) {
+          const card = await t.creditCard.fetch();
+          if (card) {
+            await card.update((c: any) => {
+              if (t.type === "expense") c.currentBalance -= t.amount;
+              if (t.type === "income") c.currentBalance += t.amount;
+            });
+          }
         }
       }
     });
+
     mySync().catch(console.error);
     return true;
   },
@@ -1009,7 +1116,7 @@ export const FinancialService = {
         return type === "expense" || type === "income";
       };
 
-      if (shouldAffectCard(prevType, prevStatus, prevCreditCardId)) {
+      if (prevStatus !== "pending" && shouldAffectCard(prevType, prevStatus, prevCreditCardId)) {
         const card = await database.get<any>("credit_cards").find(prevCreditCardId);
         await card.update((c: any) => {
           if (prevType === "expense") c.currentBalance -= prevAmount;
@@ -1017,7 +1124,7 @@ export const FinancialService = {
         });
       }
 
-      if (shouldAffectCard(nextType, nextStatus, nextCreditCardId)) {
+      if (nextStatus !== "pending" && shouldAffectCard(nextType, nextStatus, nextCreditCardId)) {
         const card = await database.get<any>("credit_cards").find(nextCreditCardId);
         await card.update((c: any) => {
           if (nextType === "expense") c.currentBalance += nextAmount;
@@ -1272,11 +1379,106 @@ export const FinancialService = {
     return { transactions: visibleTransactions, total };
   },
 
+  /**
+   * Toggles transaction status between pending and completed
+   */
+  async toggleTransactionPaymentStatus(id: string) {
+    await database.write(async () => {
+      const t = await database.get<Transaction>("transactions").find(id);
+      const newStatus = t.status === "completed" ? "pending" : "completed";
+      const amount = t.amount;
+
+      // Ensure we don't double count if we're just toggling
+      // If moving to COMPLETED: Add/Sub from account
+      // If moving to PENDING: Reverse Add/Sub from account
+
+      if (t.account.id) {
+        const acc = await t.account.fetch();
+        if (acc) {
+          await acc.update((a) => {
+            if (newStatus === "completed") {
+              if (t.type === "income") a.currentBalance += amount;
+              else if (t.type === "expense") a.currentBalance -= amount;
+            } else {
+              if (t.type === "income") a.currentBalance -= amount;
+              else if (t.type === "expense") a.currentBalance += amount;
+            }
+          });
+        }
+      }
+
+      if (t.creditCard.id) {
+        const card = await t.creditCard.fetch();
+        if (card) {
+          await card.update((c: any) => {
+            if (newStatus === "completed") {
+              if (t.type === "expense") c.currentBalance += amount;
+              else if (t.type === "income") c.currentBalance -= amount;
+            } else {
+              if (t.type === "expense") c.currentBalance -= amount;
+              else if (t.type === "income") c.currentBalance += amount;
+            }
+          });
+        }
+      }
+
+      await t.update((tx) => {
+        tx.status = newStatus;
+      });
+    });
+
+    mySync().catch(console.error);
+    return true;
+  },
+
+  /**
+   * Counts transactions that are pending and their date has passed
+   */
+  async getOverdueTransactionsCount() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    return await database
+      .get<Transaction>("transactions")
+      .query(Q.where("deleted_at", Q.eq(null)), Q.where("status", "pending"), Q.where("transaction_date", Q.lt(startOfToday.getTime())))
+      .fetchCount();
+  },
+
+  /**
+   * Automatically confirms pending credit card transactions that have reached their date
+   */
+  async autoProcessPendingCardTransactions() {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+
+    const pendingCardTxs = await database
+      .get<Transaction>("transactions")
+      .query(Q.where("deleted_at", Q.eq(null)), Q.where("status", "pending"), Q.where("credit_card_id", Q.notEq(null)), Q.where("transaction_date", Q.lte(now.getTime())))
+      .fetch();
+
+    if (pendingCardTxs.length === 0) return;
+
+    await database.write(async () => {
+      for (const t of pendingCardTxs) {
+        const card = await t.creditCard.fetch();
+        if (card) {
+          await card.update((c: any) => {
+            if (t.type === "expense") c.currentBalance += t.amount;
+            else if (t.type === "income") c.currentBalance -= t.amount;
+          });
+        }
+        await t.update((tx) => {
+          tx.status = "completed";
+        });
+      }
+    });
+
+    mySync().catch(console.error);
+  },
+
   async payInvoice(cardId: string, amount: number, accountId: string, date: Date) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user");
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("No user");
 
     await database.write(async () => {
       const card = await database.get<any>("credit_cards").find(cardId);
@@ -1284,7 +1486,7 @@ export const FinancialService = {
 
       // 1. Create payment transaction
       await database.get<Transaction>("transactions").create((t) => {
-        t.userId = user.id;
+        t.userId = userId;
         t.amount = amount;
         t.type = "expense";
         t.description = `Pagamento Fatura: ${card.name}`;
@@ -1296,7 +1498,7 @@ export const FinancialService = {
 
       // 1b. Create card-side record for visibility (does not affect totals)
       await database.get<Transaction>("transactions").create((t) => {
-        t.userId = user.id;
+        t.userId = userId;
         t.amount = amount;
         t.type = "transfer";
         t.description = `Pagamento Fatura: ${card.name}`;

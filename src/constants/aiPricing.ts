@@ -21,16 +21,20 @@ export const GEMINI_PRICING = {
   },
 };
 
-export const USD_TO_BRL_RATE = 5.4;
+export let USD_TO_BRL_RATE = 5.4;
+
+export const updateUsdBrlRate = (newRate: number) => {
+  USD_TO_BRL_RATE = newRate;
+};
 
 /**
  * Calculates the cost of a model call in BRL.
  */
-export function calculateAICost(modelId: string, promptTokens: number, candidatesTokens: number): number {
+export function calculateAICost(modelId: string, promptTokens: number, candidatesTokens: number, rate?: number): number {
   const model = GEMINI_PRICING[modelId as keyof typeof GEMINI_PRICING] || GEMINI_PRICING["gemini-2.5-flash"];
 
   const inputCost = (promptTokens / 1_000_000) * model.inputPer1M;
   const outputCost = (candidatesTokens / 1_000_000) * model.outputPer1M;
 
-  return (inputCost + outputCost) * USD_TO_BRL_RATE;
+  return (inputCost + outputCost) * (rate || USD_TO_BRL_RATE);
 }

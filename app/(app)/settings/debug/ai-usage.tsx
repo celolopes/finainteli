@@ -1,14 +1,15 @@
+import { buildThemePalette, lightenColor, withAlpha } from "@/src/components/reports/chartUtils";
+import { GlassAppbar } from "@/src/components/ui/GlassAppbar";
+import { USD_TO_BRL_RATE, updateUsdBrlRate } from "@/src/constants/aiPricing";
+import { AIUsageRepository } from "@/src/database/repositories/aiUsageRepository";
+import { CurrencyService } from "@/src/services/currency";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Card, Divider, Text, useTheme } from "react-native-paper";
-import { GlassAppbar } from "../../../../src/components/ui/GlassAppbar";
 import { PieChart } from "react-native-gifted-charts";
+import { ActivityIndicator, Appbar, Card, Divider, Text, useTheme } from "react-native-paper";
 import { CountUp } from "use-count-up";
-import { buildThemePalette, lightenColor, withAlpha } from "../../../../src/components/reports/chartUtils";
-import { USD_TO_BRL_RATE } from "../../../../src/constants/aiPricing";
-import { AIUsageRepository } from "../../../../src/database/repositories/aiUsageRepository";
 
 type FeatureChartItem = { label: string; value: number; color: string };
 
@@ -19,6 +20,8 @@ export default function AIUsageDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [featureData, setFeatureData] = useState<FeatureChartItem[]>([]);
+  const [currentRate, setCurrentRate] = useState(USD_TO_BRL_RATE);
+  const [isRealRate, setIsRealRate] = useState(false);
   const totalFeatureCost = featureData.reduce((sum, item) => sum + item.value, 0);
   const isDark = theme.dark;
 
@@ -28,35 +31,50 @@ export default function AIUsageDashboard() {
 
   const loadStats = async () => {
     try {
+      // 1. Fetch current exchange rate
+      console.log("[AIUsage] Requesting rate update...");
+      const rate = await CurrencyService.getUsdBrlRate();
+      setCurrentRate(rate);
+      setIsRealRate(rate !== 5.4);
+      updateUsdBrlRate(rate);
+
+      // 2. Load logs and data
       const logs = await AIUsageRepository.getAllLogs();
       const breakdown = await AIUsageRepository.getFeatureBreakdown();
 
       let totalTokens = 0;
-      let totalCost = 0;
+      let totalCostRecalculated = 0;
       let inputTokens = 0;
       let outputTokens = 0;
 
       logs.forEach((log) => {
         totalTokens += log.totalTokens;
-        totalCost += log.costBrl;
         inputTokens += log.promptTokens;
         outputTokens += log.candidatesTokens;
+
+        // Recalculate cost with current rate for "live" estimation
+        // Using average flash pricing as baseline for recalculation display
+        const modelCost = (log.promptTokens / 1_000_000) * 0.1 /* baseline */ + (log.candidatesTokens / 1_000_000) * 0.4;
+        totalCostRecalculated += modelCost * rate;
       });
 
-      const pieColors = buildThemePalette(theme.colors, theme.dark);
+      const pieColors = buildThemePalette(theme.colors as any, theme.dark);
 
-      const featureChartData = Object.entries(breakdown).map(([name, data], index) => ({
-        label: name,
-        value: data.totalCost,
-        color: pieColors[index % pieColors.length],
-      }));
+      const featureChartData = Object.entries(breakdown).map(([name, data], index) => {
+        const baseColor = pieColors[index % pieColors.length];
+        return {
+          label: name,
+          value: data.totalCost * (rate / USD_TO_BRL_RATE), // Adjust previous costs to current rate
+          color: isDark ? withAlpha(baseColor, 0.8) : baseColor,
+        };
+      });
 
       setStats({
         totalTokens,
-        totalCost,
+        totalCost: totalCostRecalculated,
         inputTokens,
         outputTokens,
-        avgCost: logs.length > 0 ? totalCost / logs.length : 0,
+        avgCost: logs.length > 0 ? totalCostRecalculated / logs.length : 0,
         count: logs.length,
       });
       setFeatureData(featureChartData);
@@ -148,7 +166,12 @@ export default function AIUsageDashboard() {
             <Divider style={styles.divider} />
             <View style={styles.detailRow}>
               <Text variant="bodyMedium">{t("debug.exchangeRate")}</Text>
-              <Text variant="bodyMedium">{USD_TO_BRL_RATE.toFixed(2)}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                {isRealRate && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#4CAF50" }} />}
+                <Text variant="bodyMedium">
+                  {currentRate.toFixed(2)} {isRealRate ? "(Online)" : "(Fixed)"}
+                </Text>
+              </View>
             </View>
           </Card.Content>
         </Card>
@@ -184,19 +207,20 @@ export default function AIUsageDashboard() {
                   }))}
                   donut
                   radius={110}
-                  innerRadius={50}
+                  innerRadius={75}
+                  innerCircleColor={isDark ? theme.colors.surface : "#FFFFFF"}
                   showText={false}
                   isAnimated
                   animationDuration={700}
                   showGradient={isDark}
-                  strokeWidth={1}
-                  strokeColor={withAlpha(theme.colors.background, isDark ? 0.4 : 0.2)}
+                  strokeWidth={2}
+                  strokeColor={isDark ? theme.colors.surface : "#FFFFFF"}
                   centerLabelComponent={() => (
                     <View style={styles.centerLabel}>
-                      <Text variant="labelSmall" style={{ opacity: 0.7 }}>
+                      <Text variant="labelSmall" style={{ opacity: 0.7, color: theme.colors.onSurface }}>
                         Total IA
                       </Text>
-                      <Text variant="titleMedium" style={{ fontWeight: "700" }}>
+                      <Text variant="titleMedium" style={{ fontWeight: "700", color: theme.colors.onSurface }}>
                         R${" "}
                         <CountUp
                           isCounting

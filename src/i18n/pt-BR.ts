@@ -159,6 +159,10 @@ export default {
     empty: "Nenhuma transação ainda",
     addFirst: "Adicionar Transação",
     searchPlaceholder: "Buscar transações...",
+    status: {
+      pending: "Pendente",
+      overdue: "Atrasada",
+    },
     edit: "Editar Transação",
     description: "Descrição",
     descriptionPlaceholder: "Ex: Almoço, Uber...",
@@ -193,6 +197,7 @@ export default {
       all: "Todas",
       income: "Receitas",
       expense: "Despesas",
+      planned: "Planejadas",
       clear: "Limpar Filtros",
     },
     deleteConfirm: {
