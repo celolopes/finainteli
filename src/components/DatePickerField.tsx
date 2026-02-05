@@ -1,6 +1,7 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Button, Dialog, Icon, Portal, Text, useTheme } from "react-native-paper";
 
 interface Props {
@@ -9,16 +10,11 @@ interface Props {
   label?: string;
 }
 
-const MONTHS_PT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
 export const DatePickerField = ({ value, onChange, label }: Props) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const [visible, setVisible] = useState(false);
-  const [tempDate, setTempDate] = useState(value);
-
-  const months = i18n.language.startsWith("pt") ? MONTHS_PT : MONTHS_EN;
+  const [tempDate, setTempDate] = useState(new Date(value));
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat(i18n.language || "pt-BR", {
@@ -29,7 +25,7 @@ export const DatePickerField = ({ value, onChange, label }: Props) => {
   };
 
   const handleOpen = () => {
-    setTempDate(value);
+    setTempDate(new Date(value));
     setVisible(true);
   };
 
@@ -42,31 +38,24 @@ export const DatePickerField = ({ value, onChange, label }: Props) => {
     setVisible(false);
   };
 
-  const changeDay = (delta: number) => {
-    const newDate = new Date(tempDate);
-    newDate.setDate(newDate.getDate() + delta);
-    setTempDate(newDate);
-  };
-
-  const changeMonth = (delta: number) => {
-    const newDate = new Date(tempDate);
-    newDate.setMonth(newDate.getMonth() + delta);
-    setTempDate(newDate);
-  };
-
-  const changeYear = (delta: number) => {
-    const newDate = new Date(tempDate);
-    newDate.setFullYear(newDate.getFullYear() + delta);
-    setTempDate(newDate);
-  };
-
   const setToday = () => {
-    setTempDate(new Date());
+    const now = new Date();
+    setTempDate(now);
+    // If using inline picker, updating state updates the picker immediately
   };
 
   return (
     <>
-      <TouchableOpacity onPress={handleOpen} style={[styles.selector, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
+      <TouchableOpacity
+        onPress={handleOpen}
+        style={[
+          styles.selector,
+          {
+            backgroundColor: theme.colors.surfaceVariant,
+            borderColor: theme.colors.outline,
+          },
+        ]}
+      >
         <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
           {label || t("common.date")}
         </Text>
@@ -81,73 +70,56 @@ export const DatePickerField = ({ value, onChange, label }: Props) => {
 
       <Portal>
         <Dialog visible={visible} onDismiss={handleCancel} style={{ backgroundColor: theme.colors.surface }}>
-          <Dialog.Title>{t("common.selectDate", "Selecionar Data")}</Dialog.Title>
-          <Dialog.Content>
-            {/* Day Picker */}
-            <View style={styles.pickerRow}>
-              <Text variant="bodyMedium" style={styles.pickerLabel}>
-                {t("common.day", "Dia")}
-              </Text>
-              <View style={styles.pickerControls}>
-                <TouchableOpacity onPress={() => changeDay(-1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="minus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
-                <Text variant="headlineSmall" style={[styles.pickerValue, { color: theme.colors.primary }]}>
-                  {tempDate.getDate().toString().padStart(2, "0")}
-                </Text>
-                <TouchableOpacity onPress={() => changeDay(1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="plus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
+          {/* We remove title to save space for the inline calendar which has its own header usually, 
+              but keeping a small title is fine if needed. Inline calendar is large. */}
+          {Platform.OS === "ios" ? (
+            <View style={{ padding: 0 }}>
+              <View style={{ alignItems: "center", paddingVertical: 8 }}>
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={tempDate}
+                  mode="date"
+                  display="inline"
+                  onChange={(event, selectedDate) => {
+                    const currentDate = selectedDate || tempDate;
+                    setTempDate(currentDate);
+                  }}
+                  style={{ width: 320, height: 320 }}
+                  locale={i18n.language}
+                  textColor={theme.colors.onSurface}
+                  themeVariant={theme.dark ? "dark" : "light"}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  padding: 16,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: theme.colors.outlineVariant,
+                }}
+              >
+                <Button onPress={setToday}>{t("common.today", "Hoje")}</Button>
+                <View style={{ flexDirection: "row" }}>
+                  <Button onPress={handleCancel}>{t("common.cancel")}</Button>
+                  <Button mode="contained" onPress={handleConfirm}>
+                    {t("common.confirm", "OK")}
+                  </Button>
+                </View>
               </View>
             </View>
-
-            {/* Month Picker */}
-            <View style={styles.pickerRow}>
-              <Text variant="bodyMedium" style={styles.pickerLabel}>
-                {t("common.month", "Mês")}
-              </Text>
-              <View style={styles.pickerControls}>
-                <TouchableOpacity onPress={() => changeMonth(-1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="minus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
-                <Text variant="titleMedium" style={[styles.pickerMonthValue, { color: theme.colors.primary }]}>
-                  {months[tempDate.getMonth()]}
-                </Text>
-                <TouchableOpacity onPress={() => changeMonth(1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="plus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Year Picker */}
-            <View style={styles.pickerRow}>
-              <Text variant="bodyMedium" style={styles.pickerLabel}>
-                {t("common.year", "Ano")}
-              </Text>
-              <View style={styles.pickerControls}>
-                <TouchableOpacity onPress={() => changeYear(-1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="minus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
-                <Text variant="headlineSmall" style={[styles.pickerValue, { color: theme.colors.primary }]}>
-                  {tempDate.getFullYear()}
-                </Text>
-                <TouchableOpacity onPress={() => changeYear(1)} style={[styles.pickerButton, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="plus" size={20} color={theme.colors.onSurface} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Quick Today Button */}
-            <Button mode="text" onPress={setToday} style={{ marginTop: 8 }}>
-              {t("common.today", "Hoje")}
-            </Button>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={handleCancel}>{t("common.cancel")}</Button>
-            <Button mode="contained" onPress={handleConfirm}>
-              {t("common.confirm", "Confirmar")}
-            </Button>
-          </Dialog.Actions>
+          ) : (
+            // Fallback for non-iOS if this component is ever used there
+            <>
+              <Dialog.Title>{t("common.selectDate", "Selecionar Data")}</Dialog.Title>
+              <Dialog.Content>
+                <Text>Use native picker on Android.</Text>
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={handleCancel}>Close</Button>
+              </Dialog.Actions>
+            </>
+          )}
         </Dialog>
       </Portal>
     </>
@@ -166,36 +138,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     gap: 12,
-  },
-  pickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  pickerLabel: {
-    width: 50,
-  },
-  pickerControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  pickerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pickerValue: {
-    width: 60,
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  pickerMonthValue: {
-    width: 100,
-    textAlign: "center",
-    fontWeight: "bold",
   },
 });

@@ -3,12 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Button, Dialog, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
-import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { DatePickerField } from "../../../src/components/DatePickerField";
 import { AutocompleteSuggestion, DescriptionAutocomplete } from "../../../src/components/DescriptionAutocomplete";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
+import { getLocalISODate } from "../../../src/utils/date";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 type Account = Database["public"]["Tables"]["bank_accounts"]["Row"];
@@ -41,11 +42,6 @@ export default function NewTransaction() {
   useEffect(() => {
     loadData();
   }, []);
-
-  // Converter data para formato ISO (YYYY-MM-DD) para o banco
-  const getISODate = (date: Date) => {
-    return date.toISOString().split("T")[0];
-  };
 
   const loadData = async () => {
     try {
@@ -100,7 +96,7 @@ export default function NewTransaction() {
         type: type as any,
         amount: value,
         description,
-        transaction_date: getISODate(selectedDate),
+        transaction_date: getLocalISODate(selectedDate),
         category_id: selectedCategory.id,
         account_id: useCard ? null : selectedAccount!.id,
         credit_card_id: useCard ? selectedCard!.id : null,

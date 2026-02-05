@@ -3,12 +3,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { GlassFAB } from "../../../src/components/ui/GlassFAB";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
 import { CurrencyUtils } from "../../../src/utils/currency";
+import { getTodayLocalISO } from "../../../src/utils/date";
 
 type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"];
 type BankAccount = Database["public"]["Tables"]["bank_accounts"]["Row"];
@@ -49,9 +50,9 @@ export default function CardDetails() {
         await FinancialService.createTransaction({
           amount: Math.abs(difference),
           type: difference > 0 ? "expense" : "income", // If debt increases (target > current), it's an expense.
-          description: "Auste de Saldo / Fatura Importada",
+          description: "Ajuste de Saldo / Fatura Importada",
           credit_card_id: card.id,
-          transaction_date: new Date().toISOString(),
+          transaction_date: getTodayLocalISO(),
           currency_code: card.currency_code,
           category_id: null,
           account_id: null,
@@ -162,8 +163,12 @@ export default function CardDetails() {
             amount: card.current_balance,
             type: "expense",
             description: "Saldo Inicial / Importado",
-            transaction_date: new Date().toISOString(),
-            category: { name: "Ajuste", icon: "cash", color: theme.colors.outline },
+            transaction_date: getTodayLocalISO(),
+            category: {
+              name: "Ajuste",
+              icon: "cash",
+              color: theme.colors.outline,
+            },
             currency_code: card.currency_code,
           };
 
@@ -212,7 +217,11 @@ export default function CardDetails() {
       const d = new Date(t.transaction_date);
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
       if (key !== lastKey) {
-        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+        const label = d.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
         groups.push({ key, label, items: [t] });
         lastKey = key;
       } else {
@@ -311,7 +320,12 @@ export default function CardDetails() {
           <IconButton icon="chevron-left" onPress={() => changeMonth(-1)} />
           <View style={{ alignItems: "center" }}>
             <Text variant="titleMedium" style={{ fontWeight: "bold" }}>
-              {currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }).toUpperCase()}
+              {currentDate
+                .toLocaleDateString("pt-BR", {
+                  month: "long",
+                  year: "numeric",
+                })
+                .toUpperCase()}
             </Text>
             <Text variant="bodySmall" style={{ opacity: 0.6 }}>
               Vence dia {card.due_day}
@@ -405,8 +419,21 @@ export default function CardDetails() {
                       <Animated.View key={t.id} entering={FadeInUp.delay(delay)}>
                         <Surface style={styles.transactionItem} elevation={0}>
                           <View style={styles.row}>
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                              <Avatar.Icon size={36} icon={t.category?.icon || "help"} style={{ backgroundColor: t.category?.color || theme.colors.secondaryContainer }} color="white" />
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 12,
+                              }}
+                            >
+                              <Avatar.Icon
+                                size={36}
+                                icon={t.category?.icon || "help"}
+                                style={{
+                                  backgroundColor: t.category?.color || theme.colors.secondaryContainer,
+                                }}
+                                color="white"
+                              />
                               <View>
                                 <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
                                   {t.description}
@@ -415,7 +442,11 @@ export default function CardDetails() {
                                 {t.id === "initial_balance_adjustment" ? (
                                   <Text
                                     variant="bodySmall"
-                                    style={{ color: theme.colors.primary, fontWeight: "bold", marginTop: 2 }}
+                                    style={{
+                                      color: theme.colors.primary,
+                                      fontWeight: "bold",
+                                      marginTop: 2,
+                                    }}
                                     onPress={() => {
                                       setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
                                       setEditBalanceVisible(true);
@@ -424,7 +455,13 @@ export default function CardDetails() {
                                     Toque para ajustar saldo
                                   </Text>
                                 ) : (
-                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                  <View
+                                    style={{
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      gap: 4,
+                                    }}
+                                  >
                                     <Text variant="bodySmall" style={{ opacity: 0.6 }}>
                                       {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
                                     </Text>
@@ -451,7 +488,12 @@ export default function CardDetails() {
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         color={theme.colors.onPrimary}
-        onPress={() => router.push({ pathname: "/add-transaction", params: { preselectedCardId: card.id } })}
+        onPress={() =>
+          router.push({
+            pathname: "/add-transaction",
+            params: { preselectedCardId: card.id },
+          })
+        }
       />
     </View>
   );

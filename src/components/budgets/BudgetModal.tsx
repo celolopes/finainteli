@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Button, HelperText, Modal, Portal, Text, TextInput, useTheme } from "react-native-paper";
-import { PlatformSwitch } from "../ui/PlatformSwitch";
 import { Budget } from "../../services/budget";
 import { Database } from "../../types/schema";
+import { PlatformSwitch } from "../ui/PlatformSwitch";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 
@@ -64,7 +64,7 @@ export const BudgetModal = ({ visible, onDismiss, onSave, categories, existingBu
         currency_code: "BRL", // TODO: Get from user preference
         is_active: true,
         name: categories.find((c) => c.id === categoryId)?.name || "Orçamento",
-        start_date: new Date().toISOString().split("T")[0],
+        start_date: require("../../utils/date").getTodayLocalISO().split("T")[0],
       });
       // Don't modify visible stack here, let parent handle it
     } catch (e) {
