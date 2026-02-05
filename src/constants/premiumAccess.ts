@@ -13,7 +13,8 @@ const PREVIEW_VALUES = new Set(["preview"]);
 
 const isPreviewEnv = PREVIEW_VALUES.has(EXPO_PUBLIC_ENV);
 const isPreviewChannel = PREVIEW_VALUES.has(UPDATE_CHANNEL);
-const isDevOwnership = APP_OWNERSHIP !== null && APP_OWNERSHIP !== "standalone";
+// appOwnership is "expo" | "guest" in dev environments, null in native builds
+const isDevOwnership = APP_OWNERSHIP === "expo" || APP_OWNERSHIP === "guest";
 
 export const getPremiumBypassReasons = (): PremiumBypassReason[] => {
   const reasons: PremiumBypassReason[] = [];
