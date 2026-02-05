@@ -191,7 +191,7 @@ export default function HomeScreen() {
               /* Dashboard Completo */
               <View style={styles.dashboardContent}>
                 {/* Saldo e Resumo */}
-                <CoachMarkTarget id="balance" style={{ marginBottom: 24 }}>
+                <CoachMarkTarget id="balance" style={{ marginBottom: 6 }}>
                   <BalanceCard aria-label="Resumo do Saldo" />
                 </CoachMarkTarget>
 
@@ -239,7 +239,6 @@ export default function HomeScreen() {
         )}
 
         {/* Espaço extra final */}
-        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
