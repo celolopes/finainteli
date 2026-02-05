@@ -1,7 +1,6 @@
-import { LiquidGlassView, isLiquidGlassSupported } from "@callstack/liquid-glass";
 import { BlurView } from "expo-blur";
 import React from "react";
-import { ColorValue, Platform, StyleProp, View, ViewStyle } from "react-native";
+import { Platform, StyleProp, View, ViewStyle } from "react-native";
 
 type BlurTint = React.ComponentProps<typeof BlurView>["tint"];
 type BlurMethod = React.ComponentProps<typeof BlurView>["experimentalBlurMethod"];
@@ -10,44 +9,30 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
   effect?: "clear" | "regular" | "none";
-  tintColor?: ColorValue;
-  interactive?: boolean;
   useBlurFallback?: boolean;
   blurIntensity?: number;
   blurTint?: BlurTint;
   blurMethod?: BlurMethod;
 };
 
-export function LiquidGlassSurface({
-  style,
-  children,
-  effect = "clear",
-  tintColor,
-  interactive = false,
-  useBlurFallback = true,
-  blurIntensity = 80,
-  blurTint = "systemUltraThinMaterial",
-  blurMethod = "dimezisBlurView",
-}: Props) {
-  if (Platform.OS !== "ios") {
+/**
+ * A surface component that provides blur effect on iOS and a simple view on Android.
+ * This is a simplified version that no longer depends on @callstack/liquid-glass.
+ */
+export function LiquidGlassSurface({ style, children, effect = "clear", useBlurFallback = true, blurIntensity = 80, blurTint = "systemUltraThinMaterial", blurMethod = "dimezisBlurView" }: Props) {
+  // On Android or when effect is "none", just render a simple View
+  if (Platform.OS !== "ios" || effect === "none") {
     return <View style={style}>{children}</View>;
   }
 
-  if (isLiquidGlassSupported) {
+  // On iOS, use BlurView
+  if (useBlurFallback) {
     return (
-      <LiquidGlassView style={style} effect={effect} tintColor={tintColor} interactive={interactive}>
+      <BlurView intensity={blurIntensity} tint={blurTint} experimentalBlurMethod={blurMethod} style={style}>
         {children}
-      </LiquidGlassView>
+      </BlurView>
     );
   }
 
-  if (!useBlurFallback) {
-    return <View style={style}>{children}</View>;
-  }
-
-  return (
-    <BlurView intensity={blurIntensity} tint={blurTint} experimentalBlurMethod={blurMethod} style={style}>
-      {children}
-    </BlurView>
-  );
+  return <View style={style}>{children}</View>;
 }

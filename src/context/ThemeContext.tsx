@@ -1,4 +1,3 @@
-import { isLiquidGlassSupported } from "@callstack/liquid-glass";
 import { DarkTheme as NavDarkTheme, DefaultTheme as NavDefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
 import React, { createContext, useContext, useMemo } from "react";
 import { Platform, useColorScheme } from "react-native";
@@ -6,12 +5,11 @@ import { MD3DarkTheme, MD3LightTheme, PaperProvider, adaptNavigationTheme } from
 import Colors from "../../constants/Colors";
 
 const isIOS = Platform.OS === "ios";
-const isLiquidGlass = isIOS && isLiquidGlassSupported;
 
 export const ThemeContext = createContext({
   isDark: false,
   isGlass: isIOS,
-  isLiquidGlass,
+  isLiquidGlass: false, // No longer using liquid glass
   colors: Colors.light,
 });
 
@@ -57,9 +55,9 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       ...navBase.colors,
       primary: myColors.primary,
       background: myColors.background,
-      card: isLiquidGlass ? "transparent" : myColors.surface, // Transparent for Liquid Glass interactions
+      card: myColors.surface,
       text: myColors.text,
-      border: isLiquidGlass ? myColors.glassBorder : myColors.outline,
+      border: myColors.outline,
     },
   };
 
@@ -67,7 +65,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     () => ({
       isDark,
       isGlass: isIOS,
-      isLiquidGlass,
+      isLiquidGlass: false, // Disabled - using native bottom tabs now
       colors: myColors,
     }),
     [isDark, myColors],

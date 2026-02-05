@@ -1,15 +1,14 @@
-import React from "react";
-import { Pressable, StyleSheet, StyleProp, View, ViewStyle } from "react-native";
-import { FAB, Icon } from "react-native-paper";
-import { useAppTheme } from "../../context/ThemeContext";
-import { LiquidGlassSurface } from "./LiquidGlassSurface";
+import { BlurView } from "expo-blur";
+import { type ComponentProps } from "react";
+import { Platform, Pressable, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { FAB, Icon, useTheme } from "react-native-paper";
+
+type FABProps = ComponentProps<typeof FAB>;
 
 type Props = {
-  icon: React.ComponentProps<typeof FAB>["icon"];
-  onPress: React.ComponentProps<typeof FAB>["onPress"];
-  onLongPress?: React.ComponentProps<typeof FAB>["onLongPress"];
-  onPressIn?: React.ComponentProps<typeof FAB>["onPressIn"];
-  onPressOut?: React.ComponentProps<typeof FAB>["onPressOut"];
+  icon: FABProps["icon"];
+  onPress?: FABProps["onPress"];
+  onLongPress?: FABProps["onLongPress"];
   style?: StyleProp<ViewStyle>;
   color?: string;
   disabled?: boolean;
@@ -18,33 +17,43 @@ type Props = {
   testID?: string;
 };
 
+/**
+ * A Floating Action Button with optional blur effect on iOS.
+ * Uses native BlurView on iOS for a frosted glass appearance.
+ */
 export function GlassFAB(props: Props) {
-  const { isLiquidGlass, colors } = useAppTheme();
+  const theme = useTheme();
+  const isIOS = Platform.OS === "ios";
 
-  if (!isLiquidGlass) {
-    return <FAB {...props} />;
+  // On Android, just use a regular FAB
+  if (!isIOS) {
+    return (
+      <FAB
+        icon={props.icon}
+        label={props.accessibilityLabel ?? ""}
+        onPress={props.onPress}
+        onLongPress={props.onLongPress}
+        style={props.style}
+        color={props.color}
+        disabled={props.disabled}
+        accessibilityLabel={props.accessibilityLabel}
+        testID={props.testID}
+      />
+    );
   }
 
-  const { style, icon, onPress, onLongPress, onPressIn, onPressOut, color, disabled, accessibilityLabel, accessibilityHint, testID } = props;
-  const flattened = StyleSheet.flatten(style) || {};
-  const {
-    backgroundColor,
-    elevation,
-    shadowColor,
-    shadowOffset,
-    shadowOpacity,
-    shadowRadius,
-    width,
-    height,
-    ...sanitizedStyle
-  } = flattened;
+  const { style, icon, onPress, onLongPress, color, disabled, accessibilityLabel, accessibilityHint, testID } = props;
+
+  // Extract style properties safely
+  const flatStyle = style ? StyleSheet.flatten(style) : {};
+  const { backgroundColor, width, height, ...sanitizedStyle } = (flatStyle || {}) as ViewStyle & { width?: number; height?: number };
 
   const size = typeof width === "number" ? width : 56;
   const finalHeight = typeof height === "number" ? height : size;
   const radius = Math.min(size, finalHeight) / 2;
   const iconSize = Math.round(Math.min(size, finalHeight) * 0.45);
-  const iconColor = color ?? colors.text;
-  const tintOverlayColor = typeof backgroundColor === "string" ? backgroundColor : undefined;
+  const iconColor = color ?? theme.colors.onPrimary;
+  const bgColor = typeof backgroundColor === "string" ? backgroundColor : theme.colors.primary;
 
   return (
     <Pressable
@@ -54,8 +63,6 @@ export function GlassFAB(props: Props) {
       disabled={disabled}
       onPress={onPress}
       onLongPress={onLongPress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       testID={testID}
       style={[
         styles.base,
@@ -63,18 +70,13 @@ export function GlassFAB(props: Props) {
           width: size,
           height: finalHeight,
           borderRadius: radius,
-          borderColor: colors.glassBorder,
+          borderColor: theme.colors.outlineVariant,
         },
-        sanitizedStyle,
+        sanitizedStyle as ViewStyle,
       ]}
     >
-      <LiquidGlassSurface
-        effect="clear"
-        interactive={true}
-        useBlurFallback={false}
-        style={StyleSheet.absoluteFill}
-      />
-      {tintOverlayColor ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tintOverlayColor, opacity: 0.18 }]} /> : null}
+      <BlurView intensity={80} tint="systemUltraThinMaterial" style={StyleSheet.absoluteFill} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: bgColor, opacity: 0.85 }]} />
       <Icon source={icon as any} size={iconSize} color={iconColor} />
     </Pressable>
   );
