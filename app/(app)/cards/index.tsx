@@ -2,9 +2,10 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { FlatList, Image, RefreshControl, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, ProgressBar, Surface, Text, useTheme } from "react-native-paper";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { GlassFAB } from "../../../src/components/ui/GlassFAB";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { FinancialService } from "../../../src/services/financial";
 import { Database } from "../../../src/types/schema";
 import { CurrencyUtils } from "../../../src/utils/currency";
@@ -18,6 +19,7 @@ type CreditCard = Database["public"]["Tables"]["credit_cards"]["Row"] & {
 export default function CardsList() {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -160,7 +162,12 @@ export default function CardsList() {
         />
       )}
 
-      <GlassFAB icon="plus" style={[styles.fab, { backgroundColor: theme.colors.primary }]} color="white" onPress={() => router.push("/(app)/cards/new" as any)} />
+      <GlassFAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: insets.bottom + 16 }]}
+        color={theme.colors.onPrimary}
+        onPress={() => router.push("/(app)/cards/new" as any)}
+      />
     </View>
   );
 }
@@ -238,8 +245,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     margin: 16,
     right: 0,
-    bottom: 0,
-    borderRadius: 16,
+    // bottom is dynamic
   },
   emptyContainer: {
     padding: 40,

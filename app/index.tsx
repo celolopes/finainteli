@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { useAuthStore } from "../src/store/authStore";
 
 export default function Index() {
@@ -7,11 +7,7 @@ export default function Index() {
 
   // Show loading spinner while auth is initializing
   if (!initialized) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
-        <ActivityIndicator size="large" color="#10B981" />
-      </View>
-    );
+    return <View style={{ flex: 1, backgroundColor: "#121212" }} />;
   }
 
   if (session) {

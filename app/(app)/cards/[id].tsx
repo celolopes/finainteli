@@ -276,6 +276,7 @@ export default function CardDetails() {
       <GlassAppbar elevated>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={card.name} subtitle={card.brand} />
+        <Appbar.Action icon="pencil" onPress={() => router.push({ pathname: "/(app)/cards/new", params: { id: card.id } } as any)} />
       </GlassAppbar>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -328,7 +329,19 @@ export default function CardDetails() {
                 .toUpperCase()}
             </Text>
             <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-              Vence dia {card.due_day}
+              {(() => {
+                const dueDay = card.due_day || 1;
+                const closingDay = card.closing_day || 1;
+                let dueMonth = currentDate.getMonth();
+                const dueYear = currentDate.getFullYear();
+
+                if (dueDay < closingDay) {
+                  dueMonth += 1;
+                }
+
+                const d = new Date(dueYear, dueMonth, dueDay);
+                return `Vence dia ${d.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}`;
+              })()}
             </Text>
           </View>
           <IconButton icon="chevron-right" onPress={() => changeMonth(1)} accessibilityLabel="Próximo Mês" aria-label="Próximo Mês" />

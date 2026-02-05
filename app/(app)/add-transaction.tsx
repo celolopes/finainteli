@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -32,6 +32,8 @@ export default function AddTransactionScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation();
+
+  const amountInputRef = useRef<any>(null); // Ref for Amount Input
 
   const [categories, setCategories] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -107,6 +109,11 @@ export default function AddTransactionScreen() {
         setIsRecurring(false);
         setInstallments("2");
         setRecurrenceCount("12");
+
+        // Force focus on amount input
+        setTimeout(() => {
+          amountInputRef.current?.focus();
+        }, 300);
       }, 0);
       return () => clearTimeout(timer);
     }, [reset, preselectedCardId, accounts]),
@@ -296,8 +303,10 @@ export default function AddTransactionScreen() {
                   contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
                   underlineColor="transparent"
                   activeUnderlineColor="transparent"
-                  caretHidden={true} // Hide caret to enforce "calculator" feel
+                  caretHidden={true}
                   error={!!errors.amount}
+                  ref={amountInputRef}
+                  autoFocus={true}
                   accessibilityLabel={t("transactions.amount")}
                   aria-label={t("transactions.amount")}
                 />

@@ -173,7 +173,7 @@ export default function NewTransaction() {
               contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
               underlineColor="transparent"
               activeUnderlineColor="transparent"
-              autoFocus
+              autoFocus={false}
             />
           </View>
 

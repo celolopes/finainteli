@@ -27,7 +27,13 @@ export default function TabLayout() {
   };
 
   return (
-    <NativeTabs tabBarActiveTintColor={theme.colors.primary} tabBarInactiveTintColor={theme.colors.onSurfaceVariant} labeled={true} translucent={isIos}>
+    <NativeTabs
+      tabBarActiveTintColor={theme.colors.primary}
+      tabBarInactiveTintColor={theme.colors.onSurfaceVariant}
+      labeled={true}
+      translucent={isIos}
+      activeIndicatorColor={theme.colors.primaryContainer}
+    >
       <NativeTabs.Screen
         name="index"
         options={{

@@ -1,13 +1,15 @@
 import { DatabaseProvider } from "@nozbe/watermelondb/DatabaseProvider";
+import * as Sentry from "@sentry/react-native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LockScreen } from "../src/components/security/LockScreen";
 import { TutorialOverlay } from "../src/components/tutorial/TutorialOverlay";
+import { AnimatedSplashScreen } from "../src/components/ui/AnimatedSplashScreen";
 import { OfflineBanner } from "../src/components/ui/OfflineBanner";
 import { AppThemeProvider } from "../src/context/ThemeContext";
 import { TutorialProvider } from "../src/context/TutorialContext";
@@ -17,10 +19,9 @@ import { mySync } from "../src/services/sync";
 import { useAuthStore } from "../src/store/authStore";
 import { useSecurityStore } from "../src/store/securityStore";
 import { useStore } from "../src/store/useStore";
-import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
-  dsn: 'https://99345603a9e7a1fdd171a862da9d8e83@o4510343644512256.ingest.us.sentry.io/4510822647791616',
+  dsn: "https://99345603a9e7a1fdd171a862da9d8e83@o4510343644512256.ingest.us.sentry.io/4510822647791616",
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
@@ -46,8 +47,10 @@ export default Sentry.wrap(function RootLayout() {
   });
 
   const { initialize } = useStore();
-  const { initialize: initAuth } = useAuthStore();
+  const { initialize: initAuth, initialized } = useAuthStore();
   const { initialize: initSecurity, lockApp } = useSecurityStore();
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [isSplashAnimationFinished, setIsSplashAnimationFinished] = useState(false);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -71,6 +74,12 @@ export default Sentry.wrap(function RootLayout() {
       }
     }
   }, [loaded]);
+
+  useEffect(() => {
+    if (loaded && initialized) {
+      setIsSplashVisible(false);
+    }
+  }, [loaded, initialized]);
 
   // Prevent rendering until fonts are loaded
   if (!loaded) {
@@ -101,6 +110,7 @@ export default Sentry.wrap(function RootLayout() {
           </TutorialProvider>
         </AppThemeProvider>
       </DatabaseProvider>
+      {!isSplashAnimationFinished && <AnimatedSplashScreen isVisible={isSplashVisible} onAnimationFinish={() => setIsSplashAnimationFinished(true)} />}
     </GestureHandlerRootView>
   );
 });

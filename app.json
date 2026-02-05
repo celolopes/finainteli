@@ -58,6 +58,7 @@
       "expo-localization",
       "expo-apple-authentication",
       "expo-secure-store",
+      ["react-native-bottom-tabs", { "theme": "material3-expressive" }],
       [
         "expo-notifications",
         {

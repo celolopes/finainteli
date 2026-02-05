@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Appbar, Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
-import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
+import { ActivityIndicator, Appbar, Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { FinancialService } from "../../../src/services/financial";
 import { CurrencyUtils } from "../../../src/utils/currency";
@@ -37,12 +37,38 @@ export default function CardForm() {
 
   useEffect(() => {
     loadCurrencies();
+    if (isEdit) {
+      loadCardDetails();
+    }
     loadCardCount();
   }, []);
 
   const loadCurrencies = async () => {
     const data = await FinancialService.getCurrencies();
     setCurrencies(data || []);
+  };
+
+  const loadCardDetails = async () => {
+    if (!params.id) return;
+    setLoading(true);
+    try {
+      const card = await FinancialService.getCardById(params.id as string);
+      if (card) {
+        setName(card.name);
+        setLimit(CurrencyUtils.format(card.credit_limit, card.currency_code).replace(/[^\d,]/g, ""));
+        // For current invoice, we show the current balance
+        setCurrentInvoice(CurrencyUtils.format(card.current_balance || 0, card.currency_code).replace(/[^\d,]/g, ""));
+        setClosingDay(String(card.closing_day || ""));
+        setDueDay(String(card.due_day || ""));
+        setBrand(card.brand || "mastercard");
+        setColor(card.color || COLORS[0]);
+        setCurrency(card.currency_code);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadCardCount = async () => {
@@ -82,7 +108,7 @@ export default function CardForm() {
       };
 
       if (isEdit) {
-        console.warn("Edit not implemented");
+        await FinancialService.updateCreditCard(params.id as string, cardData);
       } else {
         await FinancialService.createCreditCard(cardData);
       }
@@ -107,79 +133,85 @@ export default function CardForm() {
       </GlassAppbar>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <TextInput label="Nome do Cartão" value={name} onChangeText={setName} mode="outlined" style={styles.input} placeholder="Ex: Nubank Platinum" />
-
-          <Text variant="titleMedium" style={styles.label}>
-            Bandeira
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
-            <SegmentedButtons
-              value={brand}
-              onValueChange={setBrand}
-              buttons={[
-                { value: "mastercard", label: "Mastercard" },
-                { value: "visa", label: "Visa" },
-                { value: "amex", label: "Amex" },
-                { value: "elo", label: "Elo" },
-                { value: "other", label: "Outro" },
-              ]}
-              style={{ minWidth: 400 }}
-            />
-          </ScrollView>
-
-          <View style={styles.row}>
-            <TextInput
-              label="Limite Total"
-              value={limit}
-              onChangeText={(text) => setLimit(CurrencyUtils.maskInput(text, currency))}
-              mode="outlined"
-              keyboardType="numeric"
-              style={[styles.input, { flex: 1, marginRight: 12 }]}
-              left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
-            />
-            <TextInput
-              label="Fatura Atual"
-              value={currentInvoice}
-              onChangeText={(text) => setCurrentInvoice(CurrencyUtils.maskInput(text, currency))}
-              mode="outlined"
-              keyboardType="numeric"
-              style={[styles.input, { flex: 1 }]}
-              left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
-            />
+        {loading && isEdit ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" />
           </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.content}>
+            <TextInput label="Nome do Cartão" value={name} onChangeText={setName} mode="outlined" style={styles.input} placeholder="Ex: Nubank Platinum" />
 
-          <View style={styles.row}>
-            <TextInput
-              label="Dia Fechamento"
-              value={closingDay}
-              onChangeText={setClosingDay}
-              mode="outlined"
-              keyboardType="numeric"
-              placeholder="1-31"
-              maxLength={2}
-              style={[styles.input, { flex: 1, marginRight: 12 }]}
-            />
-            <TextInput label="Dia Vencimento" value={dueDay} onChangeText={setDueDay} mode="outlined" keyboardType="numeric" placeholder="1-31" maxLength={2} style={[styles.input, { flex: 1 }]} />
-          </View>
-
-          <Text variant="titleMedium" style={styles.label}>
-            Cor de Identificação
-          </Text>
-          <View style={styles.colorGrid}>
-            {COLORS.map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => setColor(c)}
-                style={[styles.colorItem, { backgroundColor: c }, color === c && [styles.selectedColor, { borderColor: theme.colors.onSurface }]]}
+            <Text variant="titleMedium" style={styles.label}>
+              Bandeira
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
+              <SegmentedButtons
+                value={brand}
+                onValueChange={setBrand}
+                buttons={[
+                  { value: "mastercard", label: "Mastercard" },
+                  { value: "visa", label: "Visa" },
+                  { value: "amex", label: "Amex" },
+                  { value: "elo", label: "Elo" },
+                  { value: "other", label: "Outro" },
+                ]}
+                style={{ minWidth: 400 }}
               />
-            ))}
-          </View>
+            </ScrollView>
 
-          <Button mode="contained" onPress={handleSave} loading={loading} style={styles.button} contentStyle={{ height: 50 }}>
-            Salvar Cartão
-          </Button>
-        </ScrollView>
+            <View style={styles.row}>
+              <TextInput
+                label="Limite Total"
+                value={limit}
+                onChangeText={(text) => setLimit(CurrencyUtils.maskInput(text, currency))}
+                mode="outlined"
+                keyboardType="numeric"
+                style={[styles.input, { flex: 1, marginRight: 12 }]}
+                left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
+              />
+              <TextInput
+                label="Fatura Atual"
+                value={currentInvoice}
+                onChangeText={(text) => setCurrentInvoice(CurrencyUtils.maskInput(text, currency))}
+                mode="outlined"
+                keyboardType="numeric"
+                style={[styles.input, { flex: 1 }]}
+                left={<TextInput.Affix text={CurrencyUtils.getSymbol(currency) + " "} />}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <TextInput
+                label="Dia Fechamento"
+                value={closingDay}
+                onChangeText={setClosingDay}
+                mode="outlined"
+                keyboardType="numeric"
+                placeholder="1-31"
+                maxLength={2}
+                style={[styles.input, { flex: 1, marginRight: 12 }]}
+              />
+              <TextInput label="Dia Vencimento" value={dueDay} onChangeText={setDueDay} mode="outlined" keyboardType="numeric" placeholder="1-31" maxLength={2} style={[styles.input, { flex: 1 }]} />
+            </View>
+
+            <Text variant="titleMedium" style={styles.label}>
+              Cor de Identificação
+            </Text>
+            <View style={styles.colorGrid}>
+              {COLORS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  onPress={() => setColor(c)}
+                  style={[styles.colorItem, { backgroundColor: c }, color === c && [styles.selectedColor, { borderColor: theme.colors.onSurface }]]}
+                />
+              ))}
+            </View>
+
+            <Button mode="contained" onPress={handleSave} loading={loading} style={styles.button} contentStyle={{ height: 50 }}>
+              Salvar Cartão
+            </Button>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
 
       <PaywallModal visible={showPaywall} onDismiss={() => setShowPaywall(false)} onSuccess={handlePaywallSuccess} />

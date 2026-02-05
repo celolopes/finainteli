@@ -112,7 +112,19 @@ export async function mySync() {
         } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        for (const [table, change] of Object.entries(changes) as [string, any][]) {
+        const PUSH_PRIORITY = ["categories", "bank_accounts", "credit_cards", "budgets", "transactions"];
+        const tables = Object.keys(changes).sort((a, b) => {
+          const idxA = PUSH_PRIORITY.indexOf(a);
+          const idxB = PUSH_PRIORITY.indexOf(b);
+          // If both are known, sort by index. If unknown, push to end.
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return 0;
+        });
+
+        for (const table of tables) {
+          const change = (changes as any)[table];
           // Push Created & Updated
           const toUpsert = [...change.created, ...change.updated]
             .filter((item) => {
