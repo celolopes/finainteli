@@ -4,6 +4,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -11,6 +12,7 @@ import { LockScreen } from "../src/components/security/LockScreen";
 import { TutorialOverlay } from "../src/components/tutorial/TutorialOverlay";
 import { AnimatedSplashScreen } from "../src/components/ui/AnimatedSplashScreen";
 import { OfflineBanner } from "../src/components/ui/OfflineBanner";
+import { UpdateModal } from "../src/components/ui/UpdateModal";
 import { AppThemeProvider } from "../src/context/ThemeContext";
 import { TutorialProvider } from "../src/context/TutorialContext";
 import { database } from "../src/database";
@@ -51,6 +53,8 @@ export default Sentry.wrap(function RootLayout() {
   const { initialize: initSecurity, lockApp } = useSecurityStore();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const [isSplashAnimationFinished, setIsSplashAnimationFinished] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -76,10 +80,37 @@ export default Sentry.wrap(function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    if (loaded && initialized) {
+    if (loaded && initialized && !isChecking) {
       setIsSplashVisible(false);
     }
-  }, [loaded, initialized]);
+  }, [loaded, initialized, isChecking]);
+
+  useEffect(() => {
+    async function checkUpdates() {
+      if (__DEV__) {
+        setIsChecking(false);
+        return;
+      }
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          setIsUpdating(true);
+          // Don't set isChecking(false) -> Keep splash visible behind the modal
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        } else {
+          setIsChecking(false); // No update, proceed to app
+        }
+      } catch (error) {
+        // Silently fail if update check fails (e.g. offline)
+        console.log("Update check failed:", error);
+        setIsChecking(false);
+      }
+    }
+
+    // Check immediately
+    checkUpdates();
+  }, []);
 
   // Prevent rendering until fonts are loaded
   if (!loaded) {
@@ -107,10 +138,13 @@ export default Sentry.wrap(function RootLayout() {
             </Stack>
             <TutorialOverlay />
             <StatusBar style="auto" />
+
+            {!isSplashAnimationFinished && <AnimatedSplashScreen isVisible={isSplashVisible} onAnimationFinish={() => setIsSplashAnimationFinished(true)} />}
+
+            <UpdateModal isVisible={isUpdating} />
           </TutorialProvider>
         </AppThemeProvider>
       </DatabaseProvider>
-      {!isSplashAnimationFinished && <AnimatedSplashScreen isVisible={isSplashVisible} onAnimationFinish={() => setIsSplashAnimationFinished(true)} />}
     </GestureHandlerRootView>
   );
 });

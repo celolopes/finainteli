@@ -690,7 +690,10 @@ export const FinancialService = {
         // Credit card installments are always completed (they reduce available limit)
         status = "completed";
       } else if (isFuture) {
-        // Future transactions for bank accounts are pending
+        // Future transactions are pending
+        status = "pending";
+      } else if (options.isRecurring && isCreditCard) {
+        // Recurring credit card transactions start as pending (per user preference)
         status = "pending";
       }
 
@@ -870,7 +873,10 @@ export const FinancialService = {
           // Credit card installments are always completed (they reduce available limit)
           status = "completed";
         } else if (isFutureDate) {
-          // Future transactions for bank accounts are pending
+          // Future transactions are pending
+          status = "pending";
+        } else if (options.isRecurring && isCreditCard) {
+          // Recurring credit card transactions start as pending
           status = "pending";
         }
 
