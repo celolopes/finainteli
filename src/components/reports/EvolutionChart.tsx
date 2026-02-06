@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
 import { LineChart } from "react-native-gifted-charts";
+import { Text, useTheme } from "react-native-paper";
 import { buildLabelTexts, formatThousands, lightenColor, withAlpha } from "./chartUtils";
 
 interface EvolutionData {
@@ -16,7 +16,8 @@ interface EvolutionChartProps {
 export const EvolutionChart = ({ data }: EvolutionChartProps) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get("window").width;
-  const chartWidth = Math.max(screenWidth - 32, 240);
+  // Leave more margin to prevent overflow
+  const chartWidth = Math.max(screenWidth - 80, 200);
   const safeData = data ?? [];
 
   const axisLineColor = theme.colors.outlineVariant ?? theme.colors.onSurface;
@@ -24,7 +25,14 @@ export const EvolutionChart = ({ data }: EvolutionChartProps) => {
   const lineColor = isDark ? lightenColor(theme.colors.tertiary, 0.15) : theme.colors.tertiary;
   const glowFill = withAlpha(lineColor, isDark ? 0.3 : 0.18);
   const ruleColor = withAlpha(axisLineColor, isDark ? 0.35 : 0.5);
-  const labels = useMemo(() => buildLabelTexts(safeData.map((item) => item.period), 6), [safeData]);
+  const labels = useMemo(
+    () =>
+      buildLabelTexts(
+        safeData.map((item) => item.period),
+        6,
+      ),
+    [safeData],
+  );
   const chartData = useMemo(
     () =>
       safeData.map((item, index) => ({
@@ -110,7 +118,8 @@ const styles = StyleSheet.create({
   chartSurface: {
     borderRadius: 18,
     paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 12,

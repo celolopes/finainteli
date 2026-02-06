@@ -14,6 +14,7 @@ import { FinancialService } from "../../../src/services/financial";
 import { DetailedTransaction } from "../../../src/types";
 import { Database } from "../../../src/types/schema";
 import { CurrencyUtils } from "../../../src/utils/currency";
+import { getLocalISODate, parseLocalISODate } from "../../../src/utils/date";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 type Account = Database["public"]["Tables"]["bank_accounts"]["Row"];
@@ -121,7 +122,8 @@ export default function TransactionDetails() {
             credit_card_id: txn.credit_card_id || "",
             account_id: txn.account_id || "",
           });
-          setDate(new Date(txn.transaction_date));
+          // Use parseLocalISODate to avoid timezone issues when loading YYYY-MM-DD strings
+          setDate(parseLocalISODate(txn.transaction_date.split("T")[0]));
           setOriginalTransaction(txn);
         }
       }
@@ -178,7 +180,8 @@ export default function TransactionDetails() {
         account_id: data.use_card ? null : data.account_id,
         credit_card_id: data.use_card ? data.credit_card_id : null,
         category_id: data.category_id,
-        transaction_date: date.toISOString(),
+        // Use getLocalISODate to preserve local date without UTC conversion
+        transaction_date: getLocalISODate(date),
       };
 
       const complexOptions = {

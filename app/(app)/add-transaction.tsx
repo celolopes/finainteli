@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Alert, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Appbar, Avatar, Button, Checkbox, Dialog, Divider, HelperText, Portal, RadioButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
@@ -231,285 +231,287 @@ export default function AddTransactionScreen() {
           <Appbar.Action icon="close" onPress={() => router.back()} />
           <Appbar.Content title={t("transactions.newTitle")} />
         </GlassAppbar>
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          {/* Banner Removed per user request */}
-          <View style={styles.formGroup}>
-            <Controller
-              control={control}
-              name="type"
-              render={({ field: { value, onChange } }) => (
-                <SegmentedButtons
-                  value={value}
-                  onValueChange={onChange}
-                  buttons={[
-                    {
-                      value: "expense",
-                      label: t("dashboard.expense"),
-                      icon: "arrow-down-circle-outline",
-                      style: value === "expense" ? { backgroundColor: theme.colors.errorContainer, borderColor: theme.colors.error } : undefined,
-                    },
-                    {
-                      value: "income",
-                      label: t("dashboard.income"),
-                      icon: "arrow-up-circle-outline",
-                      style: value === "income" ? { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primary } : undefined,
-                    },
-                  ]}
-                  style={styles.segmentedButton}
-                />
-              )}
-            />
-          </View>
-
-          <View style={styles.amountContainer}>
-            <Text variant="displaySmall" style={{ color: color, fontWeight: "bold" }}>
-              R$
-            </Text>
-            <Controller
-              control={control}
-              name="amount"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  value={value || "0,00"}
-                  onChangeText={(text) => {
-                    // Only allow digits
-                    const raw = text.replace(/\D/g, "");
-
-                    // If empty, reset
-                    if (!raw) {
-                      onChange("0,00");
-                      return;
-                    }
-
-                    // Parse as integer
-                    const amount = parseInt(raw, 10);
-
-                    // Convert to currency string manually to avoid locale issues on Android/iOS
-                    // 595 -> 5,95
-                    // 5 -> 0,05
-                    const result = (amount / 100).toFixed(2);
-
-                    // Replace dot with comma for PT-BR visuals
-                    const formatted = result.replace(".", ",");
-
-                    // Add thousand separators if needed (e.g. 1000,00 -> 1.000,00)
-                    const parts = formatted.split(",");
-                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                    const finalString = parts.join(",");
-
-                    onChange(finalString);
-                  }}
-                  keyboardType="numeric"
-                  placeholder="0,00"
-                  placeholderTextColor={theme.colors.onSurfaceDisabled}
-                  style={[styles.amountInput, { color: color }]}
-                  contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
-                  underlineColor="transparent"
-                  activeUnderlineColor="transparent"
-                  caretHidden={true}
-                  error={!!errors.amount}
-                  ref={amountInputRef}
-                  autoFocus={true}
-                  accessibilityLabel={t("transactions.amount")}
-                  aria-label={t("transactions.amount")}
-                />
-              )}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Controller
-              control={control}
-              name="title"
-              render={({ field: { onChange, value } }) => (
-                <DescriptionAutocomplete
-                  value={value}
-                  onChangeText={onChange}
-                  onSelectSuggestion={handleSuggestionSelect}
-                  label={t("transactions.description")}
-                  placeholder="Ex: Almoço, Uber, Salário..."
-                />
-              )}
-            />
-            <HelperText type="error" visible={!!errors.title}>
-              {errors.title?.message}
-            </HelperText>
-          </View>
-
-          {/* Category Selector */}
-          <TouchableOpacity onPress={() => setShowCatDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              {t("transactions.category")}
-            </Text>
-            <View style={styles.selectorValue}>
-              <Avatar.Icon size={32} icon={selectedCategory?.icon || "help"} style={{ backgroundColor: selectedCategory?.color || theme.colors.surfaceVariant }} />
-              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                {selectedCategory?.name || "Selecionar"}
-              </Text>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+          <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+            {/* Banner Removed per user request */}
+            <View style={styles.formGroup}>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field: { value, onChange } }) => (
+                  <SegmentedButtons
+                    value={value}
+                    onValueChange={onChange}
+                    buttons={[
+                      {
+                        value: "expense",
+                        label: t("dashboard.expense"),
+                        icon: "arrow-down-circle-outline",
+                        style: value === "expense" ? { backgroundColor: theme.colors.errorContainer, borderColor: theme.colors.error } : undefined,
+                      },
+                      {
+                        value: "income",
+                        label: t("dashboard.income"),
+                        icon: "arrow-up-circle-outline",
+                        style: value === "income" ? { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primary } : undefined,
+                      },
+                    ]}
+                    style={styles.segmentedButton}
+                  />
+                )}
+              />
             </View>
-          </TouchableOpacity>
 
-          {/* Source Selector (Account/Card) */}
-          <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              {t("transactions.source") || "Pago com"}
-            </Text>
-            <View style={styles.selectorValue}>
-              <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: theme.colors.surfaceVariant }} />
-              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                {useCard ? selectedCard?.name : selectedAccount?.name || "Selecionar"}
+            <View style={styles.amountContainer}>
+              <Text variant="displaySmall" style={{ color: color, fontWeight: "bold" }}>
+                R$
               </Text>
-            </View>
-          </TouchableOpacity>
+              <Controller
+                control={control}
+                name="amount"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    value={value || "0,00"}
+                    onChangeText={(text) => {
+                      // Only allow digits
+                      const raw = text.replace(/\D/g, "");
 
-          {/* Date Selector */}
-          <View style={styles.formGroup}>
-            {Platform.OS === "ios" ? (
-              <DatePickerField value={date} onChange={setDate} label="Data" />
-            ) : (
-              <>
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
-                  Data
+                      // If empty, reset
+                      if (!raw) {
+                        onChange("0,00");
+                        return;
+                      }
+
+                      // Parse as integer
+                      const amount = parseInt(raw, 10);
+
+                      // Convert to currency string manually to avoid locale issues on Android/iOS
+                      // 595 -> 5,95
+                      // 5 -> 0,05
+                      const result = (amount / 100).toFixed(2);
+
+                      // Replace dot with comma for PT-BR visuals
+                      const formatted = result.replace(".", ",");
+
+                      // Add thousand separators if needed (e.g. 1000,00 -> 1.000,00)
+                      const parts = formatted.split(",");
+                      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                      const finalString = parts.join(",");
+
+                      onChange(finalString);
+                    }}
+                    keyboardType="numeric"
+                    placeholder="0,00"
+                    placeholderTextColor={theme.colors.onSurfaceDisabled}
+                    style={[styles.amountInput, { color: color }]}
+                    contentStyle={{ fontSize: 40, fontWeight: "bold", color: color }}
+                    underlineColor="transparent"
+                    activeUnderlineColor="transparent"
+                    caretHidden={true}
+                    error={!!errors.amount}
+                    ref={amountInputRef}
+                    autoFocus={true}
+                    accessibilityLabel={t("transactions.amount")}
+                    aria-label={t("transactions.amount")}
+                  />
+                )}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Controller
+                control={control}
+                name="title"
+                render={({ field: { onChange, value } }) => (
+                  <DescriptionAutocomplete
+                    value={value}
+                    onChangeText={onChange}
+                    onSelectSuggestion={handleSuggestionSelect}
+                    label={t("transactions.description")}
+                    placeholder="Ex: Almoço, Uber, Salário..."
+                  />
+                )}
+              />
+              <HelperText type="error" visible={!!errors.title}>
+                {errors.title?.message}
+              </HelperText>
+            </View>
+
+            {/* Category Selector */}
+            <TouchableOpacity onPress={() => setShowCatDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                {t("transactions.category")}
+              </Text>
+              <View style={styles.selectorValue}>
+                <Avatar.Icon size={32} icon={selectedCategory?.icon || "help"} style={{ backgroundColor: selectedCategory?.color || theme.colors.surfaceVariant }} />
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                  {selectedCategory?.name || "Selecionar"}
                 </Text>
-                <TouchableOpacity style={[styles.selector, { marginBottom: 0 }]} onPress={() => setShowDatePicker(true)}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <Avatar.Icon size={32} icon="calendar" style={{ backgroundColor: theme.colors.surfaceVariant }} />
-                    <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
-                  </View>
-                </TouchableOpacity>
-                {showDatePicker && AndroidDateTimePicker && <AndroidDateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChangeDate} display="default" />}
-              </>
-            )}
-          </View>
+              </View>
+            </TouchableOpacity>
 
-          {/* Installment Options (Only for Credit Card) */}
-          {useCard && (
-            <View style={[styles.optionGroup, { borderColor: theme.colors.outline }]}>
-              <TouchableOpacity style={styles.optionHeader} onPress={() => setIsInstallment(!isInstallment)}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Avatar.Icon size={32} icon="calendar-month" style={{ backgroundColor: isInstallment ? theme.colors.primaryContainer : theme.colors.surfaceVariant }} />
-                  <Text variant="bodyLarge">Parcelamento</Text>
-                </View>
-                <RadioButton value="yes" status={isInstallment ? "checked" : "unchecked"} onPress={() => setIsInstallment(!isInstallment)} />
-              </TouchableOpacity>
+            {/* Source Selector (Account/Card) */}
+            <TouchableOpacity onPress={() => setShowSourceDialog(true)} style={[styles.selector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                {t("transactions.source") || "Pago com"}
+              </Text>
+              <View style={styles.selectorValue}>
+                <Avatar.Icon size={32} icon={useCard ? "credit-card" : "bank"} style={{ backgroundColor: theme.colors.surfaceVariant }} />
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                  {useCard ? selectedCard?.name : selectedAccount?.name || "Selecionar"}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-              {isInstallment && (
-                <View style={styles.optionBody}>
-                  <View style={styles.row}>
-                    <Text variant="bodyMedium">Número de Parcelas</Text>
-                    <TextInput value={installments} onChangeText={setInstallments} keyboardType="numeric" mode="outlined" style={styles.smallInput} dense contentStyle={{ textAlign: "center" }} />
-                  </View>
-                  <Divider style={{ marginVertical: 12 }} />
-                  <SegmentedButtons
-                    value={installmentMode}
-                    onValueChange={(v) => setInstallmentMode(v as any)}
-                    buttons={[
-                      { value: "total", label: "Valor Total" },
-                      { value: "parcel", label: "Valor da Parcela" },
-                    ]}
-                  />
-                  <HelperText type="info" visible>
-                    {installmentMode === "total"
-                      ? `Serão ${installments}x de ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") / (parseInt(installments) || 1))}`
-                      : `Total será ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") * (parseInt(installments) || 1))}`}
-                  </HelperText>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Recurrence Options (Fixed Launch) */}
-          {!isInstallment && (
-            <View style={[styles.optionGroup, { borderColor: theme.colors.outline, marginTop: 16 }]}>
-              <TouchableOpacity style={styles.optionHeader} onPress={() => setIsRecurring(!isRecurring)}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Avatar.Icon size={32} icon="update" style={{ backgroundColor: isRecurring ? theme.colors.tertiaryContainer : theme.colors.surfaceVariant }} />
-                  <Text variant="bodyLarge">Lançamento Fixo / Recorrente</Text>
-                </View>
-                <RadioButton value="yes" status={isRecurring ? "checked" : "unchecked"} onPress={() => setIsRecurring(!isRecurring)} />
-              </TouchableOpacity>
-
-              {isRecurring && (
-                <View style={styles.optionBody}>
-                  <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }} onPress={() => setIsFixed(!isFixed)}>
-                    <Checkbox status={isFixed ? "checked" : "unchecked"} />
-                    <Text variant="bodyLarge">Lançamento Fixo (Sem fim definido)</Text>
+            {/* Date Selector */}
+            <View style={styles.formGroup}>
+              {Platform.OS === "ios" ? (
+                <DatePickerField value={date} onChange={setDate} label="Data" />
+              ) : (
+                <>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+                    Data
+                  </Text>
+                  <TouchableOpacity style={[styles.selector, { marginBottom: 0 }]} onPress={() => setShowDatePicker(true)}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <Avatar.Icon size={32} icon="calendar" style={{ backgroundColor: theme.colors.surfaceVariant }} />
+                      <Text variant="titleMedium">{date.toLocaleDateString("pt-BR")}</Text>
+                    </View>
                   </TouchableOpacity>
-
-                  <Text style={{ marginBottom: 8 }}>Frequência</Text>
-                  <SegmentedButtons
-                    value={recurrenceFreq}
-                    onValueChange={(v) => setRecurrenceFreq(v as any)}
-                    buttons={[
-                      { value: "daily", label: "Diário" },
-                      { value: "weekly", label: "Semanal" },
-                      { value: "biweekly", label: "Quinz." },
-                      { value: "monthly", label: "Mensal" },
-                    ]}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <SegmentedButtons
-                    value={recurrenceFreq}
-                    onValueChange={(v) => setRecurrenceFreq(v as any)}
-                    buttons={[
-                      { value: "bimonthly", label: "Bimestral" },
-                      { value: "semiannual", label: "Semestral" },
-                      { value: "annual", label: "Anual" },
-                    ]}
-                    style={{ marginBottom: 8 }}
-                  />
-
-                  {!isFixed && (
-                    <>
-                      <View style={styles.row}>
-                        <Text variant="bodyMedium">Validar por (vezes)</Text>
-                        <TextInput
-                          value={recurrenceCount}
-                          onChangeText={setRecurrenceCount}
-                          keyboardType="numeric"
-                          mode="outlined"
-                          style={styles.smallInput}
-                          dense
-                          contentStyle={{ textAlign: "center" }}
-                          aria-label="Contagem de recorrência"
-                        />
-                      </View>
-                      <HelperText type="info" visible>
-                        Serão gerados {recurrenceCount} lançamentos futuros.
-                      </HelperText>
-                    </>
-                  )}
-                  {isFixed && (
-                    <HelperText type="info" visible>
-                      Serão gerados lançamentos{" "}
-                      {recurrenceFreq === "daily"
-                        ? "diários"
-                        : recurrenceFreq === "weekly"
-                          ? "semanais"
-                          : recurrenceFreq === "biweekly"
-                            ? "quinzenais"
-                            : recurrenceFreq === "monthly"
-                              ? "mensais"
-                              : recurrenceFreq === "bimonthly"
-                                ? "bimestrais"
-                                : recurrenceFreq === "semiannual"
-                                  ? "semestrais"
-                                  : "anuais"}{" "}
-                      automáticos por tempo indeterminado.
-                    </HelperText>
-                  )}
-                </View>
+                  {showDatePicker && AndroidDateTimePicker && <AndroidDateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChangeDate} display="default" />}
+                </>
               )}
             </View>
-          )}
 
-          <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={submitting} style={[styles.saveButton, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
-            {t("common.save")}
-          </Button>
-          <Button mode="outlined" onPress={() => router.back()} style={{ marginTop: 12, borderColor: theme.colors.outline }} textColor={theme.colors.onSurfaceVariant}>
-            {t("common.cancel") || "Cancelar"}
-          </Button>
-        </ScrollView>
+            {/* Installment Options (Only for Credit Card) */}
+            {useCard && (
+              <View style={[styles.optionGroup, { borderColor: theme.colors.outline }]}>
+                <TouchableOpacity style={styles.optionHeader} onPress={() => setIsInstallment(!isInstallment)}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Avatar.Icon size={32} icon="calendar-month" style={{ backgroundColor: isInstallment ? theme.colors.primaryContainer : theme.colors.surfaceVariant }} />
+                    <Text variant="bodyLarge">Parcelamento</Text>
+                  </View>
+                  <RadioButton value="yes" status={isInstallment ? "checked" : "unchecked"} onPress={() => setIsInstallment(!isInstallment)} />
+                </TouchableOpacity>
+
+                {isInstallment && (
+                  <View style={styles.optionBody}>
+                    <View style={styles.row}>
+                      <Text variant="bodyMedium">Número de Parcelas</Text>
+                      <TextInput value={installments} onChangeText={setInstallments} keyboardType="numeric" mode="outlined" style={styles.smallInput} dense contentStyle={{ textAlign: "center" }} />
+                    </View>
+                    <Divider style={{ marginVertical: 12 }} />
+                    <SegmentedButtons
+                      value={installmentMode}
+                      onValueChange={(v) => setInstallmentMode(v as any)}
+                      buttons={[
+                        { value: "total", label: "Valor Total" },
+                        { value: "parcel", label: "Valor da Parcela" },
+                      ]}
+                    />
+                    <HelperText type="info" visible>
+                      {installmentMode === "total"
+                        ? `Serão ${installments}x de ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") / (parseInt(installments) || 1))}`
+                        : `Total será ${CurrencyUtils.format(CurrencyUtils.parse(watch("amount") || "0") * (parseInt(installments) || 1))}`}
+                    </HelperText>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Recurrence Options (Fixed Launch) */}
+            {!isInstallment && (
+              <View style={[styles.optionGroup, { borderColor: theme.colors.outline, marginTop: 16 }]}>
+                <TouchableOpacity style={styles.optionHeader} onPress={() => setIsRecurring(!isRecurring)}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Avatar.Icon size={32} icon="update" style={{ backgroundColor: isRecurring ? theme.colors.tertiaryContainer : theme.colors.surfaceVariant }} />
+                    <Text variant="bodyLarge">Lançamento Fixo / Recorrente</Text>
+                  </View>
+                  <RadioButton value="yes" status={isRecurring ? "checked" : "unchecked"} onPress={() => setIsRecurring(!isRecurring)} />
+                </TouchableOpacity>
+
+                {isRecurring && (
+                  <View style={styles.optionBody}>
+                    <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }} onPress={() => setIsFixed(!isFixed)}>
+                      <Checkbox status={isFixed ? "checked" : "unchecked"} onPress={() => setIsFixed(!isFixed)} color={theme.colors.primary} uncheckedColor={theme.colors.onSurface} />
+                      <Text variant="bodyLarge">Lançamento Fixo (Sem fim definido)</Text>
+                    </TouchableOpacity>
+
+                    <Text style={{ marginBottom: 8 }}>Frequência</Text>
+                    <SegmentedButtons
+                      value={recurrenceFreq}
+                      onValueChange={(v) => setRecurrenceFreq(v as any)}
+                      buttons={[
+                        { value: "daily", label: "Diário" },
+                        { value: "weekly", label: "Semanal" },
+                        { value: "biweekly", label: "Quinz." },
+                        { value: "monthly", label: "Mensal" },
+                      ]}
+                      style={{ marginBottom: 8 }}
+                    />
+                    <SegmentedButtons
+                      value={recurrenceFreq}
+                      onValueChange={(v) => setRecurrenceFreq(v as any)}
+                      buttons={[
+                        { value: "bimonthly", label: "Bimestral" },
+                        { value: "semiannual", label: "Semestral" },
+                        { value: "annual", label: "Anual" },
+                      ]}
+                      style={{ marginBottom: 8 }}
+                    />
+
+                    {!isFixed && (
+                      <>
+                        <View style={styles.row}>
+                          <Text variant="bodyMedium">Validar por (vezes)</Text>
+                          <TextInput
+                            value={recurrenceCount}
+                            onChangeText={setRecurrenceCount}
+                            keyboardType="numeric"
+                            mode="outlined"
+                            style={styles.smallInput}
+                            dense
+                            contentStyle={{ textAlign: "center" }}
+                            aria-label="Contagem de recorrência"
+                          />
+                        </View>
+                        <HelperText type="info" visible>
+                          Serão gerados {recurrenceCount} lançamentos futuros.
+                        </HelperText>
+                      </>
+                    )}
+                    {isFixed && (
+                      <HelperText type="info" visible>
+                        Serão gerados lançamentos{" "}
+                        {recurrenceFreq === "daily"
+                          ? "diários"
+                          : recurrenceFreq === "weekly"
+                            ? "semanais"
+                            : recurrenceFreq === "biweekly"
+                              ? "quinzenais"
+                              : recurrenceFreq === "monthly"
+                                ? "mensais"
+                                : recurrenceFreq === "bimonthly"
+                                  ? "bimestrais"
+                                  : recurrenceFreq === "semiannual"
+                                    ? "semestrais"
+                                    : "anuais"}{" "}
+                        automáticos por tempo indeterminado.
+                      </HelperText>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+
+            <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={submitting} style={[styles.saveButton, { backgroundColor: color }]} contentStyle={{ height: 50 }}>
+              {t("common.save")}
+            </Button>
+            <Button mode="outlined" onPress={() => router.back()} style={{ marginTop: 12, borderColor: theme.colors.outline }} textColor={theme.colors.onSurfaceVariant}>
+              {t("common.cancel") || "Cancelar"}
+            </Button>
+          </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Category Dialog */}
         <Portal>

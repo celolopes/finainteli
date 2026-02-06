@@ -68,6 +68,18 @@ export default {
       card: "Card",
       goal: "Goal",
     },
+    pendingBills: {
+      title: "Bills to pay",
+      singular: "You have 1 bill due",
+      plural: "You have {{count}} bills due",
+      totalLabel: "totaling",
+    },
+    pendingIncome: {
+      title: "Income to receive",
+      singular: "You have 1 income due",
+      plural: "You have {{count}} incomes due",
+      totalLabel: "totaling",
+    },
   },
   onboarding: {
     welcome: {

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
 import { BarChart } from "react-native-gifted-charts";
+import { Text, useTheme } from "react-native-paper";
 import { CountUp } from "use-count-up";
 import { buildLabelTexts, formatThousands, lightenColor, withAlpha } from "./chartUtils";
 
@@ -18,11 +18,19 @@ interface MonthlyBarChartProps {
 export const MonthlyBarChart = ({ data }: MonthlyBarChartProps) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get("window").width;
-  const chartWidth = Math.max(screenWidth - 32, 240);
+  // Leave more margin to prevent overflow
+  const chartWidth = Math.max(screenWidth - 80, 200);
   const safeData = data ?? [];
 
   // Transform data for the chart (simple bar for expenses)
-  const labels = useMemo(() => buildLabelTexts(safeData.map((item) => item.month), 6), [safeData]);
+  const labels = useMemo(
+    () =>
+      buildLabelTexts(
+        safeData.map((item) => item.month),
+        6,
+      ),
+    [safeData],
+  );
   const showTopLabels = safeData.length <= 8;
   const barWidth = safeData.length > 10 ? 12 : 18;
   const spacing = safeData.length > 10 ? 12 : 18;
@@ -40,8 +48,7 @@ export const MonthlyBarChart = ({ data }: MonthlyBarChartProps) => {
         topLabelComponent: showTopLabels
           ? () => (
               <Text style={{ fontSize: 10, color: theme.colors.onSurface }}>
-                R${" "}
-                <CountUp isCounting end={Math.round(d.expense)} duration={0.6} key={`${d.month}-${d.expense}`} />
+                R$ <CountUp isCounting end={Math.round(d.expense)} duration={0.6} key={`${d.month}-${d.expense}`} />
               </Text>
             )
           : undefined,
@@ -117,7 +124,8 @@ const styles = StyleSheet.create({
   chartSurface: {
     borderRadius: 18,
     paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 12,

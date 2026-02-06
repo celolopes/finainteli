@@ -26,9 +26,8 @@ export default function ChatScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  // const tabBarHeight = useBottomTabBarHeight(); // Removed due to migration to native tabs
-  const tabBarHeight = Platform.OS === "ios" ? 85 : 50 + insets.bottom; // Approximate height for native tabs
-  const bottomInset = Platform.OS === "ios" ? insets.bottom + 10 : insets.bottom;
+  const tabBarHeight = Platform.OS === "ios" ? 90 : 60; // Height for native tabs
+  const bottomInset = Platform.OS === "ios" ? Math.max(insets.bottom, 20) : insets.bottom;
   const { isPro } = usePremium();
   const { goals } = useStore();
 
@@ -242,7 +241,7 @@ export default function ChatScreen() {
         />
 
         <View
-          style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: bottomInset + 10 }]}
+          style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: bottomInset + tabBarHeight }]}
           onLayout={(event) => {
             const height = event.nativeEvent.layout.height;
             if (height !== inputHeight) {

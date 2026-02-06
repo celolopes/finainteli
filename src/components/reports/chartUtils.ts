@@ -62,7 +62,8 @@ export const withAlpha = (color: string, alpha: number) => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 };
 
-export const buildThemePalette = (colors: Record<string, string | undefined>, isDark: boolean) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const buildThemePalette = (colors: Record<string, any>, isDark: boolean) => {
   const base = [
     colors.primary,
     colors.tertiary,

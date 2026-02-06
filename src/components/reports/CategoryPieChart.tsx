@@ -1,7 +1,7 @@
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
 import { PieChart } from "react-native-gifted-charts";
+import { Text, useTheme } from "react-native-paper";
 import { CountUp } from "use-count-up";
 import { buildThemePalette, lightenColor, withAlpha } from "./chartUtils";
 
@@ -19,8 +19,10 @@ interface CategoryPieChartProps {
 export const CategoryPieChart = ({ data }: CategoryPieChartProps) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get("window").width;
-  const chartSize = Math.min(screenWidth - 64, 260);
-  const radius = Math.max(chartSize / 2, 90);
+  // Limit chart size to fit within card with padding
+  const maxChartSize = screenWidth - 80; // More margin for card padding
+  const chartSize = Math.min(maxChartSize, 220);
+  const radius = Math.max(chartSize / 2, 80);
   const innerRadius = Math.round(radius * 0.58);
   const isDark = theme.dark;
 
@@ -38,7 +40,7 @@ export const CategoryPieChart = ({ data }: CategoryPieChartProps) => {
   const palette = buildThemePalette(theme.colors, isDark);
   const coloredData = processedData.map((item, index) => {
     const fallback = palette[index % palette.length] || item.color;
-    const color = item.category === "Outros" ? theme.colors.outlineVariant ?? fallback : fallback;
+    const color = item.category === "Outros" ? (theme.colors.outlineVariant ?? fallback) : fallback;
     return {
       ...item,
       color,
@@ -63,7 +65,7 @@ export const CategoryPieChart = ({ data }: CategoryPieChartProps) => {
           },
         ]}
       >
-        <View style={[styles.chart, { height: radius * 2 + 20 }]}>
+        <View style={[styles.chart, { height: radius * 2 + 24, alignItems: "center", justifyContent: "center" }]}>
           <PieChart
             data={coloredData.map((item) => ({
               value: item.amount,
@@ -113,13 +115,7 @@ export const CategoryPieChart = ({ data }: CategoryPieChartProps) => {
             />
             <Text style={styles.legendLabel}>{item.category}</Text>
             <Text style={styles.legendValue}>
-              <CountUp
-                isCounting
-                end={Math.round(item.percentage || 0)}
-                duration={0.6}
-                key={`${item.category}-${item.percentage}`}
-              />
-              %
+              <CountUp isCounting end={Math.round(item.percentage || 0)} duration={0.6} key={`${item.category}-${item.percentage}`} />%
             </Text>
           </View>
         ))}
@@ -160,14 +156,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chart: {
-    height: 300,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   chartSurface: {
     borderRadius: 18,
     paddingVertical: 12,
-    paddingHorizontal: 6,
+    paddingHorizontal: 10,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 12,

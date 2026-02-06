@@ -7,6 +7,7 @@ import Category from "../database/model/Category";
 import Transaction from "../database/model/Transaction";
 import { Database } from "../types/schema";
 import { calcInvoiceTotal, getInvoiceCycle, getOpenInvoiceRange } from "../utils/creditCardInvoice";
+import { getLocalISODate } from "../utils/date";
 import { BudgetService } from "./budget";
 import { supabase } from "./supabase";
 import { mySync } from "./sync";
@@ -507,7 +508,7 @@ export const FinancialService = {
         type: "expense",
         description: "Saldo Inicial / Fatura Importada",
         credit_card_id: newRecord.id,
-        transaction_date: new Date().toISOString(),
+        transaction_date: getLocalISODate(new Date()),
         currency_code: card.currency_code,
         category_id: null,
         account_id: null,
@@ -546,9 +547,12 @@ export const FinancialService = {
     let newTransactionRecord: Transaction;
 
     // Ensure status is handled correctly for simple transactions
+    // Credit card transactions are always "completed" (affect card limit)
+    // Future bank account transactions are "pending"
     const txDate = new Date(transaction.transaction_date);
+    const isCreditCard = !!transaction.credit_card_id;
     const isFuture = txDate.getTime() > Date.now();
-    const status = transaction.status || (isFuture ? "pending" : "completed");
+    const status = transaction.status || (isCreditCard ? "completed" : isFuture ? "pending" : "completed");
 
     await database.write(async () => {
       newTransactionRecord = await database.get<Transaction>("transactions").create((t) => {
@@ -672,23 +676,36 @@ export const FinancialService = {
       }
 
       let desc = baseData.description || "";
+
+      // Determine status based on transaction date and payment method
+      // Credit card installments are always "completed" (affect card limit)
+      // Bank account transactions in the future are "pending"
+      const isCreditCard = !!baseData.credit_card_id;
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const isFuture = txDate.getTime() >= now.getTime() + 86400000; // Tomorrow or later
+
       let status: "completed" | "pending" = "completed";
+      if (isInstallment && isCreditCard) {
+        // Credit card installments are always completed (they reduce available limit)
+        status = "completed";
+      } else if (isFuture) {
+        // Future transactions for bank accounts are pending
+        status = "pending";
+      }
 
       if (isInstallment) {
         desc = `${desc} (${i + 1}/${count})`;
-        status = "completed";
       } else if (options.isFixed) {
         desc = `${desc} (Fixo)`;
-        status = i === 0 ? "completed" : "pending";
       } else if (options.isRecurring && count > 1) {
         desc = `${desc} (Rec.)`;
-        status = i === 0 ? "completed" : "pending";
       }
 
       recordsToCreate.push({
         ...baseData,
         amount: amountPerTx,
-        transaction_date: txDate.toISOString(),
+        transaction_date: getLocalISODate(txDate),
         description: desc,
         user_id: userId,
         status,
@@ -839,17 +856,30 @@ export const FinancialService = {
         }
 
         let desc = t.description;
-        let status: "completed" | "pending" = "pending";
+
+        // Determine status based on transaction date and payment method
+        // Credit card installments are always "completed" (affect card limit)
+        // Bank account transactions in the future are "pending"
+        const isCreditCard = !!t.creditCard?.id;
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isFutureDate = txDate.getTime() >= now.getTime() + 86400000; // Tomorrow or later
+
+        let status: "completed" | "pending" = "completed";
+        if (isInstallment && isCreditCard) {
+          // Credit card installments are always completed (they reduce available limit)
+          status = "completed";
+        } else if (isFutureDate) {
+          // Future transactions for bank accounts are pending
+          status = "pending";
+        }
 
         if (isInstallment) {
           desc = `${t.description} (${i + 1}/${count})`;
-          status = "completed";
         } else if (options.isFixed) {
           desc = `${t.description} (Fixo)`;
-          status = "pending";
         } else {
           desc = `${t.description} (Rec.)`;
-          status = "pending";
         }
 
         recordsToCreate.push({
@@ -983,6 +1013,78 @@ export const FinancialService = {
         };
       }),
     );
+  },
+
+  /**
+   * Busca despesas pendentes (status = 'pending') para hoje e amanhã
+   * Usado para exibir o card de "Contas a Pagar" no dashboard
+   */
+  async getPendingBills() {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0, 0);
+
+    const query = database
+      .get<Transaction>("transactions")
+      .query(
+        Q.where("deleted_at", Q.eq(null)),
+        Q.where("type", "expense"),
+        Q.where("status", "pending"),
+        Q.where("transaction_date", Q.gte(startOfToday.getTime())),
+        Q.where("transaction_date", Q.lt(endOfTomorrow.getTime())),
+        Q.sortBy("transaction_date", Q.asc),
+      );
+
+    const records = await query.fetch();
+
+    const total = records.reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      count: records.length,
+      total,
+      transactions: records.map((t) => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        date: t.transactionDate.toISOString().split("T")[0],
+      })),
+    };
+  },
+
+  /**
+   * Busca receitas pendentes (status = 'pending') para hoje e amanhã
+   * Usado para exibir o card de "Contas a Receber" no dashboard
+   */
+  async getPendingIncome() {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0, 0);
+
+    const query = database
+      .get<Transaction>("transactions")
+      .query(
+        Q.where("deleted_at", Q.eq(null)),
+        Q.where("type", "income"),
+        Q.where("status", "pending"),
+        Q.where("transaction_date", Q.gte(startOfToday.getTime())),
+        Q.where("transaction_date", Q.lt(endOfTomorrow.getTime())),
+        Q.sortBy("transaction_date", Q.asc),
+      );
+
+    const records = await query.fetch();
+
+    const total = records.reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      count: records.length,
+      total,
+      transactions: records.map((t) => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        date: t.transactionDate.toISOString().split("T")[0],
+      })),
+    };
   },
 
   async getTransactionById(id: string) {

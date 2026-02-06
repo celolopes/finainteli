@@ -1,7 +1,7 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Avatar, Button, Dialog, Divider, IconButton, Modal, Portal, ProgressBar, RadioButton, Surface, Text, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
@@ -431,63 +431,73 @@ export default function CardDetails() {
                     animationIndex += 1;
                     return (
                       <Animated.View key={t.id} entering={FadeInUp.delay(delay)}>
-                        <Surface style={styles.transactionItem} elevation={0}>
-                          <View style={styles.row}>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                gap: 12,
-                              }}
-                            >
-                              <Avatar.Icon
-                                size={36}
-                                icon={t.category?.icon || "help"}
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            if (t.id === "initial_balance_adjustment") {
+                              setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
+                              setEditBalanceVisible(true);
+                            } else {
+                              router.push(`/(app)/transactions/${t.id}`);
+                            }
+                          }}
+                        >
+                          <Surface style={styles.transactionItem} elevation={0}>
+                            <View style={styles.row}>
+                              <View
                                 style={{
-                                  backgroundColor: t.category?.color || theme.colors.secondaryContainer,
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 12,
+                                  flex: 1,
+                                  paddingRight: 8,
                                 }}
-                                color="white"
-                              />
-                              <View>
-                                <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
-                                  {t.description}
-                                </Text>
-                                {/* Special case: Edit Initial Balance */}
-                                {t.id === "initial_balance_adjustment" ? (
-                                  <Text
-                                    variant="bodySmall"
-                                    style={{
-                                      color: theme.colors.primary,
-                                      fontWeight: "bold",
-                                      marginTop: 2,
-                                    }}
-                                    onPress={() => {
-                                      setNewBalance(CurrencyUtils.format(t.amount, t.currency_code).replace("R$", "").trim());
-                                      setEditBalanceVisible(true);
-                                    }}
-                                  >
-                                    Toque para ajustar saldo
+                              >
+                                <Avatar.Icon
+                                  size={36}
+                                  icon={t.category?.icon || "help"}
+                                  style={{
+                                    backgroundColor: t.category?.color || theme.colors.secondaryContainer,
+                                  }}
+                                  color="white"
+                                />
+                                <View style={{ flex: 1 }}>
+                                  <Text variant="bodyMedium" style={{ fontWeight: "bold" }} numberOfLines={1} ellipsizeMode="tail">
+                                    {t.description}
                                   </Text>
-                                ) : (
-                                  <View
-                                    style={{
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                      gap: 4,
-                                    }}
-                                  >
-                                    <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                                      {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
+                                  {/* Special case: Edit Initial Balance */}
+                                  {t.id === "initial_balance_adjustment" ? (
+                                    <Text
+                                      variant="bodySmall"
+                                      style={{
+                                        color: theme.colors.primary,
+                                        fontWeight: "bold",
+                                        marginTop: 2,
+                                      }}
+                                    >
+                                      Toque para ajustar saldo
                                     </Text>
-                                  </View>
-                                )}
+                                  ) : (
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      <Text variant="bodySmall" style={{ opacity: 0.6 }} numberOfLines={1}>
+                                        {new Date(t.transaction_date).toLocaleDateString()} • {t.category?.name || "Sem Categoria"}
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
                               </View>
+                              <Text variant="bodyLarge" style={{ fontWeight: "bold", flexShrink: 0 }}>
+                                {CurrencyUtils.format(t.amount, t.currency_code || card.currency_code)}
+                              </Text>
                             </View>
-                            <Text variant="bodyLarge" style={{ fontWeight: "bold" }}>
-                              {CurrencyUtils.format(t.amount, t.currency_code || card.currency_code)}
-                            </Text>
-                          </View>
-                        </Surface>
+                          </Surface>
+                        </TouchableOpacity>
                         <Divider />
                       </Animated.View>
                     );

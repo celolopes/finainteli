@@ -62,12 +62,12 @@ export const TransactionItem = ({ transaction, onPress, onToggleStatus }: Props)
 
       {/* Content */}
       <View style={styles.content}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           {isOverdue && <MaterialCommunityIcons name="alert-circle" size={16} color={theme.colors.error} />}
-          <Text variant="bodyLarge" style={[styles.title, { color: isOverdue ? theme.colors.error : theme.colors.onSurface }]}>
+          <Text variant="bodyLarge" numberOfLines={1} ellipsizeMode="tail" style={[styles.title, { color: isOverdue ? theme.colors.error : theme.colors.onSurface, flex: 1 }]}>
             {transaction.title}
           </Text>
-          {!!transaction.credit_card_id && <MaterialCommunityIcons name="credit-card-outline" size={14} color={theme.colors.onSurfaceVariant} />}
+          {!!transaction.credit_card_id && <MaterialCommunityIcons name="credit-card-outline" size={14} color={theme.colors.onSurfaceVariant} style={{ flexShrink: 0 }} />}
         </View>
         <Text variant="bodySmall" style={{ color: isOverdue ? theme.colors.error : theme.colors.onSurfaceVariant, opacity: isOverdue ? 0.8 : 1 }}>
           {transaction.category} {isPending && `• ${isOverdue ? t("transactions.status.overdue") : t("transactions.status.pending")}`}
@@ -81,23 +81,28 @@ export const TransactionItem = ({ transaction, onPress, onToggleStatus }: Props)
           style={{
             color: transaction.type === "expense" ? "#F87171" : "#4ADE80",
             fontWeight: "700",
-            marginBottom: isPending ? 4 : 0,
+            marginBottom: 4,
           }}
         >
           {isIncome ? "+" : "-"}R$ {formatCurrency(transaction.amount)}
         </Text>
 
-        {isPending && (
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              onToggleStatus?.();
-            }}
-            style={[styles.checkCircle, { borderColor: isOverdue ? theme.colors.error : theme.colors.outline }]}
-          >
-            <MaterialCommunityIcons name="check" size={14} color={isOverdue ? theme.colors.error : theme.colors.outline} />
-          </TouchableOpacity>
-        )}
+        {/* Checkbox for all transactions - toggle payment/received status */}
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            onToggleStatus?.();
+          }}
+          style={[
+            styles.checkCircle,
+            {
+              borderColor: isPending ? (isOverdue ? theme.colors.error : theme.colors.outline) : "#4ADE80",
+              backgroundColor: isPending ? "transparent" : "#4ADE80",
+            },
+          ]}
+        >
+          <MaterialCommunityIcons name="check" size={14} color={isPending ? (isOverdue ? theme.colors.error : theme.colors.outline) : "#FFFFFF"} />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

@@ -69,6 +69,18 @@ export default {
       card: "Cartão",
       goal: "Meta",
     },
+    pendingBills: {
+      title: "Contas a pagar",
+      singular: "Você tem 1 conta a pagar",
+      plural: "Você tem {{count}} contas a pagar",
+      totalLabel: "no total de",
+    },
+    pendingIncome: {
+      title: "Contas a receber",
+      singular: "Você tem 1 valor a receber",
+      plural: "Você tem {{count}} valores a receber",
+      totalLabel: "no total de",
+    },
   },
   onboarding: {
     welcome: {

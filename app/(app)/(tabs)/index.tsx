@@ -2,8 +2,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuthStore } from "../../../src/store/authStore";
 import { useFinancialStore } from "../../../src/store/financialStore";
@@ -12,6 +13,7 @@ import { useFinancialStore } from "../../../src/store/financialStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BalanceCard } from "../../../src/components/dashboard/BalanceCard";
 import { EmptyDashboard } from "../../../src/components/dashboard/EmptyDashboard";
+import { PendingAlertsCarousel } from "../../../src/components/dashboard/PendingAlertsCarousel";
 import { QuickActions } from "../../../src/components/dashboard/QuickActions";
 import { UserHeader } from "../../../src/components/dashboard/UserHeader";
 import { SmartTipCard } from "../../../src/components/SmartTipCard";
@@ -20,12 +22,16 @@ import { useTutorial } from "../../../src/context/TutorialContext";
 import { useAILimit } from "../../../src/hooks/useAILimit";
 import { useBudgetMonitor } from "../../../src/hooks/useBudgetMonitor";
 import { usePremium } from "../../../src/hooks/usePremium";
+import { FinancialService } from "../../../src/services/financial";
 import { GeminiService } from "../../../src/services/gemini";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
+  // Calculate bottom padding for iOS native tab bar
+  const tabBarPadding = Platform.OS === "ios" ? 90 : 60;
 
   const { accounts, monthlySummary, isLoading, fetchDashboardData, spendingByCategory } = useFinancialStore();
 
@@ -39,6 +45,10 @@ export default function HomeScreen() {
   const [tipLoading, setTipLoading] = useState(false);
   const { canUseTip, incrementTipUsage, isLoading: limitLoading } = useAILimit();
   const { isPro } = usePremium();
+
+  // Pending alerts state (bills to pay & income to receive)
+  const [pendingBills, setPendingBills] = useState<{ count: number; total: number }>({ count: 0, total: 0 });
+  const [pendingIncome, setPendingIncome] = useState<{ count: number; total: number }>({ count: 0, total: 0 });
 
   // Load daily tip from cache or generate new one
   const loadDailyTip = useCallback(async () => {
@@ -111,6 +121,9 @@ export default function HomeScreen() {
         console.log("[Home] Focusing and refreshing dashboard data...");
         fetchDashboardData();
         checkBudgets();
+        // Fetch pending alerts for today/tomorrow
+        FinancialService.getPendingBills().then(setPendingBills).catch(console.error);
+        FinancialService.getPendingIncome().then(setPendingIncome).catch(console.error);
       }
     }, [session]),
   );
@@ -170,7 +183,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         aria-label="Dashboard Principal"
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchDashboardData} tintColor={theme.colors.primary} />}
       >
         {/* Header com Avatar e Saudação (Liquid Glass iOS / M3 Android) */}
@@ -190,6 +203,9 @@ export default function HomeScreen() {
             ) : (
               /* Dashboard Completo */
               <View style={styles.dashboardContent}>
+                {/* Pending Alerts Carousel - Bills to Pay & Income to Receive */}
+                <PendingAlertsCarousel pendingBills={pendingBills} pendingIncome={pendingIncome} />
+
                 {/* Saldo e Resumo */}
                 <CoachMarkTarget id="balance" style={{ marginBottom: 6 }}>
                   <BalanceCard aria-label="Resumo do Saldo" />
