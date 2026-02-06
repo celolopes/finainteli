@@ -1624,4 +1624,54 @@ export const FinancialService = {
     mySync().catch(console.error);
     return true;
   },
+  async createCategory(category: Partial<Category>) {
+    const userId = await this._getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
+
+    let newRecord: Category;
+    await database.write(async () => {
+      newRecord = await database.get<Category>("categories").create((c) => {
+        c.userId = userId;
+        c.name = category.name!;
+        c.icon = (category.icon as string) || "help";
+        c.color = (category.color as string) || "#999999";
+        c.type = (category.type as "income" | "expense" | "both") || "expense";
+      });
+    });
+
+    mySync().catch(console.error);
+    return newRecord!._raw;
+  },
+
+  async updateCategory(id: string, updates: Partial<Database["public"]["Tables"]["categories"]["Update"]>) {
+    await database.write(async () => {
+      const category = await database.get<Category>("categories").find(id);
+      await category.update((c) => {
+        if (updates.name !== undefined) c.name = updates.name;
+        if (updates.icon !== undefined) c.icon = (updates.icon as string) || "help";
+        if (updates.color !== undefined) c.color = (updates.color as string) || "#999999";
+        if (updates.type !== undefined) c.type = updates.type as "income" | "expense" | "both";
+      });
+    });
+    mySync().catch(console.error);
+    return true;
+  },
+
+  async deleteCategory(id: string) {
+    const count = await database
+      .get<Transaction>("transactions")
+      .query(Q.where("category_id", id), Q.where("deleted_at", Q.eq(null)))
+      .fetchCount();
+
+    if (count > 0) {
+      throw new Error("Não é possível excluir categoria em uso.");
+    }
+
+    await database.write(async () => {
+      const category = await database.get<Category>("categories").find(id);
+      await category.markAsDeleted();
+    });
+    mySync().catch(console.error);
+    return true;
+  },
 };

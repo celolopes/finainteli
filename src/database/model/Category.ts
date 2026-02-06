@@ -8,7 +8,7 @@ export default class Category extends Model {
   @field("name") name!: string;
   @field("icon") icon!: string;
   @field("color") color!: string;
-  @field("type") type?: "income" | "expense";
+  @field("type") type?: "income" | "expense" | "both";
 
   @readonly @date("updated_at") updatedAt!: Date;
   @date("deleted_at") deletedAt?: Date;

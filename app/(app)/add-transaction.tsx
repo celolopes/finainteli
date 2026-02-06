@@ -515,7 +515,7 @@ export default function AddTransactionScreen() {
 
         {/* Category Dialog */}
         <Portal>
-          <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)} style={{ maxHeight: "70%" }}>
+          <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)}>
             <Dialog.Title>Escolher Categoria</Dialog.Title>
             <Dialog.ScrollArea>
               <ScrollView contentContainerStyle={styles.dialogGrid}>
@@ -560,7 +560,7 @@ export default function AddTransactionScreen() {
                   style={styles.gridItem}
                   onPress={() => {
                     setShowCatDialog(false);
-                    Alert.alert("Em breve", "Criação de categorias personalizadas será implementada na próxima atualização.");
+                    router.push("/(app)/settings/categories/new" as any);
                   }}
                 >
                   <Avatar.Icon size={48} icon="plus" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />

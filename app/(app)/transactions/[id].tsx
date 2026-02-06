@@ -464,7 +464,7 @@ export default function TransactionDetails() {
 
       {/* Category Dialog */}
       <Portal>
-        <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)} style={{ maxHeight: "70%" }}>
+        <Dialog visible={showCatDialog} onDismiss={() => setShowCatDialog(false)}>
           <Dialog.Title>{t("transactions.selectCategory")}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView contentContainerStyle={styles.dialogGrid}>
@@ -485,6 +485,19 @@ export default function TransactionDetails() {
                     </Text>
                   </TouchableOpacity>
                 ))}
+
+              <TouchableOpacity
+                style={styles.gridItem}
+                onPress={() => {
+                  setShowCatDialog(false);
+                  router.push("/(app)/settings/categories/new" as any);
+                }}
+              >
+                <Avatar.Icon size={48} icon="plus" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />
+                <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurface }}>
+                  Adicionar
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>

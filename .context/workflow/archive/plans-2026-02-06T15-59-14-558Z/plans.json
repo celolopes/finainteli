@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "finainteli-bugfix-improvements",
+      "path": "plans/finainteli-bugfix-improvements.md",
+      "title": "Correções de Bugs e Melhorias do FinaInteli",
+      "summary": "Plano de correções de bugs e melhorias que inclui: substituição da biblioteca Liquid Glass pela react-native-bottom-tabs, correções na tela de nova transação (focus, autocomplete, UI de categorias e origem, date picker), persistência do histórico do chat com formatação markdown, e ajuste nos requisitos mínimos para relatórios.",
+      "linkedAt": "2026-02-05T12:49:15.330Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "finainteli-bugfix-improvements"
+}

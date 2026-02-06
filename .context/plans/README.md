@@ -3,8 +3,9 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Finainteli Bugfix Improvements](./finainteli-bugfix-improvements.md)
-2. [Premium Sandbox Bypass](./premium-sandbox-bypass.md)
+1. [Category Management](./category-management.md)
+2. [Finainteli Bugfix Improvements](./finainteli-bugfix-improvements.md)
+3. [Premium Sandbox Bypass](./premium-sandbox-bypass.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

@@ -66,6 +66,8 @@ export interface Database {
           is_system: boolean;
           created_at: string;
         };
+        Insert: Omit<Database["public"]["Tables"]["categories"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
       };
       transactions: {
         Row: {
