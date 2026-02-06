@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Appbar, Avatar, Button, RadioButton, Text, TextInput, useTheme } from "react-native-paper";
+import { Appbar, Avatar, Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassAppbar } from "../../../../src/components/ui/GlassAppbar";
 import { FinancialService } from "../../../../src/services/financial";
@@ -102,12 +102,21 @@ export default function CategoryFormScreen() {
 
     setLoading(true);
     try {
+      let newId = id;
       if (isEditing) {
         await FinancialService.updateCategory(id as string, { name, type, icon, color });
       } else {
-        await FinancialService.createCategory({ name, type, icon, color });
+        const created = await FinancialService.createCategory({ name, type, icon, color });
+        newId = created.id;
       }
-      router.back();
+
+      const params = useLocalSearchParams();
+      if (params.returnTo) {
+        // Navigate back to the source screen with the new ID
+        router.navigate({ pathname: params.returnTo as any, params: { createdCategoryId: newId } });
+      } else {
+        router.back();
+      }
     } catch (e) {
       console.error(e);
       Alert.alert("Erro", "Falha ao salvar categoria.");
@@ -130,22 +139,15 @@ export default function CategoryFormScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Tipo
           </Text>
-          <RadioButton.Group onValueChange={(value) => setType(value as any)} value={type}>
-            <View style={styles.row}>
-              <View style={styles.radioItem}>
-                <RadioButton value="expense" />
-                <Text>Despesa</Text>
-              </View>
-              <View style={styles.radioItem}>
-                <RadioButton value="income" />
-                <Text>Receita</Text>
-              </View>
-              <View style={styles.radioItem}>
-                <RadioButton value="both" />
-                <Text>Ambos</Text>
-              </View>
-            </View>
-          </RadioButton.Group>
+          <SegmentedButtons
+            value={type}
+            onValueChange={(val) => setType(val as "income" | "expense" | "both")}
+            buttons={[
+              { value: "expense", label: "Despesa", icon: "arrow-down-circle" },
+              { value: "income", label: "Receita", icon: "arrow-up-circle" },
+              { value: "both", label: "Ambos", icon: "swap-vertical" },
+            ]}
+          />
         </View>
 
         <View style={styles.section}>

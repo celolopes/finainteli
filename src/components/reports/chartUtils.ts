@@ -1,4 +1,8 @@
-export const formatThousands = (value: number) => `k${Math.round((Number(value) || 0) / 1000)}`;
+export const formatThousands = (value: number) => {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+  return String(value);
+};
 
 export const buildLabelTexts = (labels: string[], maxLabels: number = 6) => {
   if (labels.length <= maxLabels) return labels;

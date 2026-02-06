@@ -70,7 +70,7 @@ export default function AddTransactionScreen() {
   const schema = useMemo(() => createSchema(t), [t]);
   type FormData = z.infer<typeof schema>;
 
-  const { preselectedCardId } = useLocalSearchParams<{ preselectedCardId: string }>();
+  const { preselectedCardId, createdCategoryId } = useLocalSearchParams<{ preselectedCardId: string; createdCategoryId?: string }>();
 
   const {
     control,
@@ -91,9 +91,24 @@ export default function AddTransactionScreen() {
     },
   });
 
+  // Handle Return from Category Creation
+  useEffect(() => {
+    if (createdCategoryId) {
+      const reloadAndSelect = async () => {
+        const c = await FinancialService.getCategories();
+        setCategories(c || []);
+        if (createdCategoryId) setValue("category_id", createdCategoryId);
+      };
+      reloadAndSelect();
+    }
+  }, [createdCategoryId]);
+
   // Reset form on focus to ensure clean state
   useFocusEffect(
     useCallback(() => {
+      // Don't reset if we just came back from creating a category
+      if (createdCategoryId) return;
+
       // Clean form state when opening "Quick Access"
       const timer = setTimeout(() => {
         reset({
@@ -118,7 +133,7 @@ export default function AddTransactionScreen() {
         }, 300);
       }, 0);
       return () => clearTimeout(timer);
-    }, [reset, preselectedCardId, accounts]),
+    }, [reset, preselectedCardId, accounts, createdCategoryId]),
   );
 
   const handleSuggestionSelect = (suggestion: AutocompleteSuggestion) => {
@@ -560,7 +575,7 @@ export default function AddTransactionScreen() {
                   style={styles.gridItem}
                   onPress={() => {
                     setShowCatDialog(false);
-                    router.push("/(app)/settings/categories/new" as any);
+                    router.push({ pathname: "/(app)/settings/categories/new", params: { returnTo: "/(app)/add-transaction" } } as any);
                   }}
                 >
                   <Avatar.Icon size={48} icon="plus" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />

@@ -259,6 +259,7 @@ export default {
     settings: "Configurações",
     account: "Conta",
     notifications: "Notificações",
+    notificationsDesc: "Receber alertas de orçamento",
     language: "Idioma",
     languages: {
       ptBR: "Português (BR)",

@@ -82,25 +82,22 @@ export const MonthlyBarChart = ({ data }: MonthlyBarChartProps) => {
             data={chartData}
             width={chartWidth}
             height={220}
-            barWidth={barWidth}
-            barBorderRadius={8}
-            spacing={spacing}
-            initialSpacing={14}
-            endSpacing={14}
+            barWidth={24}
+            spacing={24}
+            barBorderRadius={6}
             isAnimated
             animationDuration={700}
-            yAxisTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
-            xAxisLabelTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
-            xAxisColor={axisLineColor}
-            yAxisColor={axisLineColor}
+            yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 11 }}
+            xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 11 }}
+            xAxisColor="transparent"
+            yAxisColor="transparent"
+            yAxisThickness={0}
+            xAxisThickness={0}
             rulesColor={ruleColor}
-            rulesThickness={0.6}
-            yAxisLabelWidth={48}
-            noOfSections={4}
-            rotateLabel
-            xAxisLabelsHeight={32}
-            xAxisLabelsVerticalShift={6}
-            adjustToWidth
+            rulesType="solid"
+            rulesThickness={0.5}
+            yAxisLabelWidth={35}
+            noOfSections={3}
             formatYLabel={(label) => formatThousands(Number(label))}
           />
         </View>

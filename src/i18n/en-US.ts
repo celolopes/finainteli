@@ -240,6 +240,7 @@ export default {
     settings: "Settings",
     account: "Account",
     notifications: "Notifications",
+    notificationsDesc: "Receive budget alerts",
     language: "Language",
     languages: {
       ptBR: "Portuguese (BR)",

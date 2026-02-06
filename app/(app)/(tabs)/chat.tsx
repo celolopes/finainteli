@@ -182,7 +182,7 @@ export default function ChatScreen() {
       <View style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 }}>
         <GlassAppbar>
           <Appbar.Content
-            title={t("tabs.chat")}
+            title={t("tabs.advisor")}
             subtitle={!isPro ? `${FREE_DAILY_LIMIT - usageCount} mensagens grátis hoje` : undefined}
             subtitleStyle={{ color: theme.colors.primary, fontWeight: "bold" }}
           />

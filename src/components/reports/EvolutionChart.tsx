@@ -79,24 +79,49 @@ export const EvolutionChart = ({ data }: EvolutionChartProps) => {
             lineGradient={isDark}
             lineGradientStartColor={lineColor}
             lineGradientEndColor={glowFill}
-            yAxisTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
-            xAxisLabelTextStyle={{ color: theme.colors.onSurface, fontSize: 10 }}
-            xAxisColor={axisLineColor}
-            yAxisColor={axisLineColor}
+            yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 11 }}
+            xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 11 }}
+            xAxisColor="transparent"
+            yAxisColor="transparent"
             rulesColor={ruleColor}
-            rulesThickness={0.6}
-            yAxisLabelWidth={48}
-            noOfSections={4}
-            rotateLabel
-            xAxisLabelsHeight={32}
-            xAxisLabelsVerticalShift={6}
-            initialSpacing={16}
-            endSpacing={16}
-            adjustToWidth
-            hideDataPoints={!isDark}
-            dataPointsRadius={3}
-            dataPointsColor={withAlpha(lineColor, 0.9)}
+            rulesType="solid"
+            rulesThickness={0.5}
+            yAxisLabelWidth={35}
+            noOfSections={3}
             formatYLabel={(label) => formatThousands(Number(label))}
+            hideDataPoints={false}
+            dataPointsColor={lineColor}
+            dataPointsRadius={4}
+            pointerConfig={{
+              pointerStripHeight: 160,
+              pointerStripColor: ruleColor,
+              pointerStripWidth: 2,
+              pointerColor: ruleColor,
+              radius: 6,
+              pointerLabelWidth: 100,
+              pointerLabelHeight: 90,
+              activatePointersOnLongPress: true,
+              autoAdjustPointerLabelPosition: false,
+              pointerLabelComponent: (items: any) => {
+                const item = items[0];
+                return (
+                  <View
+                    style={{
+                      height: 90,
+                      width: 100,
+                      justifyContent: "center",
+                      marginTop: -30,
+                      marginLeft: -40,
+                    }}
+                  >
+                    <View style={{ padding: 6, borderRadius: 8, backgroundColor: theme.colors.inverseSurface }}>
+                      <Text style={{ color: theme.colors.inverseOnSurface, fontSize: 10, textAlign: "center" }}>{item.label}</Text>
+                      <Text style={{ color: theme.colors.inverseOnSurface, fontSize: 12, fontWeight: "bold", textAlign: "center" }}>R$ {formatThousands(item.value)}</Text>
+                    </View>
+                  </View>
+                );
+              },
+            }}
           />
         </View>
       </View>

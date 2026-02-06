@@ -71,19 +71,15 @@ export const CategoryPieChart = ({ data }: CategoryPieChartProps) => {
               value: item.amount,
               color: item.color,
               gradientCenterColor: item.gradientCenterColor,
-              text: `${Math.round(item.percentage || 0)}%`,
             }))}
             donut
             radius={radius}
             innerRadius={innerRadius}
-            showText
-            textColor="#ffffff"
-            textSize={12}
             isAnimated
             animationDuration={700}
             showGradient={isDark}
-            strokeWidth={1}
-            strokeColor={withAlpha(theme.colors.background, isDark ? 0.4 : 0.2)}
+            strokeWidth={2}
+            strokeColor={theme.colors.surface}
             centerLabelComponent={() => (
               <View style={styles.centerLabel}>
                 <Text variant="labelSmall" style={{ opacity: 0.7 }}>
