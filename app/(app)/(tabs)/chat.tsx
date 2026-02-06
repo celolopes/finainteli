@@ -5,9 +5,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import Markdown from "react-native-markdown-display"; // Import Markdown
-import { Icon, Surface, Text, TextInput, useTheme } from "react-native-paper";
+import { Appbar, Icon, Text, TextInput, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PaywallModal } from "../../../src/components/paywall/PaywallModal";
+import { GlassAppbar } from "../../../src/components/ui/GlassAppbar";
 import { usePremium } from "../../../src/hooks/usePremium";
 import { FinancialService } from "../../../src/services/financial";
 import { GeminiService } from "../../../src/services/gemini";
@@ -84,8 +85,6 @@ export default function ChatScreen() {
       console.error("Failed to load usage", e);
     }
   };
-
-  // ... (usage increment logic remains same)
 
   const incrementUsage = async () => {
     if (isPro) return;
@@ -171,23 +170,27 @@ export default function ChatScreen() {
     // Customize other markdown elements if needed
   });
 
+  // Calculate top padding for list to account for fixed header
+  const headerHeight = Platform.OS === "ios" ? 44 + insets.top : 56 + insets.top;
+  const listPaddingTop = headerHeight + 16;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient colors={[theme.colors.surfaceVariant, theme.colors.background]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.3 }} style={StyleSheet.absoluteFillObject} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? tabBarHeight : 0}>
-        {/* Header / Limit Indicator */}
-        {!isPro && (
-          <View style={[styles.limitContainer, { top: insets.top + 10 }]}>
-            <Surface style={styles.limitBadge} elevation={2}>
-              <Icon source="flash" size={16} color={theme.colors.primary} />
-              <Text variant="labelSmall" style={{ fontWeight: "bold", marginLeft: 4 }}>
-                {FREE_DAILY_LIMIT - usageCount} mensagens grátis hoje
-              </Text>
-            </Surface>
-          </View>
-        )}
+      {/* Fixed Glass Header */}
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 }}>
+        <GlassAppbar>
+          <Appbar.Content
+            title={t("tabs.chat")}
+            subtitle={!isPro ? `${FREE_DAILY_LIMIT - usageCount} mensagens grátis hoje` : undefined}
+            subtitleStyle={{ color: theme.colors.primary, fontWeight: "bold" }}
+          />
+          {!isPro && <Appbar.Action icon="flash" color={theme.colors.primary} size={20} style={{ margin: 0 }} />}
+        </GlassAppbar>
+      </View>
 
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? tabBarHeight : 0}>
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -195,7 +198,7 @@ export default function ChatScreen() {
           contentContainerStyle={[
             styles.list,
             {
-              paddingTop: !isPro ? insets.top + 50 : insets.top + 20,
+              paddingTop: listPaddingTop,
               paddingBottom: 20, // Clean fixed padding
               flexGrow: 1, // Ensures content can grow and push bottom
             },

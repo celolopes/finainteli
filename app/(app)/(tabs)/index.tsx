@@ -181,16 +181,18 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        aria-label="Dashboard Principal"
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding + insets.bottom }]}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchDashboardData} tintColor={theme.colors.primary} />}
-      >
-        {/* Header com Avatar e Saudação (Liquid Glass iOS / M3 Android) */}
+      {/* Header com Avatar e Saudação (Liquid Glass iOS / M3 Android) - Fixo no topo */}
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }}>
         <CoachMarkTarget id="header">
           <UserHeader />
         </CoachMarkTarget>
+      </View>
 
+      <ScrollView
+        aria-label="Dashboard Principal"
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding + insets.bottom, paddingTop: Platform.OS === "ios" ? insets.top + 100 : 20 }]}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchDashboardData} tintColor={theme.colors.primary} progressViewOffset={Platform.OS === "ios" ? insets.top + 100 : 40} />}
+      >
         {isLoading && !hasData ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" />
